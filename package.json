@@ -1,0 +1,11 @@
+{
+    "private": true,
+    "scripts": {
+        "publish": "dotnet fsi build.fsx publish"
+    },
+    "dependencies": {
+    },
+    "devDependencies": {
+        "fable-publish-utils": "^2.2.0"
+    }
+}
