@@ -1,10 +1,13 @@
 #load "node_modules/fable-publish-utils/PublishUtils.fs"
+
+open System
 open PublishUtils
 
 // ATTENTION: Packages must appear in dependency order
 let packages = [
     "Fable.Lit"
-    "Feliz.Lit"
+    "React.Lit"
+    "Feliz.Engine.Lit"
     "Elmish.Lit"
   ]
 

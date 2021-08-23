@@ -33,6 +33,23 @@ let timerTick dispatch =
         dispatch (Tick DateTime.Now)
     , 1000) |> ignore
 
+let dummyInput() =
+    Html.div [
+        Html.h1 "1"
+        Html.button [
+            Attr.classes [
+                true, "my-button"
+                false, "is-active"
+            ]
+            Html.text "Increment"
+        ]
+        Html.input [
+            Attr.type' "checkbox"
+            Attr.isChecked true
+            Html.text "Check me!"
+        ]
+    ]
+
 let clockHand (time: Time) =
     let length = time.Length
     let angle = 2.0 * Math.PI * time.ClockPercentage
@@ -111,20 +128,22 @@ let nameInput value dispatch =
     ]
 
     html $"""
-<div style={styles containerCss}>
-  <input
-    style={styles inputCss}
-    value={value}
-    @keyup={fun (ev: Event) ->
-      ev.target.Value |> dispatch}>
+      <div style={styles containerCss}>
+        <input
+          style={styles inputCss}
+          value={value}
+          @keyup={fun (ev: Event) ->
+            ev.target.Value |> dispatch}>
 
-  <span>Hello {value}!</span>
-</div>
-"""
+        <span>Hello {value}!</span>
+      </div>
+    """
 
 let itemList model =
     let renderNumber (value: int) = 
-        html $"""<li>Value: <strong>{value}</strong></li>"""
+        html $"""
+          <li>Value: <strong>{value}</strong></li>
+        """
 
     let shuffle (li:_ list) = 
         let rng = new Random()
@@ -153,8 +172,9 @@ let view model dispatch =
     html $"""
       {clock model.CurrentTime}
       {nameInput model.Value (ChangeValue >> dispatch)}
-      {itemList model}
     """
+      // {itemList model}
+      // {dummyInput() |> toLit}
 
 Program.mkProgram initialState update view
 |> Program.withSubscription (fun _ -> Cmd.ofSub timerTick)

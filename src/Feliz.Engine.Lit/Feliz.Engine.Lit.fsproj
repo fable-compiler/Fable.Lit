@@ -6,13 +6,14 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Elmish.Lit.fs" />
+    <Compile Include="Feliz.Engine.Lit.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Elmish" Version="3.1.0" />
+    <PackageReference Include="Feliz.Engine" Version="1.0.0-beta-004" />
+    <PackageReference Include="Feliz.Engine.Event" Version="1.0.0-beta-004" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Fable.Lit\Fable.Lit.fsproj" />

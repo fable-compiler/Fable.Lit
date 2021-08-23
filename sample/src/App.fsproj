@@ -7,7 +7,7 @@
     <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Feliz.Lit\Feliz.Lit.fsproj" />
+    <ProjectReference Include="..\..\src\Feliz.Engine.Lit\Feliz.Engine.Lit.fsproj" />
     <ProjectReference Include="..\..\src\Elmish.Lit\Elmish.Lit.fsproj" />
   </ItemGroup>
   <!-- <ItemGroup>
