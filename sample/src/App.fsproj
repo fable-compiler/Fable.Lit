@@ -7,7 +7,8 @@
     <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Elmish.Lit.fsproj" />
+    <ProjectReference Include="..\..\src\Feliz.Lit\Feliz.Lit.fsproj" />
+    <ProjectReference Include="..\..\src\Elmish.Lit\Elmish.Lit.fsproj" />
   </ItemGroup>
   <!-- <ItemGroup>
     <PackageReference Include="Elmish.Lit" Version="1.0.0-beta-001" />

@@ -5,6 +5,7 @@ open Elmish
 open Elmish.Lit
 open Fable.Core
 open Feliz
+open type length
 open Browser
 open Browser.Types
 open Helpers
@@ -95,7 +96,7 @@ let clock (time: DateTime) =
 
 let nameInput value dispatch =
     let containerCss = [
-      Css.marginLeft (length.rem 2)
+      Css.marginLeft(rem 2)
       Css.displayFlex
       Css.justifyContentSpaceAround
       Css.alignItemsFlexStart
@@ -103,10 +104,10 @@ let nameInput value dispatch =
     ]
 
     let inputCss = [
-      Css.padding (length.rem 0.25)
-      Css.fontSize (length.px 16)
-      Css.width (length.px 250)
-      Css.marginBottom (length.rem 1)
+      Css.padding(rem 0.25)
+      Css.fontSize(px 16)
+      Css.width(px 250)
+      Css.marginBottom(rem 1)
     ]
 
     html $"""
@@ -144,7 +145,7 @@ let itemList model =
         <p>No Key Item List</p>
         <ul>{items |> List.map renderNumber}</ul>
         <p>Keyed Item List</p>
-        <ul>{items |> repeat string renderNumber}</ul>
+        <ul>{items |> ofSeqWithId string renderNumber}</ul>
       </div>
     """
 
