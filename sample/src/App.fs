@@ -121,20 +121,38 @@ let nameInput value dispatch =
 </div>
 """
 
-let renderNumber (value: int) (index: int) = 
-  html $"""<li>value - {value}</li>"""
+let itemList model =
+    let renderNumber (value: int) = 
+        html $"""<li>Value: <strong>{value}</strong></li>"""
 
-let view model dispatch =
-    let itemList = [1;2;3;4;5] |> List.map (fun item -> html $"""<li>Item: {item}</li>""")
+    let shuffle (li:_ list) = 
+        let rng = new Random()
+        let arr = List.toArray li
+        let max = (arr.Length - 1)
+        let randomSwap (arr:_[]) i =
+            let pos = rng.Next(max)
+            let tmp = arr.[pos]
+            arr.[pos] <- arr.[i]
+            arr.[i] <- tmp
+            arr
+       
+        [|0..max|] |> Array.fold randomSwap arr |> Array.toList
+
+    let items = shuffle [1; 2; 3; 4; 5]
+    html $"""
+      <div class={classes ["content", true; "px-4", true; "has-text-primary", model.CurrentTime.Second % 2 = 0]}>
+        <p>No Key Item List</p>
+        <ul>{items |> List.map renderNumber}</ul>
+        <p>Keyed Item List</p>
+        <ul>{items |> repeat string renderNumber}</ul>
+      </div>
+    """
+
+let view model dispatch =    
     html $"""
       {clock model.CurrentTime}
       {nameInput model.Value (ChangeValue >> dispatch)}
-      <div class={classes ["content", true; "px-4", true; "has-text-primary", model.CurrentTime.Second % 2 = 0]}>
-        <p>No Key Item List</p>
-        <ul>{itemList}</ul>
-        <p>Keyed Item List</p>
-        <ul>{repeat [1;2;3;4;5] renderNumber}</ul>
-      </div>
+      {itemList model}
     """
 
 Program.mkProgram initialState update view
