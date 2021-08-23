@@ -3,11 +3,12 @@ module App
 open System
 open Elmish
 open Elmish.Lit
-open Lit
+open Fable.Core
 open Feliz
 open Browser
 open Browser.Types
 open Helpers
+open Lit
 
 type Model =
     { CurrentTime: DateTime
@@ -120,10 +121,20 @@ let nameInput value dispatch =
 </div>
 """
 
+let renderNumber (value: int) (index: int) = 
+  html $"""<li>value - {value}</li>"""
+
 let view model dispatch =
+    let itemList = [1;2;3;4;5] |> List.map (fun item -> html $"""<li>Item: {item}</li>""")
     html $"""
       {clock model.CurrentTime}
       {nameInput model.Value (ChangeValue >> dispatch)}
+      <div class={classes ["content", true; "px-4", true; "has-text-primary", model.CurrentTime.Second % 2 = 0]}>
+        <p>No Key Item List</p>
+        <ul>{itemList}</ul>
+        <p>Keyed Item List</p>
+        <ul>{repeat [1;2;3;4;5] renderNumber}</ul>
+      </div>
     """
 
 Program.mkProgram initialState update view

@@ -6,10 +6,10 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
-  <!-- <ItemGroup>
-    <ProjectReference Include="..\..\src\Elmish.Lit.fsproj" />
-  </ItemGroup> -->
   <ItemGroup>
-    <PackageReference Include="Elmish.Lit" Version="1.0.0-beta-001" />
+    <ProjectReference Include="..\..\src\Elmish.Lit.fsproj" />
   </ItemGroup>
+  <!-- <ItemGroup>
+    <PackageReference Include="Elmish.Lit" Version="1.0.0-beta-001" />
+  </ItemGroup> -->
 </Project>
