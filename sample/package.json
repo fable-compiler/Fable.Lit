@@ -2,11 +2,11 @@
     "private": "true",
     "scripts": {
         "postinstall": "dotnet tool restore",
-        "start": "dotnet fable watch src -o out --run webpack serve",
+        "start": "dotnet run -c Release -p ../../fable/src/Fable.Cli -- watch src -o out --run webpack serve",
         "deploy": "NODE_ENV=production dotnet fable src -o out --run webpack && gh-pages -d public"
     },
     "dependencies": {
-        "lit-html": "^1.4.1"
+        "lit-html": "^2.0.0-rc.4"
     },
     "devDependencies": {
         "css-loader": "^5.1.1",

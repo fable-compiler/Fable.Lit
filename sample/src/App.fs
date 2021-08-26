@@ -1,123 +1,70 @@
 module App
 
 open System
-open Elmish
-open Elmish.Lit
-open Fable.Core
+open Browser.Types
 open Feliz
 open type length
-open Browser
-open Browser.Types
-open Helpers
+open Elmish
 open Lit
+open Helpers
 
 type Model =
-    { CurrentTime: DateTime
-      Value: string }
+    { Value: string
+      ShowClock: bool
+      Clock: Clock.Model }
 
-type Messages =
-    | Tick of DateTime
+type Msg =
     | ChangeValue of string
+    | ShowClock of bool
+    | ClockMsg of Clock.Msg
 
 let initialState() =
-    { CurrentTime = DateTime.Now
-      Value = "World" }, Cmd.none
+    let clock, cmd = Clock.init()
+    { Value = "World"
+      ShowClock = true
+      Clock = clock }, Cmd.map ClockMsg cmd
 
 let update msg model =
     match msg with
-    | Tick next -> { model with CurrentTime = next }, Cmd.none
-    | ChangeValue newValue -> { model with Value = newValue }, Cmd.none
+    | ChangeValue v -> { model with Value = v }, Cmd.none
+    | ShowClock v -> { model with ShowClock = v }, Cmd.none
+    | ClockMsg msg ->
+        let clock, cmd = Clock.update msg model.Clock
+        { model with Clock = clock }, Cmd.map ClockMsg cmd
 
-let timerTick dispatch =
-    window.setInterval(fun _ ->
-        dispatch (Tick DateTime.Now)
-    , 1000) |> ignore
+let buttonFeliz (model: Model) dispatch =
+    toLitStatic <| Html.button [
+        Attr.className "button"
+        Ev.onClick (fun _ -> not model.ShowClock |> ShowClock |> dispatch)
 
-let dummyInput() =
-    Html.div [
-        Html.h1 "1"
-        Html.button [
-            Attr.classes [
-                true, "my-button"
-                false, "is-active"
-            ]
-            Html.text "Increment"
-        ]
-        Html.input [
-            Attr.type' "checkbox"
-            Attr.isChecked true
-            Html.text "Check me!"
-        ]
+        // This doesn't work, template is only built once and cached
+        // if model.ShowClock then
+        //     Html.text "Hide clock"
+        // else
+        //     Html.strong "Show clock"
+
+        // Do this instead
+        ofLit <|
+            if model.ShowClock then
+                toLitStatic <| Html.text "Hide clock"
+            else
+                toLitStatic <| Html.strong "Show clock"
     ]
 
-let clockHand (time: Time) =
-    let length = time.Length
-    let angle = 2.0 * Math.PI * time.ClockPercentage
-    let handX = (50.0 + length * cos (angle - Math.PI / 2.0))
-    let handY = (50.0 + length * sin (angle - Math.PI / 2.0))
-    svg $"""
-<line
-  x1="50"
-  y1="50"
-  x2={handX}
-  y2={handY}
-  stroke={time.Stroke}
-  stroke-width={time.StrokeWidth}>
-</line>   
-"""
-
-let handTop (time: Time) =
-    let length = time.Length
-    let revolution = float time.Value
-    let angle = 2.0 * Math.PI * (revolution / time.FullRound)
-    let handX = (50.0 + length * cos (angle - Math.PI / 2.0))
-    let handY = (50.0 + length * sin (angle - Math.PI / 2.0))
-    svg $"""
-<circle
-  cx={handX}
-  cy={handY}
-  r="2"
-  fill={time.Stroke}>
-</circle>   
-"""
-
-let clock (time: DateTime) =
+let buttonLit (model: Model) dispatch =
     html $"""
-<svg viewBox="0 0 100 100"
-     width="350px">
-  <circle
-    cx="50"
-    cy="50"
-    r="45"
-    fill="#0B79CE"></circle>
-
-  {clockHand time.AsHour}
-  {handTop time.AsHour}
-
-  {clockHand time.AsMinute}
-  {handTop time.AsMinute}
-
-  {clockHand time.AsSecond}
-  {handTop time.AsSecond}
-
-  <circle
-    cx="50"
-    cy="50"
-    r="3"
-    fill="#0B79CE"
-    stroke="#023963"
-    stroke-width="1">  
-  </circle>   
-</svg>
-"""
+        <button class="button" @click={fun _ -> not model.ShowClock |> ShowClock |> dispatch}>
+          {if model.ShowClock then "Hide clock" else "Show clock"}
+        </button>
+    """
 
 let nameInput value dispatch =
     let containerCss = [
-      Css.marginLeft(rem 2)
-      Css.displayFlex
-      Css.justifyContentSpaceAround
-      Css.alignItemsFlexStart
-      Css.flexDirectionColumn
+        Css.marginLeft(rem 2)
+        Css.displayFlex
+        Css.justifyContentCenter
+        Css.alignItemsCenter
+        Css.flexDirectionColumn
     ]
 
     let inputCss = [
@@ -127,11 +74,16 @@ let nameInput value dispatch =
       Css.marginBottom(rem 1)
     ]
 
+    let inputRef = createRef<HTMLInputElement>()
+
     html $"""
       <div style={styles containerCss}>
         <input
+          {refValue inputRef}
           style={styles inputCss}
           value={value}
+          @focus={fun _ ->
+            inputRef.value |> Option.iter (fun el -> el.select())}
           @keyup={fun (ev: Event) ->
             ev.target.Value |> dispatch}>
 
@@ -140,12 +92,12 @@ let nameInput value dispatch =
     """
 
 let itemList model =
-    let renderNumber (value: int) = 
+    let renderNumber (value: int) =
         html $"""
           <li>Value: <strong>{value}</strong></li>
         """
 
-    let shuffle (li:_ list) = 
+    let shuffle (li:_ list) =
         let rng = new Random()
         let arr = List.toArray li
         let max = (arr.Length - 1)
@@ -155,12 +107,12 @@ let itemList model =
             arr.[pos] <- arr.[i]
             arr.[i] <- tmp
             arr
-       
+
         [|0..max|] |> Array.fold randomSwap arr |> Array.toList
 
     let items = shuffle [1; 2; 3; 4; 5]
     html $"""
-      <div class={classes ["content", true; "px-4", true; "has-text-primary", model.CurrentTime.Second % 2 = 0]}>
+      <div class={classes ["content", true; "px-4", true; "has-text-primary", DateTime.Now.Second % 2 = 0]}>
         <p>No Key Item List</p>
         <ul>{items |> List.map renderNumber}</ul>
         <p>Keyed Item List</p>
@@ -168,15 +120,26 @@ let itemList model =
       </div>
     """
 
-let view model dispatch =    
+let view model dispatch =
     html $"""
-      {clock model.CurrentTime}
+      <div style={styles [
+        Css.margin(rem 2)
+        Css.displayFlex
+        Css.justifyContentCenter
+        Css.alignItemsCenter
+        Css.flexDirectionColumn
+      ]}>
+        {buttonFeliz model dispatch}
+        {if model.ShowClock
+         then Clock.view model.Clock (ClockMsg >> dispatch)
+         else nothing}
+      </div>
       {nameInput model.Value (ChangeValue >> dispatch)}
     """
       // {itemList model}
       // {dummyInput() |> toLit}
 
 Program.mkProgram initialState update view
-|> Program.withSubscription (fun _ -> Cmd.ofSub timerTick)
+|> Program.withSubscription (fun _ -> Cmd.ofSub(fun d -> Clock.subscribe (ClockMsg >> d)))
 |> Program.withLit "app-container"
 |> Program.run

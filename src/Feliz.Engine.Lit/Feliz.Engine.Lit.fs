@@ -1,46 +1,49 @@
-namespace Feliz
-
 [<AutoOpen>]
-module Lit =
-    open Fable.Core
-    open Fable.Core.JsInterop
-    open Feliz
-    open Lit
+module Feliz.Lit
 
-    type Node =
-        | Text of string
-        | Template of TemplateResult
-        | Style of string * string
-        | HtmlNode of string * Node list
-        | SvgNode of string * Node list
-        | Attr of string * string
-        | BoolAttr of string * bool
-        | Event of string * obj
-        | Fragment of Node list
+open Fable.Core
+open Fable.Core.JsInterop
+open Feliz
+open Lit
 
-    let Html = HtmlEngine((fun t ns -> HtmlNode(t, List.ofSeq ns)), Text, fun () -> Fragment [])
+type Node =
+    | Text of string
+    | Template of TemplateResult
+    | Style of string * string
+    | HtmlNode of string * Node list
+    | SvgNode of string * Node list
+    | Attr of string * string
+    | BoolAttr of string * bool
+    | Event of string * obj
+    | Fragment of Node list
 
-    let Svg = SvgEngine((fun t ns -> SvgNode(t, List.ofSeq ns)), Text, fun () -> Fragment [])
+let Html = HtmlEngine((fun t ns -> HtmlNode(t, List.ofSeq ns)), Text, fun () -> Fragment [])
 
-    let Attr = AttrEngine((fun k v -> Attr(k, v)), (fun k v -> BoolAttr(k, v)))
+let Svg = SvgEngine((fun t ns -> SvgNode(t, List.ofSeq ns)), Text, fun () -> Fragment [])
 
-    let Css = CssEngine(fun k v -> Style(k, v))
+let Attr = AttrEngine((fun k v -> Attr(k, v)), (fun k v -> BoolAttr(k, v)))
 
-    let Ev = EventEngine(fun k f -> Event(k.ToLowerInvariant(), f))
+let Css = CssEngine(fun k v -> Style(k, v))
 
-    /// Equivalent to lit-hmtl styleMap, accepting a list of Feliz styles
-    let styles (styles: Node seq) =
-        let map = obj()
-        styles
-        |> Seq.iter (function
-            | Style(key, value) -> map?(key) <- value
-            | _ -> ())
-        LitHtml.styleMap map
+let Ev = EventEngine(fun k f -> Event(k.ToLowerInvariant(), f))
 
-    let ofLit (template: TemplateResult) =
-        Template template
+/// Equivalent to lit-hmtl styleMap, accepting a list of Feliz styles
+let styles (styles: Node seq) =
+    let map = obj()
+    styles
+    |> Seq.iter (function
+        | Style(key, value) -> map?(key) <- value
+        | _ -> ())
+    LitHtml.styleMap map
 
-    let toLit (node: Node) =
+module internal Util =
+    open Fable.Core.JS
+
+    let cache = Constructors.WeakMap.Create<string[], string[]>()
+
+    let strs (s: string[]) = s
+
+    let buildTemplate (node: Node) =
         let rec addNode (parts, values) tag nodes =
             let styles', attrs =
                 (([], []), nodes) ||> List.fold (fun (styles', attrs) node ->
@@ -58,7 +61,7 @@ module Lit =
                 ">"::parts, values
 
             let parts, values =
-                match parts, styles', attrs with
+                match parts, styles', List.rev attrs with
                 | [], _, _ -> failwith "unexpected empty parts"
                 | head::parts, [], [] -> (head + "<" + tag + ">")::parts, values
                 | head::parts, [], (fstKey, fstValue)::attrs ->
@@ -84,14 +87,60 @@ module Lit =
             | HtmlNode(tag, nodes)
             | SvgNode (tag, nodes) -> addNode (parts, values) tag nodes
             | Fragment nodes -> ((parts, values), nodes) ||> List.fold inner
-        
+
         let parts, values = inner ([""], []) node
         let parts = List.rev parts |> List.toArray
         let values = List.rev values |> List.toArray
 
-        // parts |> String.concat "{}" |> printfn "%s"
-        // JS.console.log(values)
+        parts, values
 
+    let getValues (node: Node) =
+        let rec addNode values nodes =
+            let styles', attrs =
+                (([], []), nodes) ||> List.fold (fun (styles', attrs) node ->
+                    match node with
+                    | Style _ -> node::styles', attrs
+                    | Attr(_key, value) -> styles', box value::attrs
+                    | BoolAttr(_key, value) -> styles', box value::attrs
+                    | Event(_key, value) -> styles', box value::attrs
+                    | _ -> styles', attrs)
+
+            let values =
+                match styles', attrs with
+                | [], attrs -> attrs @ values
+                | styles', attrs -> attrs @ [styles styles'] @ values
+
+            (values, nodes) ||> List.fold inner
+
+        and inner values = function
+            | Text v -> box v::values
+            | Template v -> box v::values
+            | Style _ | Attr _ | BoolAttr _ | Event _ -> values
+            | HtmlNode(_tag, nodes)
+            | SvgNode (_tag, nodes) -> addNode values nodes
+            | Fragment nodes -> (values, nodes) ||> List.fold inner
+
+        inner [] node |> List.rev |> List.toArray
+
+    let getTemplate (ref: string[]) (node: Node) =
+        let strings = cache.get(ref)
+        let strings, values =
+            if isNull strings then
+                let strings, values = buildTemplate node
+                cache.set(ref, strings) |> ignore
+                strings, values
+            else
+                let values = getValues node
+                strings, values
         match node with
-        | SvgNode _ -> LitHtml.svg.Invoke(parts, values)
-        | _ -> LitHtml.html.Invoke(parts, values)
+        | SvgNode _ -> LitHtml.svg.Invoke(strings, values)
+        | _ -> LitHtml.html.Invoke(strings, values)
+
+let ofLit (template: TemplateResult) =
+    Template template
+
+let __toLitStatic (ref: string[]) (node: Node): TemplateResult =
+    Util.getTemplate ref node
+
+let inline toLitStatic (node: Node): TemplateResult =
+    __toLitStatic (emitJsExpr Util.strs "$0``") node

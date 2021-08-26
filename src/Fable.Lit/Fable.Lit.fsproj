@@ -9,7 +9,7 @@
     <NpmDependencies>
       <NpmPackage Name="lit-html" Version="&gt;= 1.4.0 &lt; 2.0.0" ResolutionStrategy="Max" />
     </NpmDependencies>
-  </PropertyGroup>  
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Template.fs" />
     <Compile Include="Lit.fs" />
@@ -19,6 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.4.4" />
-    <PackageReference Include="Fable.Core" Version="3.2.8" />
+    <PackageReference Include="Fable.Core" Version="3.2.9" />
   </ItemGroup>
 </Project>
