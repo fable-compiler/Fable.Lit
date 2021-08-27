@@ -13,6 +13,7 @@ open Helpers
 module R = Fable.React.Standard
 module R = Fable.React.Helpers
 module P = Fable.React.Props
+let ReactHooks = Fable.React.HookBindings.Hooks
 
 type Model =
     { Value: string
@@ -72,7 +73,7 @@ let buttonLit (model: Model) dispatch =
     """
 
 module Styles =
-    let nameInputContainer = [
+    let verticalContainer = [
         Css.marginLeft(rem 2)
         Css.displayFlex
         Css.justifyContentCenter
@@ -95,7 +96,7 @@ let nameInput value dispatch =
     //     inputRef.value |> Option.iter (fun el -> el.select())}
 
     html $"""
-      <div style={Feliz.styles Styles.nameInputContainer}>
+      <div style={Feliz.styles Styles.verticalContainer}>
         <input
           style={Feliz.styles Styles.nameInput}
           value={value}
@@ -110,7 +111,7 @@ let nameInput value dispatch =
 let NameInputComponent() =
     let value, setValue = Hook.useState "Local"
     html $"""
-      <div style={Feliz.styles Styles.nameInputContainer}>
+      <div style={Feliz.styles Styles.verticalContainer}>
         <input
           style={Feliz.styles Styles.nameInput}
           value={value}
@@ -152,17 +153,22 @@ let itemList model =
 
 [<ReactComponent>]
 let ReactComponent (dt: DateTime) =
-    R.div [] [R.str $"""I'm a React component and time is {dt.ToString("HH:mm:ss")}"""]
+    let state = ReactHooks.useState 0
+    R.fragment [] [
+        R.p [] [R.str $"""I'm a React component"""]
+        R.p [] [R.str $"""Time is {dt.ToString("HH:mm:ss")}"""]
+        R.button [
+            P.Class "button"
+            P.OnClick (fun _ -> state.update(state.current + 1))
+        ] [ R.str $"Clicked {state.current} time(s)!"]
+    ]
+
+let ReactComponentAsLit = React.toLit ReactComponent
 
 let view model dispatch =
     html $"""
-      <div style={Feliz.styles [
-        Css.margin(rem 2)
-        Css.displayFlex
-        Css.justifyContentCenter
-        Css.alignItemsCenter
-        Css.flexDirectionColumn
-      ]}>
+      {ReactComponentAsLit model.Clock.CurrentTime}
+      <div style={Feliz.styles Styles.verticalContainer}>
         {buttonFeliz model dispatch}
         {if model.ShowClock
          then Clock.view model.Clock (ClockMsg >> dispatch)

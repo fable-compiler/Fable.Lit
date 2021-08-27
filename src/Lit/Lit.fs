@@ -18,6 +18,13 @@ type Directive() =
 type AsyncDirective() =
     member _.setValue(value: obj): unit = jsNative
 
+type Part =
+    interface end
+
+type ChildPart =
+    inherit Part
+    abstract parentNode: Element
+
 type LitHtml =
     [<ImportMember("lit-html")>]
     static member html: Template.JsTag<TemplateResult> = jsNative
@@ -30,6 +37,9 @@ type LitHtml =
 
     [<ImportMember("lit-html")>]
     static member nothing: TemplateResult = jsNative
+
+    [<ImportMember("lit-html")>]
+    static member noChange: TemplateResult = jsNative
 
     [<ImportMember("lit-html/directive.js")>]
     static member directive (cons: obj): obj = jsNative
