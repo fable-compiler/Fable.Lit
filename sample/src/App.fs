@@ -89,12 +89,6 @@ module Styles =
     ]
 
 let nameInput value dispatch =
-    // Ref can only be used with lit-html 2.0
-    // let inputRef = createRef<HTMLInputElement>()
-    //   {refValue inputRef}
-    //   @focus={fun _ ->
-    //     inputRef.value |> Option.iter (fun el -> el.select())}
-
     html $"""
       <div style={Feliz.styles Styles.verticalContainer}>
         <input
@@ -110,11 +104,16 @@ let nameInput value dispatch =
 [<HookComponent>]
 let NameInputComponent() =
     let value, setValue = Hook.useState "Local"
+    let inputRef = Hook.useRef<HTMLInputElement>()
+
     html $"""
       <div style={Feliz.styles Styles.verticalContainer}>
         <input
           style={Feliz.styles Styles.nameInput}
           value={value}
+          {refValue inputRef}
+          @focus={fun _ ->
+            inputRef.value |> Option.iter (fun el -> el.select())}
           @keyup={fun (ev: Event) ->
             ev.target.Value |> setValue}>
 

@@ -16,9 +16,16 @@ type HookDirective() =
     let mutable _stateIndex = 0
     let _states = ResizeArray<obj>()
 
+    let mutable _refIndex = 0
+    let _refs = ResizeArray<RefValue<obj>>()
+
+    let _effects = ResizeArray<unit -> IDisposable>()
+    let _disposables = ResizeArray<IDisposable>()
+
     member this.createTemplate() =
         // Reset indices
         _stateIndex <- 0
+        _refIndex <- 0
 
         renderFn.apply(this, _args)
 
@@ -28,6 +35,8 @@ type HookDirective() =
         let result = this.createTemplate()
         if _firstRun then
             _firstRun <- false
+            for effect in _effects do
+                _disposables.Add(effect())
 
         result
 
@@ -49,6 +58,30 @@ type HookDirective() =
 
         state, fun v -> this.setState(index, v)
 
+    member _.useRef<'T>(?init: unit -> 'T): RefValue<'T> =
+        if _firstRun then
+            let ref = createRef<'T>()
+            init |> Option.iter (fun init -> ref.value <- Some(init()))
+            _refs.Add(unbox ref)
+            ref
+        else
+            let idx = _refIndex
+            _refIndex <- idx + 1
+            unbox _refs.[idx]
+
+    member _.useEffectOnce(effect: unit -> IDisposable): unit =
+        if _firstRun then
+            _effects.Add(effect)
+
+    member _.disconnected() =
+        for disp in _disposables do
+            disp.Dispose()
+        _disposables.Clear()
+
+    member _.reconnected() =
+        for effect in _effects do
+             _disposables.Add(effect())
+
 type HookComponentAttribute() =
     inherit JS.DecoratorAttribute()
     override _.Decorate(fn, _fnName, _arg) =
@@ -61,3 +94,15 @@ type Hook() =
 
     static member inline useState(init: unit -> 'Value) =
         jsThis<HookDirective>.useState(init)
+
+    static member inline useRef<'Value>(): RefValue<'Value> =
+        jsThis<HookDirective>.useRef<'Value>()
+
+    static member inline useRef(v: 'Value) =
+        jsThis<HookDirective>.useRef(fun () -> v)
+
+    static member inline useRef(init: unit -> 'Value) =
+        jsThis<HookDirective>.useRef(init)
+
+    static member inline useEffectOnce(effect: unit -> IDisposable) =
+        jsThis<HookDirective>.useEffectOnce(effect)

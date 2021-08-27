@@ -8,7 +8,7 @@ type TemplateResult =
     interface end
 
 type RefValue<'T> =
-    abstract value: 'T option
+    abstract value: 'T option with get, set
 
 [<ImportMember("lit-html/directive.js")>]
 type Directive() =
