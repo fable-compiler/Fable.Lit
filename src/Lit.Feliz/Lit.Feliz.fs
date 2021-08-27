@@ -1,5 +1,4 @@
-[<AutoOpen>]
-module Feliz.Lit
+module Lit.Feliz
 
 open Fable.Core
 open Fable.Core.JsInterop
@@ -27,17 +26,16 @@ let Css = CssEngine(fun k v -> Style(k, v))
 
 let Ev = EventEngine(fun k f -> Event(k.ToLowerInvariant(), f))
 
-/// Equivalent to lit-hmtl styleMap, accepting a list of Feliz styles
-let styles (styles: Node seq) =
-    let map = obj()
-    styles
-    |> Seq.iter (function
-        | Style(key, value) -> map?(key) <- value
-        | _ -> ())
-    LitHtml.styleMap map
-
-module internal Util =
+module Util =
     open Fable.Core.JS
+
+    let styles (styles: Node seq) =
+        let map = obj()
+        styles
+        |> Seq.iter (function
+            | Style(key, value) -> map?(key) <- value
+            | _ -> ())
+        LitHtml.styleMap map
 
     let cache = Constructors.WeakMap.Create<string[], string[]>()
 
@@ -136,11 +134,22 @@ module internal Util =
         | SvgNode _ -> LitHtml.svg.Invoke(strings, values)
         | _ -> LitHtml.html.Invoke(strings, values)
 
-let ofLit (template: TemplateResult) =
-    Template template
+[<RequireQualifiedAccess>]
+module Feliz =
+    open System
 
-let __toLitStatic (ref: string[]) (node: Node): TemplateResult =
-    Util.getTemplate ref node
+    /// Equivalent to lit-hmtl styleMap, accepting a list of Feliz styles
+    let styles (styles: Node seq) =
+        Util.styles styles
 
-let inline toLitStatic (node: Node): TemplateResult =
-    __toLitStatic (emitJsExpr Util.strs "$0``") node
+    let ofLit (template: TemplateResult) =
+        Template template
+
+    let lit_html (s: FormattableString) =
+        ofLit (html s)
+
+    let lit_svg (s: FormattableString) =
+        ofLit (svg s)
+
+    let inline toLit (node: Node): TemplateResult =
+        Util.getTemplate (emitJsExpr Util.strs "$0``") node

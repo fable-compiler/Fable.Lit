@@ -8,13 +8,12 @@
     <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Feliz.Engine.Lit\Feliz.Engine.Lit.fsproj" />
-    <ProjectReference Include="..\..\src\Elmish.Lit\Elmish.Lit.fsproj" />
+    <ProjectReference Include="..\..\src\Lit.Feliz\Lit.Feliz.fsproj" />
+    <ProjectReference Include="..\..\src\Lit.React\Lit.React.fsproj" />
+    <ProjectReference Include="..\..\src\Lit.Elmish\Lit.Elmish.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Promise" Version="3.0.0-beta-002" />
+    <PackageReference Include="Feliz.CompilerPlugins" Version="1.6.0" />
   </ItemGroup>
-  <!-- <ItemGroup>
-    <PackageReference Include="Elmish.Lit" Version="1.0.0-beta-001" />
-  </ItemGroup> -->
 </Project>

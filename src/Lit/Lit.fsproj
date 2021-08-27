@@ -7,12 +7,14 @@
   </PropertyGroup>
   <PropertyGroup>
     <NpmDependencies>
-      <NpmPackage Name="lit-html" Version="&gt;= 1.4.0 &lt; 2.0.0" ResolutionStrategy="Max" />
+      <NpmPackage Name="lit-html" Version="&gt;= 2.0.0 &lt; 3.0.0" ResolutionStrategy="Max" />
     </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Fable.Core.JS.fs" />
     <Compile Include="Template.fs" />
     <Compile Include="Lit.fs" />
+    <Compile Include="Hook.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />

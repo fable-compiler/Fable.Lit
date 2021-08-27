@@ -5,10 +5,10 @@ open PublishUtils
 
 // ATTENTION: Packages must appear in dependency order
 let packages = [
-    "Fable.Lit"
-    "React.Lit"
-    "Feliz.Engine.Lit"
-    "Elmish.Lit"
+    "Lit"
+    "Lit.React"
+    "Lit.Feliz"
+    "Lit.Elmish"
   ]
 
 let ignoreCaseEquals (str1: string) (str2: string) =

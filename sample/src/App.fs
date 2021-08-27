@@ -6,7 +6,13 @@ open Feliz
 open type length
 open Elmish
 open Lit
+open Lit.Feliz
+open Lit.Elmish
 open Helpers
+
+module R = Fable.React.Standard
+module R = Fable.React.Helpers
+module P = Fable.React.Props
 
 type Model =
     { Value: string
@@ -33,7 +39,7 @@ let update msg model =
         { model with Clock = clock }, Cmd.map ClockMsg cmd
 
 let buttonFeliz (model: Model) dispatch =
-    toLitStatic <| Html.button [
+    Feliz.toLit <| Html.button [
         Attr.className "button"
         Ev.onClick (fun _ -> not model.ShowClock |> ShowClock |> dispatch)
 
@@ -44,11 +50,18 @@ let buttonFeliz (model: Model) dispatch =
         //     Html.strong "Show clock"
 
         // Do this instead
-        ofLit <|
+        Feliz.ofLit <|
             if model.ShowClock then
-                toLitStatic <| Html.text "Hide clock"
+                ofText "Hide clock"
             else
-                toLitStatic <| Html.strong "Show clock"
+                Feliz.toLit <| Html.strong "Show clock"
+
+        // Alternatively you can just embed a Lit template in a Feliz node
+        // Note `text` is content, not an element, so it's ok if it appears in a condition
+        // if model.ShowClock then
+        //     Html.text "Hide clock"
+        // else
+        //     Feliz.lit_html $"""<strong>Show clock</strong>"""
     ]
 
 let buttonLit (model: Model) dispatch =
@@ -58,8 +71,8 @@ let buttonLit (model: Model) dispatch =
         </button>
     """
 
-let nameInput value dispatch =
-    let containerCss = [
+module Styles =
+    let nameInputContainer = [
         Css.marginLeft(rem 2)
         Css.displayFlex
         Css.justifyContentCenter
@@ -67,25 +80,42 @@ let nameInput value dispatch =
         Css.flexDirectionColumn
     ]
 
-    let inputCss = [
+    let nameInput = [
       Css.padding(rem 0.25)
       Css.fontSize(px 16)
       Css.width(px 250)
       Css.marginBottom(rem 1)
     ]
 
-    let inputRef = createRef<HTMLInputElement>()
+let nameInput value dispatch =
+    // Ref can only be used with lit-html 2.0
+    // let inputRef = createRef<HTMLInputElement>()
+    //   {refValue inputRef}
+    //   @focus={fun _ ->
+    //     inputRef.value |> Option.iter (fun el -> el.select())}
 
     html $"""
-      <div style={styles containerCss}>
+      <div style={Feliz.styles Styles.nameInputContainer}>
         <input
-          {refValue inputRef}
-          style={styles inputCss}
+          style={Feliz.styles Styles.nameInput}
           value={value}
-          @focus={fun _ ->
-            inputRef.value |> Option.iter (fun el -> el.select())}
           @keyup={fun (ev: Event) ->
             ev.target.Value |> dispatch}>
+
+        <span>Hello {value}!</span>
+      </div>
+    """
+
+[<HookComponent>]
+let NameInputComponent() =
+    let value, setValue = Hook.useState "Local"
+    html $"""
+      <div style={Feliz.styles Styles.nameInputContainer}>
+        <input
+          style={Feliz.styles Styles.nameInput}
+          value={value}
+          @keyup={fun (ev: Event) ->
+            ev.target.Value |> setValue}>
 
         <span>Hello {value}!</span>
       </div>
@@ -120,9 +150,13 @@ let itemList model =
       </div>
     """
 
+[<ReactComponent>]
+let ReactComponent (dt: DateTime) =
+    R.div [] [R.str $"""I'm a React component and time is {dt.ToString("HH:mm:ss")}"""]
+
 let view model dispatch =
     html $"""
-      <div style={styles [
+      <div style={Feliz.styles [
         Css.margin(rem 2)
         Css.displayFlex
         Css.justifyContentCenter
@@ -134,10 +168,10 @@ let view model dispatch =
          then Clock.view model.Clock (ClockMsg >> dispatch)
          else nothing}
       </div>
-      {nameInput model.Value (ChangeValue >> dispatch)}
+      {NameInputComponent()}
     """
-      // {itemList model}
-      // {dummyInput() |> toLit}
+    //   {nameInput model.Value (ChangeValue >> dispatch)}
+    //   {itemList model}
 
 Program.mkProgram initialState update view
 |> Program.withSubscription (fun _ -> Cmd.ofSub(fun d -> Clock.subscribe (ClockMsg >> d)))
