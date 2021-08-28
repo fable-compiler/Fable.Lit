@@ -4,10 +4,11 @@ module Lit.Elmish.Program
 open Browser
 open Browser.Types
 open Elmish
+open Lit
 
 let withLitOnElement (el: Element) (program: Program<'arg, 'model, 'msg, Lit.TemplateResult>): Program<'arg, 'model, 'msg, Lit.TemplateResult> =
     let setState model dispatch =
-        Program.view program model dispatch |> Lit.Api.render el
+        Program.view program model dispatch |> Lit.render el
 
     Program.withSetState setState program
 

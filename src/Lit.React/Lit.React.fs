@@ -1,5 +1,4 @@
-[<RequireQualifiedAccess>]
-module React
+namespace Lit
 
 open System
 open Fable.Core
@@ -12,14 +11,14 @@ open Lit
 type ReactDirective() =
     inherit AsyncDirective()
 
-    let renderFn = Unchecked.defaultof<obj -> ReactElement>
-
     let mutable _firstRun = true
-    let _domElRef = createRef<Element>()
-    let _template = html $"""<div {refValue _domElRef}></div>"""
+    let _domElRef = Lit.createRef<Element>()
 
-    member _.renderReact(props) =
-        let reactEl = renderFn props
+    member _.className = ""
+    member _.renderFn = Unchecked.defaultof<obj -> ReactElement>
+
+    member this.renderReact(props) =
+        let reactEl = this.renderFn props
         match _domElRef.value with
         | None -> ()
         | Some domEl -> ReactDom.render(reactEl, domEl)
@@ -31,24 +30,26 @@ type ReactDirective() =
             JS.setTimeout (fun () -> this.renderReact(props)) 0 |> ignore
         else
             this.renderReact(props)
-        _template
+        Lit.html $"""<div class={this.className} {Lit.refValue _domElRef}></div>"""
 
-let toLit (reactComponent: 'Props -> ReactElement): 'Props -> TemplateResult =
-    emitJsExpr (jsConstructor<ReactDirective>, reactComponent)
-        "class extends $0 { renderFn = $1 }"
-    |> LitHtml.directive :?> _
+type React =
+    static member toLit (reactComponent: 'Props -> ReactElement, ?className: string): 'Props -> TemplateResult =
+        emitJsExpr (jsConstructor<ReactDirective>, reactComponent, defaultArg className "")
+            "class extends $0 { renderFn = $1; className = $2 }"
+        |> LitHtml.directive :?> _
 
-let inline ofLit (tag: string) (template: TemplateResult) =
-    let container = Hooks.useRef Unchecked.defaultof<Element option>
-    Hooks.useEffect((fun () ->
-        match container.current with
-        | None -> ()
-        | Some el -> template |> render (el :?> HTMLElement)
-    ))
-    domEl tag [ Props.RefValue container ] []
+    static member inline ofLit (template: TemplateResult, ?tag: string) =
+        let tag = defaultArg tag "div"
+        let container = Hooks.useRef Unchecked.defaultof<Element option>
+        Hooks.useEffect((fun () ->
+            match container.current with
+            | None -> ()
+            | Some el -> template |> Lit.render (el :?> HTMLElement)
+        ))
+        domEl tag [ Props.RefValue container ] []
 
-let inline lit_html (s: FormattableString) =
-    ofLit "div" (html s)
+    static member inline lit_html (s: FormattableString) =
+        React.ofLit(Lit.html s)
 
-let inline lit_svg (s: FormattableString) =
-    ofLit "div" (html s)
+    static member inline lit_svg (s: FormattableString) =
+        React.ofLit(Lit.html s)

@@ -71,59 +71,67 @@ type LitHtml =
     [<ImportMember("lit-html/directives/ref.js")>]
     static member createRef<'T>(): RefValue<'T> = jsNative
 
-[<AutoOpen>]
-module Api =
-    let html: Template.Tag<_> = Template.transform LitHtml.html
+type Lit() =
+    static let _html: Template.Tag<_> = Template.transform LitHtml.html
+    static let _svg: Template.Tag<_> = Template.transform LitHtml.svg
+
+    static member html = _html
 
     /// svg is required for nested templates within an svg element
-    let svg: Template.Tag<_> = Template.transform LitHtml.svg
+    static member svg = _svg
 
-    let nothing = LitHtml.nothing
+    static member nothing = LitHtml.nothing
 
-    let render el t = LitHtml.render(t, el)
+    static member render el t = LitHtml.render(t, el)
 
-    let classes (classes: (string * bool) seq) =
+    static member classes (classes: (string * bool) seq) =
         // LitHtml.classMap (keyValueList CaseRules.LowerFirst classes)
         classes |> Seq.choose (fun (s, b) -> if b then Some s else None) |> String.concat " "
 
+    static member classes (classes: string seq) =
+        classes |> String.concat " "
+
     /// Use memoize only when the template argument can change considerable depending on some condition (e.g. a modal or nothing).
-    let memoize (template: TemplateResult): TemplateResult =
+    static member memoize (template: TemplateResult): TemplateResult =
         LitHtml.cache template
 
-    /// Use repeat to give a unique id to items in a list. This can improve performance in lists that will be sorted or filtered.
-    let ofSeqWithId (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq) =
+    static member ofSeq (items: TemplateResult seq): TemplateResult = unbox items
+
+    static member ofList (items: TemplateResult list): TemplateResult = unbox items
+
+    /// Give a unique id to items in a list. This can improve performance in lists that will be sorted or filtered.
+    static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq) =
         LitHtml.repeat(items, getId, fun x _ -> template x)
 
     /// The view function will only be re-run if one of the dependencies change
-    let ofLazy (dependencies: obj list) (view: unit -> TemplateResult): TemplateResult =
+    static member ofLazy (dependencies: obj list) (view: unit -> TemplateResult): TemplateResult =
         // TODO: Should we try to use F# equality here?
         LitHtml.guard(List.toArray dependencies, view)
 
     /// Shows the placeholder until the promise is resolved
-    let ofPromise (placeholder: TemplateResult) (deferred: JS.Promise<TemplateResult>) =
+    static member ofPromise (placeholder: TemplateResult) (deferred: JS.Promise<TemplateResult>) =
         LitHtml.until(deferred, placeholder)
 
-    let ofText (v: string): TemplateResult = unbox v
+    static member ofStr (v: string): TemplateResult = unbox v
 
-    let ofInt (v: int): TemplateResult = unbox v
+    static member ofText (v: string): TemplateResult = unbox v
 
-    let ofFloat (v: float): TemplateResult = unbox v
+    static member ofInt (v: int): TemplateResult = unbox v
+
+    static member ofFloat (v: float): TemplateResult = unbox v
 
     /// Sets the attribute if the value is defined and removes the attribute if the value is undefined.
-    let ifSome (attributeValue: string option) =
+    static member attrOfOption (attributeValue: string option) =
         LitHtml.ifDefined attributeValue
 
-    /// Ref can only be used with lit-html 2.0
-    let inline createRef<'T>(): RefValue<'T> =
+    static member inline createRef<'T>(): RefValue<'T> =
         LitHtml.createRef<'T>()
 
-    /// Ref can only be used with lit-html 2.0
-    let inline refValue<'El when 'El :> Element> (v: RefValue<'El>) =
+    static member inline refValue<'El when 'El :> Element> (v: RefValue<'El>) =
         LitHtml.ref v
 
-    /// Ref can only be used with lit-html 2.0
-    let inline refFn<'El when 'El :> Element> (fn: 'El option -> unit) =
+    static member inline refFn<'El when 'El :> Element> (fn: 'El option -> unit) =
         LitHtml.ref fn
 
-    let inline directive<'Class, 'Arg> : 'Arg -> TemplateResult =
+    static member inline directive<'Class, 'Arg>(): 'Arg -> TemplateResult =
         LitHtml.directive JsInterop.jsConstructor<'Class> :?> _

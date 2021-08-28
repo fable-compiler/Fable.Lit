@@ -1,5 +1,6 @@
 module Lit.Feliz
 
+open System
 open Fable.Core
 open Fable.Core.JsInterop
 open Feliz
@@ -134,22 +135,19 @@ module Util =
         | SvgNode _ -> LitHtml.svg.Invoke(strings, values)
         | _ -> LitHtml.html.Invoke(strings, values)
 
-[<RequireQualifiedAccess>]
-module Feliz =
-    open System
-
+type Feliz =
     /// Equivalent to lit-hmtl styleMap, accepting a list of Feliz styles
-    let styles (styles: Node seq) =
+    static member styles (styles: Node seq) =
         Util.styles styles
 
-    let ofLit (template: TemplateResult) =
+    static member ofLit (template: TemplateResult) =
         Template template
 
-    let lit_html (s: FormattableString) =
-        ofLit (html s)
+    static member lit_html (s: FormattableString) =
+        Feliz.ofLit(Lit.html s)
 
-    let lit_svg (s: FormattableString) =
-        ofLit (svg s)
+    static member lit_svg (s: FormattableString) =
+        Feliz.ofLit(Lit.svg s)
 
-    let inline toLit (node: Node): TemplateResult =
+    static member inline toLit (node: Node): TemplateResult =
         Util.getTemplate (emitJsExpr Util.strs "$0``") node

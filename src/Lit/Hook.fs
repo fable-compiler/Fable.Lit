@@ -8,8 +8,6 @@ open Fable.Core.JsInterop
 type HookDirective() =
     inherit AsyncDirective()
 
-    let renderFn = Unchecked.defaultof<JS.Function>
-
     let mutable _firstRun = true
     let mutable _args = [||]
 
@@ -22,12 +20,14 @@ type HookDirective() =
     let _effects = ResizeArray<unit -> IDisposable>()
     let _disposables = ResizeArray<IDisposable>()
 
+    member _.renderFn = Unchecked.defaultof<JS.Function>
+
     member this.createTemplate() =
         // Reset indices
         _stateIndex <- 0
         _refIndex <- 0
 
-        renderFn.apply(this, _args)
+        this.renderFn.apply(this, _args)
 
     member this.render([<ParamArray>] args: obj[]) =
         _args <- args
@@ -60,7 +60,7 @@ type HookDirective() =
 
     member _.useRef<'T>(?value: 'T): RefValue<'T> =
         if _firstRun then
-            let ref = createRef<'T>()
+            let ref = Lit.createRef<'T>()
             value |> Option.iter (fun value -> ref.value <- Some(value))
             _refs.Add(unbox ref)
             ref
@@ -85,7 +85,8 @@ type HookDirective() =
 type HookComponentAttribute() =
     inherit JS.DecoratorAttribute()
     override _.Decorate(fn) =
-        emitJsExpr (jsConstructor<HookDirective>, fn) "class extends $0 { renderFn = $1 }"
+        emitJsExpr (jsConstructor<HookDirective>, fn)
+            "class extends $0 { renderFn = $1 }"
         |> LitHtml.directive :?> _
 
 type Hook() =
