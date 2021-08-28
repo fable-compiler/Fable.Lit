@@ -15,6 +15,7 @@
     <Compile Include="Template.fs" />
     <Compile Include="Lit.fs" />
     <Compile Include="Hook.fs" />
+    <Compile Include="Hook.UseElmish.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />
@@ -22,5 +23,6 @@
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.4.4" />
     <PackageReference Include="Fable.Core" Version="3.3.0-beta-001" />
+    <PackageReference Include="Fable.Promise" Version="3.0.0-beta-002" />
   </ItemGroup>
 </Project>

@@ -11,47 +11,22 @@ open Lit.Elmish
 open Lit.Elmish.HMR
 open Helpers
 
-module ReactLib =
-    open Fable.React
-    open Fable.React.Props
-
-    [<ReactComponent>]
-    let MyComponent (dt: DateTime) =
-        let state = Hooks.useState 0
-        fragment [] [
-            p [] [str $"""I'm a React component"""]
-            p [] [str $"""Time is {dt.ToString("HH:mm:ss")}"""]
-            button [
-                Class "button"
-                OnClick (fun _ -> state.update(state.current + 1))
-            ] [ str $"Clicked {state.current} time(s)!"]
-        ]
-
-let ReactLitComponent = React.toLit ReactLib.MyComponent
-
 type Model =
     { Value: string
-      ShowClock: bool
-      Clock: Clock.Model }
+      ShowClock: bool }
 
 type Msg =
     | ChangeValue of string
     | ShowClock of bool
-    | ClockMsg of Clock.Msg
 
 let initialState() =
-    let clock, cmd = Clock.init()
     { Value = "World"
-      ShowClock = true
-      Clock = clock }, Cmd.map ClockMsg cmd
+      ShowClock = true }, Cmd.none
 
 let update msg model =
     match msg with
     | ChangeValue v -> { model with Value = v }, Cmd.none
     | ShowClock v -> { model with ShowClock = v }, Cmd.none
-    | ClockMsg msg ->
-        let clock, cmd = Clock.update msg model.Clock
-        { model with Clock = clock }, Cmd.map ClockMsg cmd
 
 module Styles =
     let verticalContainer = [
@@ -68,6 +43,25 @@ module Styles =
       Css.width(px 250)
       Css.marginBottom(rem 1)
     ]
+
+module ReactLib =
+    open Fable.React
+    open Fable.React.Props
+
+    [<ReactComponent>]
+    let MyComponent showClock =
+        let state = Hooks.useState 0
+        fragment [] [
+            p [] [str $"""I'm a React component"""]
+            p [] [str $"""Clock is {if showClock then "visible" else "hidden"}"""]
+            button [
+                Class "button"
+                OnClick (fun _ -> state.update(state.current + 1))
+            ] [ str $"Clicked {state.current} time(s)!"]
+        ]
+
+let ReactLitComponent =
+    React.toLit(ReactLib.MyComponent, className="container")
 
 let buttonLit (model: Model) dispatch =
     let strong txt =
@@ -173,19 +167,20 @@ let itemList model =
 
 let view model dispatch =
     Lit.html $"""
-      {ReactLitComponent model.Clock.CurrentTime}
+      {ReactLitComponent model.ShowClock}
+
       <div style={Feliz.styles Styles.verticalContainer}>
+
         {buttonFeliz model dispatch}
-        {if model.ShowClock
-         then Clock.view model.Clock (ClockMsg >> dispatch)
-         else Lit.nothing}
+        {if model.ShowClock then Clock.Clock() else Lit.nothing}
+
       </div>
+
       {nameInput model.Value (ChangeValue >> dispatch)}
       {NameInputComponent()}
     """
     //   {itemList model}
 
 Program.mkProgram initialState update view
-|> Program.withSubscription (fun _ -> Cmd.ofSub(fun d -> Clock.subscribe (ClockMsg >> d)))
 |> Program.withLit "app-container"
 |> Program.run

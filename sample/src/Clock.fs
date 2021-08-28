@@ -1,27 +1,38 @@
 module Clock
 
 open System
+open Fable.Core
 open Browser
 open Elmish
 open Lit
 open Helpers
 
 type Model =
-    { CurrentTime: DateTime }
+    { CurrentTime: DateTime
+      IntervalId: int }
+    interface IDisposable with
+        member this.Dispose() =
+            JS.clearInterval this.IntervalId
 
 type Msg =
     | Tick of DateTime
+    | IntervalId of int
 
-let init(v) =
-    { CurrentTime = DateTime.Now }, Cmd.none
+let init() =
+    let subscribe dispatch =
+        JS.setInterval (fun () ->
+            Tick DateTime.Now |> dispatch
+        ) 1000
+        |> IntervalId
+        |> dispatch
+
+    { CurrentTime = DateTime.Now
+      IntervalId = 0 }, Cmd.ofSub subscribe
 
 let update msg model =
     match msg with
     | Tick next -> { model with CurrentTime = next }, Cmd.none
-
-let subscribe dispatch =
-    let dispatch _ = Tick DateTime.Now |> dispatch
-    window.setInterval(dispatch, 1000) |> ignore
+    | IntervalId id -> { model with IntervalId = id }, Cmd.none
 
 let clockHand (time: Time) =
     let length = time.Length
@@ -84,3 +95,8 @@ let view model _dispatch =
           </circle>
         </svg>
     """
+
+[<HookComponent>]
+let Clock() =
+    let model, dispatch = Hook.useElmish(init, update)
+    view model dispatch

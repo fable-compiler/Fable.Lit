@@ -12,7 +12,7 @@ type ReactDirective() =
     inherit AsyncDirective()
 
     let mutable _firstRun = true
-    let _domElRef = Lit.createRef<Element>()
+    let _domElRef = Lit.createRef<Element option>()
 
     member _.className = ""
     member _.renderFn = Unchecked.defaultof<obj -> ReactElement>

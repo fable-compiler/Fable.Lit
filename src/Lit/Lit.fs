@@ -8,7 +8,7 @@ type TemplateResult =
     interface end
 
 type RefValue<'T> =
-    abstract value: 'T option with get, set
+    abstract value: 'T with get, set
 
 [<ImportMember("lit-html/directive.js")>]
 type Directive() =
@@ -127,7 +127,7 @@ type Lit() =
     static member inline createRef<'T>(): RefValue<'T> =
         LitHtml.createRef<'T>()
 
-    static member inline refValue<'El when 'El :> Element> (v: RefValue<'El>) =
+    static member inline refValue<'El when 'El :> Element> (v: RefValue<'El option>) =
         LitHtml.ref v
 
     static member inline refFn<'El when 'El :> Element> (fn: 'El option -> unit) =
