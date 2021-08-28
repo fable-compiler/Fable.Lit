@@ -33,8 +33,9 @@ type ReactDirective() =
             this.renderReact(props)
         _template
 
-let toLit (fn: 'Props -> ReactElement): 'Props -> TemplateResult =
-    emitJsExpr (jsConstructor<ReactDirective>, fn) "class extends $0 { renderFn = $1 }"
+let toLit (reactComponent: 'Props -> ReactElement): 'Props -> TemplateResult =
+    emitJsExpr (jsConstructor<ReactDirective>, reactComponent)
+        "class extends $0 { renderFn = $1 }"
     |> LitHtml.directive :?> _
 
 let inline ofLit (tag: string) (template: TemplateResult) =

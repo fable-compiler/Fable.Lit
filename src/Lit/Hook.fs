@@ -58,10 +58,10 @@ type HookDirective() =
 
         state, fun v -> this.setState(index, v)
 
-    member _.useRef<'T>(?init: unit -> 'T): RefValue<'T> =
+    member _.useRef<'T>(?value: 'T): RefValue<'T> =
         if _firstRun then
             let ref = createRef<'T>()
-            init |> Option.iter (fun init -> ref.value <- Some(init()))
+            value |> Option.iter (fun value -> ref.value <- Some(value))
             _refs.Add(unbox ref)
             ref
         else
@@ -84,7 +84,7 @@ type HookDirective() =
 
 type HookComponentAttribute() =
     inherit JS.DecoratorAttribute()
-    override _.Decorate(fn, _fnName, _arg) =
+    override _.Decorate(fn) =
         emitJsExpr (jsConstructor<HookDirective>, fn) "class extends $0 { renderFn = $1 }"
         |> LitHtml.directive :?> _
 
@@ -98,11 +98,8 @@ type Hook() =
     static member inline useRef<'Value>(): RefValue<'Value> =
         jsThis<HookDirective>.useRef<'Value>()
 
-    static member inline useRef(v: 'Value) =
-        jsThis<HookDirective>.useRef(fun () -> v)
-
-    static member inline useRef(init: unit -> 'Value) =
-        jsThis<HookDirective>.useRef(init)
+    static member inline useRef(v: 'Value): RefValue<'Value> =
+        jsThis<HookDirective>.useRef(v)
 
     static member inline useEffectOnce(effect: unit -> IDisposable) =
         jsThis<HookDirective>.useEffectOnce(effect)

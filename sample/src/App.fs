@@ -162,11 +162,11 @@ let ReactComponent (dt: DateTime) =
         ] [ R.str $"Clicked {state.current} time(s)!"]
     ]
 
-let ReactComponentAsLit = React.toLit ReactComponent
+let ReactLitComponent = React.toLit ReactComponent
 
 let view model dispatch =
     html $"""
-      {ReactComponentAsLit model.Clock.CurrentTime}
+      {ReactLitComponent model.Clock.CurrentTime}
       <div style={Feliz.styles Styles.verticalContainer}>
         {buttonFeliz model dispatch}
         {if model.ShowClock
