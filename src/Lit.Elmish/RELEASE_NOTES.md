@@ -1,7 +1,3 @@
-### 1.0.0-beta-002
+### 1.0.0-beta-003
 
-* Split packages
-
-### 1.0.0-beta-001
-
-* First beta release
+* Beta release
