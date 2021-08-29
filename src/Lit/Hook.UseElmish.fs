@@ -54,11 +54,15 @@ module UseElmishExtensions =
     type Cmd<'msg> = (('msg -> unit) -> unit) list
 
     type Hook with
-        static member useElmish<'State,'Msg>(this: HookDirective, init: 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
-            let init, cmd = init
-            let state = this.useRef(fun () -> init)
+        static member useElmish<'State,'Msg>(this: HookDirective, initState: 'State, initCmd: Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
+            let state = this.useRef(fun () -> initState)
             let ring = this.useRef(fun () -> RingBuffer(10))
-            let childState, setChildState = this.useState(fun () -> init)
+            let childState, setChildState = this.useState(fun () -> initState)
+
+            // TODO: lit-html documentation says that for a disconnected item
+            // calls to setValue will be queued in case it's reconnected,
+            // so maybe we don't need useCancellationToken
+            // https://lit.dev/docs/api/custom-directives/#AsyncDirective.setValue
             let token = Hook.useCancellationToken(this)
 
             let setChildState () =
@@ -67,13 +71,14 @@ module UseElmishExtensions =
                         setChildState state.value
                 ) 0 |> ignore
 
-            // TODO: Do we need useCallbackRef here?
+            // TODO: Do we need something like useCallbackRef here?
             let rec dispatch (msg: 'Msg): unit =
                 promise {
                     let mutable nextMsg = Some msg
 
                     while nextMsg.IsSome && not (token.value.IsCancellationRequested) do
                         let msg = nextMsg.Value
+                        // TODO: try .. with here? What to do on error?
                         let (state', cmd') = update msg state.value
                         cmd' |> List.iter (fun sub -> sub dispatch)
                         nextMsg <- ring.value.Pop()
@@ -83,10 +88,10 @@ module UseElmishExtensions =
                 |> Promise.start
 
             this.useEffectOnce(fun () ->
-                state.value <- init
+                state.value <- initState
                 setChildState()
 
-                cmd
+                initCmd
                 |> List.iter (fun sub -> sub dispatch)
 
                 Hook.createDisposable(fun () ->
@@ -99,9 +104,9 @@ module UseElmishExtensions =
 
             (childState, dispatch)
 
-        static member inline useElmish<'State,'Msg> (init: 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
-            Hook.useElmish(jsThis, init, update)
-
         static member inline useElmish<'State,'Msg> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
-            let init = Hook.useMemo(init)
-            Hook.useElmish(jsThis, init, update)
+            let initState, initCmd = Hook.useMemo(init)
+            Hook.useElmish(jsThis, initState, initCmd, update)
+
+        static member inline useElmish<'State,'Msg> (initState: 'State, update: 'Msg -> 'State -> 'State * Cmd<'Msg>, ?initCmd: Cmd<'Msg>) =
+            Hook.useElmish(jsThis, initState, defaultArg initCmd [], update)

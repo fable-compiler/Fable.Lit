@@ -13,12 +13,6 @@ type Time =
     member this.ClockPercentage =
         (float this.Value) / this.FullRound
 
-    member this.Stroke =
-        match this with
-        | Hour _ -> "lightgreen"
-        | Minute _ -> "white"
-        | Second _ -> "#023963"
-
     member this.StrokeWidth =
         match this with
         | Hour _ | Minute _ -> 2

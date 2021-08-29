@@ -28,9 +28,14 @@ type ReactDirective() =
             _firstRun <- false
             // Let lit-html mount the template on the DOM so we can get the ref
             JS.setTimeout (fun () -> this.renderReact(props)) 0 |> ignore
-        else
+        elif this.isConnected then
             this.renderReact(props)
         Lit.html $"""<div class={this.className} {Lit.refValue _domElRef}></div>"""
+
+    member _.disconnected() =
+        match _domElRef.value with
+        | None -> ()
+        | Some domEl -> ReactDom.unmountComponentAtNode(domEl) |> ignore
 
 type React =
     static member toLit (reactComponent: 'Props -> ReactElement, ?className: string): 'Props -> TemplateResult =

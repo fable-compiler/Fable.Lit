@@ -65,9 +65,9 @@ let ReactLitComponent =
 
 let buttonLit (model: Model) dispatch =
     let strong txt =
-        Lit.html $"<strong>{txt}</strong>"
+        html $"<strong>{txt}</strong>"
 
-    Lit.html $"""
+    html $"""
         <button class="button" @click={fun _ -> not model.ShowClock |> ShowClock |> dispatch}>
           {if model.ShowClock then Lit.ofText "Hide clock" else strong "Show clock"}
         </button>
@@ -77,6 +77,7 @@ let buttonLit (model: Model) dispatch =
 // Note we cannot change nested nodes dynamically (except for text and css) unless we convert them to lit first
 let buttonFeliz (model: Model) dispatch =
     Feliz.toLit <| Html.button [
+        Css.marginBottom(rem 1)
         Attr.className "button"
         Ev.onClick (fun _ -> not model.ShowClock |> ShowClock |> dispatch)
 
@@ -98,7 +99,7 @@ let buttonFeliz (model: Model) dispatch =
 
 // This render function integrates with Elmish and doesn't keep local state
 let nameInput value dispatch =
-    Lit.html $"""
+    html $"""
       <div style={Feliz.styles Styles.verticalContainer}>
         <p>I get my state from Elmish</p>
         <input
@@ -117,7 +118,7 @@ let NameInputComponent() =
     let value, setValue = Hook.useState "Local"
     let inputRef = Hook.useRef<HTMLInputElement>()
 
-    Lit.html $"""
+    html $"""
       <div style={Feliz.styles (
                       Css.marginTop(rem 1.5)
                       ::Styles.verticalContainer
@@ -138,7 +139,7 @@ let NameInputComponent() =
 
 let itemList model =
     let renderNumber (value: int) =
-        Lit.html $"""
+        html $"""
           <li>Value: <strong>{value}</strong></li>
         """
 
@@ -156,7 +157,7 @@ let itemList model =
         [|0..max|] |> Array.fold randomSwap arr |> Array.toList
 
     let items = shuffle [1; 2; 3; 4; 5]
-    Lit.html $"""
+    html $"""
       <div class={Lit.classes ["content", true; "px-4", true; "has-text-primary", DateTime.Now.Second % 2 = 0]}>
         <p>No Key Item List</p>
         <ul>{items |> List.map renderNumber}</ul>
@@ -166,7 +167,7 @@ let itemList model =
     """
 
 let view model dispatch =
-    Lit.html $"""
+    html $"""
       {ReactLitComponent model.ShowClock}
 
       <div style={Feliz.styles Styles.verticalContainer}>

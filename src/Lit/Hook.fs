@@ -7,79 +7,98 @@ open Fable.Core.JsInterop
 [<RequireQualifiedAccess>]
 type internal Effect =
     | OnConnected of (unit -> IDisposable)
-    | EveryTime of (unit -> unit)
+    | OnRender of (unit -> unit)
 
 [<AttachMembers>]
 type HookDirective() =
     inherit AsyncDirective()
 
     let mutable _firstRun = true
+    let mutable _rendering = false
     let mutable _args = [||]
 
     let mutable _stateIndex = 0
     let _states = ResizeArray<obj>()
-
-    let mutable _refIndex = 0
-    let _refs = ResizeArray<RefValue<obj>>()
 
     let _effects = ResizeArray<Effect>()
     let _disposables = ResizeArray<IDisposable>()
 
     member _.renderFn = Unchecked.defaultof<JS.Function>
 
+    // TODO: Improve error message for each situation
+    member _.fail() =
+        failwith "Hooks must be called consistently for each render call"
+
     member this.createTemplate() =
-        // Reset indices
         _stateIndex <- 0
-        _refIndex <- 0
+        _rendering <- true
+        let res = this.renderFn.apply(this, _args)
+        // TODO: Do same check for effects?
+        if not _firstRun && _stateIndex <> _states.Count then
+            this.fail()
+        _rendering <- false
+        if this.isConnected then
+            this.runEffects(onRender=true, onConnected=_firstRun)
+        _firstRun <- false
+        res
 
-        this.renderFn.apply(this, _args)
+    member this.checkRendering() =
+        if not _rendering then
+            this.fail()
 
-    member _.runEffects() =
-        _effects |> Seq.iter (function
-            | Effect.EveryTime effect -> effect()
-            | Effect.OnConnected effect ->
-                if _firstRun then
-                    _disposables.Add(effect()))
+    member _.runEffects(onConnected: bool, onRender: bool) =
+        // lit-html doesn't provide a didUpdate callback
+        // so for now just use a 0 timeout. If necessary
+        // we can also try a ref callback.
+        JS.setTimeout (fun () ->
+            _effects |> Seq.iter (function
+                | Effect.OnRender effect ->
+                    if onRender then effect()
+                | Effect.OnConnected effect ->
+                    if onConnected then
+                        _disposables.Add(effect()))) 0 |> ignore
 
     member this.render([<ParamArray>] args: obj[]) =
         _args <- args
-        let result = this.createTemplate()
-        this.runEffects()
-        _firstRun <- false
-        result
+        this.createTemplate()
 
     member this.setState(index: int, value: 'T): unit =
         _states.[index] <- value
-        // TODO: Should we check we're not in the middle of a render?
-        this.createTemplate() |> this.setValue
+        if not _rendering then
+            this.createTemplate() |> this.setValue
+
+    member this.getState(): 'T * int =
+        if _stateIndex >= _states.Count then
+            this.fail()
+        let idx = _stateIndex
+        _stateIndex <- idx + 1
+        _states.[idx] :?> _, idx
 
     member this.useState(init: unit -> 'T): 'T * ('T -> unit) =
+        this.checkRendering()
         let state, index =
             if _firstRun then
                 let state = init()
                 _states.Add(state)
                 state, _states.Count - 1
             else
-                let idx = _stateIndex
-                _stateIndex <- idx + 1
-                _states.[idx] :?> _, idx
+                this.getState()
 
         state, fun v -> this.setState(index, v)
 
-    member _.useRef<'T>(init: unit -> 'T): RefValue<'T> =
+    member this.useRef<'T>(init: unit -> 'T): RefValue<'T> =
+        this.checkRendering()
         if _firstRun then
             let ref = Lit.createRef<'T>()
             ref.value <- init()
-            _refs.Add(unbox ref)
+            _states.Add(box ref)
             ref
         else
-            let idx = _refIndex
-            _refIndex <- idx + 1
-            unbox _refs.[idx]
+            this.getState() |> fst
 
     member _.useEffect(effect): unit =
         if _firstRun then
-            _effects.Add(Effect.EveryTime effect)
+            _effects.Add(Effect.OnRender effect)
 
     member _.useEffectOnce(effect): unit =
         if _firstRun then
@@ -90,8 +109,11 @@ type HookDirective() =
             disp.Dispose()
         _disposables.Clear()
 
+    // In some situations, a disconnected part may be reconnected again,
+    // so we need to re-run the effects but the old state is kept
+    // https://lit.dev/docs/api/custom-directives/#AsyncDirective
     member this.reconnected() =
-        this.runEffects()
+        this.runEffects(onConnected=true, onRender=false)
 
 type HookComponentAttribute() =
     inherit JS.DecoratorAttribute()
@@ -119,6 +141,9 @@ type Hook() =
     // TODO: Dependencies?
     static member inline useEffect(effect: unit -> unit) =
         jsThis<HookDirective>.useEffect(effect)
+
+    static member inline useEffectOnce(effect: unit -> unit) =
+        jsThis<HookDirective>.useEffectOnce(fun () -> effect(); Hook.emptyDisposable)
 
     static member inline useEffectOnce(effect: unit -> IDisposable) =
         jsThis<HookDirective>.useEffectOnce(effect)

@@ -9,6 +9,9 @@ type TemplateResult =
 
 type RefValue<'T> =
     abstract value: 'T with get, set
+    [<Emit("$0.value")>]
+    /// Compatibility with React's ref
+    abstract current: 'T with get, set
 
 [<ImportMember("lit-html/directive.js")>]
 type Directive() =
@@ -16,6 +19,7 @@ type Directive() =
 
 [<ImportMember("lit-html/async-directive.js")>]
 type AsyncDirective() =
+    member _.isConnected: bool = jsNative
     member _.setValue(value: obj): unit = jsNative
 
 type Part =
@@ -24,6 +28,10 @@ type Part =
 type ChildPart =
     inherit Part
     abstract parentNode: Element
+
+type ElementPart =
+    inherit Part
+    abstract element: Element
 
 type LitHtml =
     [<ImportMember("lit-html")>]
@@ -71,14 +79,16 @@ type LitHtml =
     [<ImportMember("lit-html/directives/ref.js")>]
     static member createRef<'T>(): RefValue<'T> = jsNative
 
-type Lit() =
-    static let _html: Template.Tag<_> = Template.transform LitHtml.html
-    static let _svg: Template.Tag<_> = Template.transform LitHtml.svg
+[<AutoOpen>]
+module LitTemplates =
+    let html: Template.Tag<_> = Template.transform LitHtml.html
+    let svg: Template.Tag<_> = Template.transform LitHtml.svg
 
-    static member html = _html
+type Lit() =
+    static member html = html
 
     /// svg is required for nested templates within an svg element
-    static member svg = _svg
+    static member svg = svg
 
     static member nothing = LitHtml.nothing
 
