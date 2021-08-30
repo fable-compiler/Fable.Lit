@@ -128,7 +128,7 @@ let nameInput value dispatch =
 
 // This function keeps local state and can use hooks
 [<HookComponent>]
-let NameInputComponent() =
+let NameInput() =
     let value, setValue = Hook.useState "Local"
     let inputRef = Hook.useRef<HTMLInputElement>()
 
@@ -185,7 +185,7 @@ let view model dispatch =
         {if model.ShowClock then Clock.Clock() else Lit.nothing}
 
         {nameInput model.Value (ChangeValue >> dispatch)}
-        {NameInputComponent()}
+        {NameInput()}
       </div>
     """
     //   {itemList model}
