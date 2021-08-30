@@ -46,7 +46,7 @@ let renderList items =
 
 ### HookComponent
 
-Fable.Lit includes the `HookComponent` attribute. When you decorate a view function with it, this lets you use [hooks](https://reactjs.org/docs/hooks-overview.html) in a similar way as [ReactComponent](). Hook support is included in Fable.Lit's F# code and doesn't require any extra JS dependency besides lit-html.
+Fable.Lit includes the `HookComponent` attribute. When you decorate a view function with it, this lets you use [hooks](https://reactjs.org/docs/hooks-overview.html) in a similar way as [ReactComponent](https://zaid-ajaj.github.io/Feliz/#/Feliz/React/NotJustFunctions) attribute does. Hook support is included in Fable.Lit's F# code and doesn't require any extra JS dependency besides lit-html.
 
 ```fsharp
 [<HookComponent>]
@@ -98,7 +98,7 @@ Fable.Lit.React package contains helpers to integrate lit-html with React in bot
 
 > If you're comfortable with [JSX](https://reactjs.org/docs/introducing-jsx.html) and Typescript/JS, it's also easy to [invoke them from Feliz](https://zaid-ajaj.github.io/Feliz/#/Feliz/UsingJsx) if that suits your needs better.
 
-Use `React.lit_html` or `React.lit_svg` to include the string template directly. Or `React.ofLit` to transform `Lit.TemplateResult` into `ReactElement`. These helpers use hooks so they must be called directly in the root of a React component.
+Use `React.lit_html` (or svg) to include the string template directly. Or transform an already-compiled template with `React.ofLit: Lit.TemplateResult -> ReactElement`. These helpers use hooks so they must be called directly in the root of a React component.
 
 ```fsharp
 [<ReactComponent>]
@@ -211,7 +211,7 @@ let buttonFeliz (model: Model) dispatch =
     ]
 ```
 
-The only thing you need to take into account is templates are built once and then cached (this is necessary because of the way lit-html 2 templates work), so you cannot change the structure of a template dynamically with conditions. This doesn't mean that templates need to be static forever, but you need to "compile" (that is, convert from `Lit.Feliz.Node` to `Lit.TemplateResult` with `Feliz.toLit`) any nested structure that is bound to change. The exception to this are CSS styles and single text nodes, which are considered values and not structure, so they can change dynamically.
+The only thing you need to take into account is templates are built once and then cached (this is necessary because of the way lit-html 2 templates work), so you cannot change the structure of a template dynamically with conditions. This doesn't mean that templates need to be static forever, but you need to "compile" (that is, convert with `Feliz.toLit: Lit.Feliz.Node -> Lit.TemplateResult`) any nested structure that is bound to change. The exception to this are CSS styles and single text nodes, which are considered values and not structure, so they can change dynamically.
 
 ```fsharp
 let buttonFeliz (model: Model) dispatch =
