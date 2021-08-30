@@ -74,29 +74,29 @@ let clockHand (color: string) (time: Time) =
         {handTop color time}
     """
 
-let labelledInput (dispatch: string -> unit) (label: string) (value: string) =
+let colors = [
+    "white"
+    "red"
+    "yellow"
+    "purple"
+]
+
+let select options value dispatch =
+    let option value =
+        html $"""<option value={value}>{value}</option>"""
+
     html $"""
-    <div class="field is-horizontal">
-  <div class="field-label is-normal">
-    <label class="label">{label}</label>
-  </div>
-  <div class="field-body">
-    <div class="field">
-      <p class="control">
-        <input class="input" type="text"
-            value={value}
-            @change={fun (ev: Event) -> dispatch ev.target.Value}>
-      </p>
-    </div>
-  </div>
-</div>
-"""
+        <div class="select mb-2">
+            <select value={value} @change={fun (ev: Event) -> ev.target.Value |> dispatch}>
+                {colors |> List.map option}
+            </select>
+        </div>
+    """
 
 let view model dispatch =
     let time = model.CurrentTime
 
     html $"""
-        {labelledInput (MinuteHandColor >> dispatch) "Minute color" model.MinuteHandColor}
         <svg viewBox="0 0 100 100"
              width="350px">
           <circle
@@ -118,6 +118,8 @@ let view model dispatch =
             stroke-width="1">
           </circle>
         </svg>
+
+        {select colors model.MinuteHandColor (MinuteHandColor >> dispatch)}
     """
 
 [<HookComponent>]

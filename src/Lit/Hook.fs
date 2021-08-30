@@ -47,9 +47,7 @@ type HookDirective() =
             this.fail()
 
     member _.runEffects(onConnected: bool, onRender: bool) =
-        // lit-html doesn't provide a didUpdate callback
-        // so for now just use a 0 timeout. If necessary
-        // we can also try a ref callback.
+        // lit-html doesn't provide a didUpdate callback so just use a 0 timeout.
         JS.setTimeout (fun () ->
             _effects |> Seq.iter (function
                 | Effect.OnRender effect ->

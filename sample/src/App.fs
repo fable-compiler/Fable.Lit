@@ -13,20 +13,24 @@ open Helpers
 
 type Model =
     { Value: string
-      ShowClock: bool }
+      ShowClock: bool
+      ShowReact: bool }
 
 type Msg =
     | ChangeValue of string
-    | ShowClock of bool
+    | ToggleClock
+    | ToggleReact
 
 let initialState() =
     { Value = "World"
-      ShowClock = true }, Cmd.none
+      ShowClock = true
+      ShowReact = true }, Cmd.none
 
 let update msg model =
     match msg with
     | ChangeValue v -> { model with Value = v }, Cmd.none
-    | ShowClock v -> { model with ShowClock = v }, Cmd.none
+    | ToggleClock -> { model with ShowClock = not model.ShowClock }, Cmd.none
+    | ToggleReact -> { model with ShowReact = not model.ShowReact }, Cmd.none
 
 module Styles =
     let verticalContainer = [
@@ -51,25 +55,37 @@ module ReactLib =
     [<ReactComponent>]
     let MyComponent showClock =
         let state = Hooks.useState 0
-        fragment [] [
-            p [] [str $"""I'm a React component"""]
-            p [] [str $"""Clock is {if showClock then "visible" else "hidden"}"""]
-            button [
-                Class "button"
-                OnClick (fun _ -> state.update(state.current + 1))
-            ] [ str $"Clicked {state.current} time(s)!"]
+        Hooks.useEffectDisposable((fun () ->
+            printfn "Initializing React component..."
+            Hook.createDisposable(fun () ->
+                printfn "Disposing React component..."
+            )
+        ), [||])
+
+        div [ Class "card" ] [
+            div [ Class "card-content" ] [
+                div [ Class "content" ] [
+                    p [] [str $"""I'm a React component. Clock is {if showClock then "visible" else "hidden"}"""]
+                    button [
+                        Class "button"
+                        OnClick (fun _ -> state.update(state.current + 1))
+                    ] [ str $"""Clicked {state.current} time{if state.current = 1 then "" else "s"}!"""]
+                ]
+            ]
         ]
 
 let ReactLitComponent =
-    React.toLit(ReactLib.MyComponent, className="container")
+    React.toLit ReactLib.MyComponent
 
 let buttonLit (model: Model) dispatch =
     let strong txt =
         html $"<strong>{txt}</strong>"
 
     html $"""
-        <button class="button" @click={fun _ -> not model.ShowClock |> ShowClock |> dispatch}>
-          {if model.ShowClock then Lit.ofText "Hide clock" else strong "Show clock"}
+        <button class="button"
+                style={ LitHtml.styleMap {| margin = "1rem 0"  |} }
+                @click={fun _ -> ToggleReact |> dispatch}>
+          {if model.ShowReact then Lit.ofText "Hide React" else strong "Show React"}
         </button>
     """
 
@@ -77,9 +93,9 @@ let buttonLit (model: Model) dispatch =
 // Note we cannot change nested nodes dynamically (except for text and css) unless we convert them to lit first
 let buttonFeliz (model: Model) dispatch =
     Feliz.toLit <| Html.button [
-        Css.marginBottom(rem 1)
         Attr.className "button"
-        Ev.onClick (fun _ -> not model.ShowClock |> ShowClock |> dispatch)
+        Css.margin(rem 1, zero)
+        Ev.onClick (fun _ -> ToggleClock |> dispatch)
 
         // This doesn't work, template is only built once and cached
         // if model.ShowClock then Html.text "Hide clock"
@@ -100,15 +116,13 @@ let buttonFeliz (model: Model) dispatch =
 // This render function integrates with Elmish and doesn't keep local state
 let nameInput value dispatch =
     html $"""
-      <div style={Feliz.styles Styles.verticalContainer}>
-        <p>I get my state from Elmish</p>
+      <div class="content">
+        <p>Elmish state: <i>Hello {value}!</i></p>
         <input
           style={Feliz.styles Styles.nameInput}
           value={value}
           @keyup={fun (ev: Event) ->
             ev.target.Value |> dispatch}>
-
-        <span>Hello {value}!</span>
       </div>
     """
 
@@ -119,11 +133,8 @@ let NameInputComponent() =
     let inputRef = Hook.useRef<HTMLInputElement>()
 
     html $"""
-      <div style={Feliz.styles (
-                      Css.marginTop(rem 1.5)
-                      ::Styles.verticalContainer
-                  )}>
-        <p>I have local state</p>
+      <div class="content">
+        <p>Local state: <i>Hello {value}!</i></p>
         <input
           style={Feliz.styles Styles.nameInput}
           value={value}
@@ -132,8 +143,6 @@ let NameInputComponent() =
             inputRef.value |> Option.iter (fun el -> el.select())}
           @keyup={fun (ev: Event) ->
             ev.target.Value |> setValue}>
-
-        <span>Hello {value}!</span>
       </div>
     """
 
@@ -168,17 +177,16 @@ let itemList model =
 
 let view model dispatch =
     html $"""
-      {ReactLitComponent model.ShowClock}
-
       <div style={Feliz.styles Styles.verticalContainer}>
+        {buttonLit model dispatch}
+        {if model.ShowReact then ReactLitComponent model.ShowClock else Lit.nothing}
 
         {buttonFeliz model dispatch}
         {if model.ShowClock then Clock.Clock() else Lit.nothing}
 
+        {nameInput model.Value (ChangeValue >> dispatch)}
+        {NameInputComponent()}
       </div>
-
-      {nameInput model.Value (ChangeValue >> dispatch)}
-      {NameInputComponent()}
     """
     //   {itemList model}
 
