@@ -12,8 +12,9 @@ type Node =
     | Style of string * string
     | HtmlNode of string * Node list
     | SvgNode of string * Node list
-    | Attr of string * string
-    | BoolAttr of string * bool
+    | Property of string * obj
+    | Attribute of string * string
+    | BooleanAttribute of string * bool
     | Event of string * obj
     | Fragment of Node list
 
@@ -21,7 +22,7 @@ let Html = HtmlEngine((fun t ns -> HtmlNode(t, List.ofSeq ns)), Text, fun () -> 
 
 let Svg = SvgEngine((fun t ns -> SvgNode(t, List.ofSeq ns)), Text, fun () -> Fragment [])
 
-let Attr = AttrEngine((fun k v -> Attr(k, v)), (fun k v -> BoolAttr(k, v)))
+let Attr = AttrEngine((fun k v -> Attribute(k, v)), (fun k v -> BooleanAttribute(k, v)))
 
 let Css = CssEngine(fun k v -> Style(k, v))
 
@@ -44,35 +45,37 @@ module Util =
 
     let buildTemplate (node: Node) =
         let rec addNode (parts, values) tag nodes =
-            let styles', attrs =
-                (([], []), nodes) ||> List.fold (fun (styles', attrs) node ->
+            let styles', keyValuePairs =
+                (([], []), nodes) ||> List.fold (fun (styles', kvs) node ->
                     match node with
-                    | Style _ -> node::styles', attrs
-                    | Attr(key, value) -> styles', (key, box value)::attrs
-                    | BoolAttr(key, value) -> styles', ("?" + key, box value)::attrs
-                    | Event(key, value) -> styles', ("@" + key, box value)::attrs
-                    | _ -> styles', attrs)
+                    | Style _ -> node::styles', kvs
+                    | Property(key, value) -> styles', ("." + key, value)::kvs
+                    | Attribute(key, value) -> styles', (key, box value)::kvs
+                    | BooleanAttribute(key, value) -> styles', ("?" + key, box value)::kvs
+                    | Event(key, value) -> styles', ("@" + key, box value)::kvs
+                    | _ -> styles', kvs)
 
-            let addAttrs (parts, values) attrs =
+            let addKeyValuePairs (parts, values) keyValuePairs =
                 let parts, values =
-                    ((parts, values), attrs) ||> List.fold (fun (parts, values) (key, value) ->
+                    ((parts, values), keyValuePairs)
+                    ||> List.fold (fun (parts, values) (key, value) ->
                         (" " + key + "=")::parts, value::values)
                 ">"::parts, values
 
             let parts, values =
-                match parts, styles', List.rev attrs with
+                match parts, styles', List.rev keyValuePairs with
                 | [], _, _ -> failwith "unexpected empty parts"
                 | head::parts, [], [] -> (head + "<" + tag + ">")::parts, values
-                | head::parts, [], (fstKey, fstValue)::attrs ->
+                | head::parts, [], (fstKey, fstValue)::keyValuePairs ->
                     let parts = (head + "<" + tag + " " + fstKey + "=")::parts
                     let values = fstValue::values
-                    addAttrs (parts, values) attrs
-                | head::parts, styles', attrs ->
+                    addKeyValuePairs (parts, values) keyValuePairs
+                | head::parts, styles', keyValuePairs ->
                     let parts = (head + "<" + tag + " style=")::parts
                     let values = (styles styles')::values
-                    match attrs with
+                    match keyValuePairs with
                     | [] -> ">"::parts, values
-                    | attrs -> addAttrs (parts, values) attrs
+                    | keyValuePairs -> addKeyValuePairs (parts, values) keyValuePairs
 
             let parts, values = ((parts, values), nodes) ||> List.fold inner
             match parts with
@@ -82,7 +85,7 @@ module Util =
         and inner (parts, values) = function
             | Text v -> ""::parts, (box v::values)
             | Template v -> ""::parts, (box v::values)
-            | Style _ | Attr _ | BoolAttr _ | Event _ -> parts, values
+            | Style _ | Property _ | Attribute _ | BooleanAttribute _ | Event _ -> parts, values
             | HtmlNode(tag, nodes)
             | SvgNode (tag, nodes) -> addNode (parts, values) tag nodes
             | Fragment nodes -> ((parts, values), nodes) ||> List.fold inner
@@ -95,26 +98,27 @@ module Util =
 
     let getValues (node: Node) =
         let rec addNode values nodes =
-            let styles', attrs =
-                (([], []), nodes) ||> List.fold (fun (styles', attrs) node ->
+            let styles', newValues =
+                (([], []), nodes) ||> List.fold (fun (styles', newValues) node ->
                     match node with
-                    | Style _ -> node::styles', attrs
-                    | Attr(_key, value) -> styles', box value::attrs
-                    | BoolAttr(_key, value) -> styles', box value::attrs
-                    | Event(_key, value) -> styles', box value::attrs
-                    | _ -> styles', attrs)
+                    | Style _ -> node::styles', newValues
+                    | Property(_key, value) -> styles', box value::newValues
+                    | Attribute(_key, value) -> styles', box value::newValues
+                    | BooleanAttribute(_key, value) -> styles', box value::newValues
+                    | Event(_key, value) -> styles', box value::newValues
+                    | _ -> styles', newValues)
 
             let values =
-                match styles', attrs with
-                | [], attrs -> attrs @ values
-                | styles', attrs -> attrs @ [styles styles'] @ values
+                match styles', newValues with
+                | [], newValues -> newValues @ values
+                | styles', newValues -> newValues @ [styles styles'] @ values
 
             (values, nodes) ||> List.fold inner
 
         and inner values = function
             | Text v -> box v::values
             | Template v -> box v::values
-            | Style _ | Attr _ | BoolAttr _ | Event _ -> values
+            | Style _ | Property _ | Attribute _ | BooleanAttribute _ | Event _ -> values
             | HtmlNode(_tag, nodes)
             | SvgNode (_tag, nodes) -> addNode values nodes
             | Fragment nodes -> (values, nodes) ||> List.fold inner
@@ -136,6 +140,10 @@ module Util =
         | _ -> LitHtml.html.Invoke(strings, values)
 
 type Feliz =
+    /// Unlike attributes, properties can accept non-string objects
+    static member prop (key: string) (value: obj) =
+        Property(key, value)
+
     /// Equivalent to lit-hmtl styleMap, accepting a list of Feliz styles
     static member styles (styles: Node seq) =
         Util.styles styles
