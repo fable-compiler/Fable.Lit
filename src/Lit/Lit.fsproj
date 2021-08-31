@@ -15,7 +15,6 @@
     <Compile Include="Template.fs" />
     <Compile Include="Lit.fs" />
     <Compile Include="Hook.fs" />
-    <Compile Include="Hook.UseElmish.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />

@@ -4,10 +4,59 @@ open System
 open Fable.Core
 open Fable.Core.JsInterop
 
-[<RequireQualifiedAccess>]
-type internal Effect =
-    | OnConnected of (unit -> IDisposable)
-    | OnRender of (unit -> unit)
+module internal HookUtil =
+    type Cmd<'Msg> = (('Msg -> unit) -> unit) list
+
+    [<RequireQualifiedAccess>]
+    type Effect =
+        | OnConnected of (unit -> IDisposable)
+        | OnRender of (unit -> unit)
+
+    [<Struct>]
+    type RingState<'item> =
+        | Writable of wx:'item array * ix:int
+        | ReadWritable of rw:'item array * wix:int * rix:int
+
+    type RingBuffer<'item>(size) =
+        let doubleSize ix (items: 'item array) =
+            seq { yield! items |> Seq.skip ix
+                  yield! items |> Seq.take ix
+                  for _ in 0..items.Length do
+                    yield Unchecked.defaultof<'item> }
+            |> Array.ofSeq
+
+        let mutable state : 'item RingState =
+            Writable (Array.zeroCreate (max size 10), 0)
+
+        member _.Pop() =
+            match state with
+            | ReadWritable (items, wix, rix) ->
+                let rix' = (rix + 1) % items.Length
+                match rix' = wix with
+                | true ->
+                    state <- Writable(items, wix)
+                | _ ->
+                    state <- ReadWritable(items, wix, rix')
+                Some items.[rix]
+            | _ ->
+                None
+
+        member _.Push (item:'item) =
+            match state with
+            | Writable (items, ix) ->
+                items.[ix] <- item
+                let wix = (ix + 1) % items.Length
+                state <- ReadWritable(items, wix, ix)
+            | ReadWritable (items, wix, rix) ->
+                items.[wix] <- item
+                let wix' = (wix + 1) % items.Length
+                match wix' = rix with
+                | true ->
+                    state <- ReadWritable(items |> doubleSize rix, items.Length, 0)
+                | _ ->
+                    state <- ReadWritable(items, wix', rix)
+
+open HookUtil
 
 [<AttachMembers>]
 type HookDirective() =
@@ -46,24 +95,36 @@ type HookDirective() =
         if not _rendering then
             this.fail()
 
-    member _.runEffects(onConnected: bool, onRender: bool) =
+    member _.runAsync(f: unit -> unit) =
+        JS.setTimeout f 0 |> ignore
+
+    member this.runEffects(onConnected: bool, onRender: bool) =
         // lit-html doesn't provide a didUpdate callback so just use a 0 timeout.
-        JS.setTimeout (fun () ->
+        this.runAsync(fun () ->
             _effects |> Seq.iter (function
                 | Effect.OnRender effect ->
                     if onRender then effect()
                 | Effect.OnConnected effect ->
                     if onConnected then
-                        _disposables.Add(effect()))) 0 |> ignore
+                        _disposables.Add(effect())))
 
     member this.render([<ParamArray>] args: obj[]) =
         _args <- args
         this.createTemplate()
 
-    member this.setState(index: int, value: 'T): unit =
-        _states.[index] <- value
-        if not _rendering then
-            this.createTemplate() |> this.setValue
+    member this.setState(index: int, newValue: 'T, ?equals: 'T -> 'T -> bool): unit =
+        let equals (oldValue: 'T) (newValue: 'T) =
+            match equals with
+            | Some equals -> equals oldValue newValue
+            | None -> box(oldValue).Equals(newValue)
+
+        let oldValue = _states.[index] :?> 'T
+        if not(equals oldValue newValue) then
+            _states.[index] <- newValue
+            if not _rendering then
+                this.createTemplate() |> this.setValue
+            else
+                this.runAsync(fun () -> this.createTemplate() |> this.setValue)
 
     member this.getState(): 'T * int =
         if _stateIndex >= _states.Count then
@@ -72,13 +133,15 @@ type HookDirective() =
         _stateIndex <- idx + 1
         _states.[idx] :?> _, idx
 
+    member _.addState(state: 'T): 'T * int =
+        _states.Add(state)
+        state, _states.Count - 1
+
     member this.useState(init: unit -> 'T): 'T * ('T -> unit) =
         this.checkRendering()
         let state, index =
             if _firstRun then
-                let state = init()
-                _states.Add(state)
-                state, _states.Count - 1
+                init() |> this.addState
             else
                 this.getState()
 
@@ -87,10 +150,7 @@ type HookDirective() =
     member this.useRef<'T>(init: unit -> 'T): RefValue<'T> =
         this.checkRendering()
         if _firstRun then
-            let ref = Lit.createRef<'T>()
-            ref.value <- init()
-            _states.Add(box ref)
-            ref
+            init() |> Lit.createRef<'T> |> this.addState |> fst
         else
             this.getState() |> fst
 
@@ -101,6 +161,58 @@ type HookDirective() =
     member _.useEffectOnce(effect): unit =
         if _firstRun then
             _effects.Add(Effect.OnConnected effect)
+
+    member this.useElmish(init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State  -> 'State * Cmd<'Msg>): 'State * ('Msg -> unit) =
+        if _firstRun then
+            // TODO: Error handling
+            let exec dispatch cmd =
+                cmd |> List.iter (fun call -> call dispatch)
+
+            let (model, cmd) = init()
+            let (model, _), index = this.addState(model, null)
+
+            let setState (model: 'State) (dispatch: 'Msg -> unit) =
+                this.setState(
+                    index,
+                    (model, dispatch),
+                    equals = fun (oldModel, _) (newModel, _) -> oldModel = newModel
+                )
+
+            let rb = RingBuffer 10
+            let mutable reentered = false
+            let mutable state = model
+
+            let rec dispatch msg =
+                if reentered then
+                    rb.Push msg
+                else
+                    reentered <- true
+                    let mutable nextMsg = Some msg
+                    while Option.isSome nextMsg do
+                        let msg = nextMsg.Value
+                        // TODO: Error handling
+                        let (model',cmd') = update msg state
+                        setState model' dispatch
+                        cmd' |> exec dispatch
+                        state <- model'
+                        nextMsg <- rb.Pop()
+                    reentered <- false
+
+            _states.[index] <- (state, dispatch)
+
+            _effects.Add(Effect.OnConnected(fun () ->
+                cmd |> exec dispatch
+                { new IDisposable with
+                    member _.Dispose() =
+                        let (state, _) = _states.[index] :?> _
+                        match box state with
+                        | :? IDisposable as disp -> disp.Dispose()
+                        | _ -> () }
+            ))
+
+            state, dispatch
+        else
+            this.getState() |> fst
 
     member _.disconnected() =
         for disp in _disposables do
@@ -153,6 +265,9 @@ type Hook() =
     static member emptyDisposable =
         { new IDisposable with
             member _.Dispose() = () }
+
+    static member inline useElmish<'State,'Msg when 'State : equality> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
+        jsThis<HookDirective>.useElmish(init, update)
 
     static member inline useCancellationToken () =
         Hook.useCancellationToken(jsThis)

@@ -13,6 +13,8 @@ type RefValue<'T> =
     /// Compatibility with React's ref
     abstract current: 'T with get, set
 
+type RefValue = RefValue<obj>
+
 [<ImportMember("lit-html/directive.js")>]
 type Directive() =
     class end
@@ -134,13 +136,18 @@ type Lit() =
     static member attrOfOption (attributeValue: string option) =
         LitHtml.ifDefined attributeValue
 
-    static member inline createRef<'T>(): RefValue<'T> =
-        LitHtml.createRef<'T>()
+    static member createRef<'T>(): RefValue<'T option> =
+        LitHtml.createRef<'T option>()
 
-    static member inline refValue<'El when 'El :> Element> (v: RefValue<'El option>) =
+    static member createRef(value: 'T): RefValue<'T> =
+        let r = LitHtml.createRef<'T>()
+        r.value <- value
+        r
+
+    static member refValue<'El when 'El :> Element> (v: RefValue<'El option>) =
         LitHtml.ref v
 
-    static member inline refFn<'El when 'El :> Element> (fn: 'El option -> unit) =
+    static member refFn<'El when 'El :> Element> (fn: 'El option -> unit) =
         LitHtml.ref fn
 
     static member inline directive<'Class, 'Arg>(): 'Arg -> TemplateResult =
