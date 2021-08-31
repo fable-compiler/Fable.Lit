@@ -6,6 +6,7 @@
         "deploy": "NODE_ENV=production dotnet fable src -o out --run webpack && gh-pages -d public"
     },
     "dependencies": {
+        "lit": "^2.0.0-rc.3",
         "lit-html": "^2.0.0-rc.4",
         "react": "^17.0.2",
         "react-dom": "^17.0.2"

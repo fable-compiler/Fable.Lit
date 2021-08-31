@@ -73,6 +73,30 @@ module ReactLib =
                 ]
             ]
         ]
+module LitComponents = 
+    open Lit.Extensions
+    open Fable.Core
+
+    [<AttachMembers>]
+    type CounterSample() =
+        inherit LitElement()
+
+        let mutable counter = 0
+        let mutable nameAttribute = "World"
+
+        static member properties =
+            {| counter = {| state = true |}
+               nameAttribute = {| attribute = "name-attribute"  |} |}
+
+        override _.render() =
+            Html.article [
+                Html.p [ Html.text $"Hello, {nameAttribute}!" ]
+                Html.button [
+                    Ev.onClick(fun _ -> counter <- counter + 1)
+                    Html.text $"Clicked {counter} times!"
+                ]
+            ]
+            |> Feliz.toLit
 
 let ReactLitComponent =
     React.toLit ReactLib.MyComponent
@@ -186,9 +210,12 @@ let view model dispatch =
 
         {nameInput model.Value (ChangeValue >> dispatch)}
         {NameInput()}
+        <counter-sample name-attribute="Fable"></counter-sample>
       </div>
     """
     //   {itemList model}
+
+Lit.Extensions.defineComponent "counter-sample" (Fable.Core.JsInterop.jsConstructor<LitComponents.CounterSample>)
 
 Program.mkProgram initialState update view
 |> Program.withLit "app-container"

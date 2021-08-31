@@ -8,6 +8,7 @@
     <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Lit.Extensions\Lit.Extensions.fsproj" />
     <ProjectReference Include="..\..\src\Lit.Feliz\Lit.Feliz.fsproj" />
     <ProjectReference Include="..\..\src\Lit.React\Lit.React.fsproj" />
     <ProjectReference Include="..\..\src\Lit.Elmish\Lit.Elmish.fsproj" />
