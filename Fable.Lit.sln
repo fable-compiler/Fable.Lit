@@ -1,23 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31612.314
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02A16E23-0ECB-444D-B10B-245EAF6589DD}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lit", "src\Lit\Lit.fsproj", "{207E7C81-549C-4CF5-830B-E681E383BDAB}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Lit", "src\Lit\Lit.fsproj", "{207E7C81-549C-4CF5-830B-E681E383BDAB}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lit.React", "src\Lit.React\Lit.React.fsproj", "{B231739B-4508-423A-9321-E7A7242E6BE4}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Lit.React", "src\Lit.React\Lit.React.fsproj", "{B231739B-4508-423A-9321-E7A7242E6BE4}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lit.Feliz", "src\Lit.Feliz\Lit.Feliz.fsproj", "{0EBD5EA0-373F-4C63-B4D2-8C0681552554}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Lit.Feliz", "src\Lit.Feliz\Lit.Feliz.fsproj", "{0EBD5EA0-373F-4C63-B4D2-8C0681552554}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{80F23BCE-813B-4B21-B61D-F10D20387040}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "App", "sample\src\App.fsproj", "{735B907F-DBC6-415D-8C71-3D71409EC392}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "App", "sample\src\App.fsproj", "{735B907F-DBC6-415D-8C71-3D71409EC392}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lit.Elmish", "src\Lit.Elmish\Lit.Elmish.fsproj", "{EAD7C6EA-3264-4AA1-A267-DB83425E86B5}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Lit.Elmish", "src\Lit.Elmish\Lit.Elmish.fsproj", "{EAD7C6EA-3264-4AA1-A267-DB83425E86B5}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lit.Extensions", "src\Lit.Extensions\Lit.Extensions.fsproj", "{0198F7C6-63E4-4587-8A25-6EA2747200B7}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Lit.Extensions", "src\Lit.Extensions\Lit.Extensions.fsproj", "{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +27,9 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{207E7C81-549C-4CF5-830B-E681E383BDAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -89,21 +92,18 @@ Global
 		{EAD7C6EA-3264-4AA1-A267-DB83425E86B5}.Release|x64.Build.0 = Release|Any CPU
 		{EAD7C6EA-3264-4AA1-A267-DB83425E86B5}.Release|x86.ActiveCfg = Release|Any CPU
 		{EAD7C6EA-3264-4AA1-A267-DB83425E86B5}.Release|x86.Build.0 = Release|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Debug|x64.Build.0 = Debug|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Debug|x86.Build.0 = Debug|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Release|x64.ActiveCfg = Release|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Release|x64.Build.0 = Release|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Release|x86.ActiveCfg = Release|Any CPU
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7}.Release|x86.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Debug|x64.Build.0 = Debug|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Debug|x86.Build.0 = Debug|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Release|x64.ActiveCfg = Release|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Release|x64.Build.0 = Release|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Release|x86.ActiveCfg = Release|Any CPU
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{207E7C81-549C-4CF5-830B-E681E383BDAB} = {02A16E23-0ECB-444D-B10B-245EAF6589DD}
@@ -111,9 +111,6 @@ Global
 		{0EBD5EA0-373F-4C63-B4D2-8C0681552554} = {02A16E23-0ECB-444D-B10B-245EAF6589DD}
 		{735B907F-DBC6-415D-8C71-3D71409EC392} = {80F23BCE-813B-4B21-B61D-F10D20387040}
 		{EAD7C6EA-3264-4AA1-A267-DB83425E86B5} = {02A16E23-0ECB-444D-B10B-245EAF6589DD}
-		{0198F7C6-63E4-4587-8A25-6EA2747200B7} = {02A16E23-0ECB-444D-B10B-245EAF6589DD}
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {69688933-1625-46FB-A1A1-CF0D6B76C96C}
+		{F805A6B3-6D78-4BBF-837C-9BBABE7FF4A6} = {02A16E23-0ECB-444D-B10B-245EAF6589DD}
 	EndGlobalSection
 EndGlobal
