@@ -3,6 +3,7 @@ namespace Lit
 open System
 open Fable.Core
 open Fable.Core.JsInterop
+open Browser
 
 module internal HookUtil =
     type Cmd<'Msg> = (('Msg -> unit) -> unit) list
@@ -97,10 +98,12 @@ type HookDirective() =
 
     member this.checkRendering() = if not _rendering then this.fail ()
 
-    member _.runAsync(f: unit -> unit) = JS.setTimeout f 0 |> ignore
+    member _.runAsync(f: unit -> unit) =
+        // JS.setTimeout f 0 |> ignore
+        window.requestAnimationFrame (fun _ -> f ())
+        |> ignore
 
     member this.runEffects(onConnected: bool, onRender: bool) =
-        // lit-html doesn't provide a didUpdate callback so just use a 0 timeout.
         this.runAsync
             (fun () ->
                 _effects

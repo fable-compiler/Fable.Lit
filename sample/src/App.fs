@@ -79,7 +79,7 @@ let ReactLitComponent =
 
 let buttonLit (model: Model) dispatch =
     let strong txt =
-        html $"<strong>{txt}</strong>"
+        html $"""<strong>{txt}</strong>"""
 
     html $"""
         <button class="button"
@@ -178,6 +178,7 @@ let itemList model =
 let view model dispatch =
     html $"""
       <div style={Feliz.styles Styles.verticalContainer}>
+
         {buttonLit model dispatch}
         {if model.ShowReact then ReactLitComponent model.ShowClock else Lit.nothing}
 

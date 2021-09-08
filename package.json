@@ -1,11 +1,17 @@
 {
     "private": true,
     "scripts": {
-        "publish": "dotnet fsi build.fsx publish"
+        "install": "dotnet tool restore",
+        "publish": "dotnet fsi build.fsx publish",
+        "test": "dotnet fable test --run web-test-runner test/**/*.test.js --node-resolve",
+        "test:watch": "dotnet fable watch test --run web-test-runner test/**/*.test.js --node-resolve --watch"
     },
     "dependencies": {
+        "lit-html": "^2.0.0-rc.4"
     },
     "devDependencies": {
+        "@open-wc/testing": "^2.5.33",
+        "@web/test-runner": "^0.13.16",
         "fable-publish-utils": "^2.2.0"
     }
 }
