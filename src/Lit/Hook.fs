@@ -6,8 +6,6 @@ open Fable.Core.JsInterop
 open Browser
 
 module internal HookUtil =
-    type Cmd<'Msg> = (('Msg -> unit) -> unit) list
-
     [<RequireQualifiedAccess>]
     type Effect =
         | OnConnected of (unit -> IDisposable)
@@ -59,6 +57,15 @@ module internal HookUtil =
                 | _ -> state <- ReadWritable(items, wix', rix)
 
 open HookUtil
+
+type Cmd<'Msg> = (('Msg -> unit) -> unit) list
+
+type HookProvider =
+    abstract useState: init: (unit -> 'T) -> 'T * ('T -> unit)
+    abstract useRef: init: (unit -> 'T) -> RefValue<'T>
+    abstract useEffect: effect: (unit -> unit) -> unit
+    abstract useEffectOnce: effect: (unit -> IDisposable) -> unit
+    abstract useElmish : init: (unit -> 'State * Cmd<'Msg>) * update: ('Msg -> 'State -> 'State * Cmd<'Msg>) -> 'State * ('Msg -> unit)
 
 [<AttachMembers>]
 type HookDirective() =
@@ -146,96 +153,6 @@ type HookDirective() =
         _states.Add(state)
         _states.Count - 1, state
 
-    member this.useState(init: unit -> 'T) : 'T * ('T -> unit) =
-        this.checkRendering ()
-
-        let index, state =
-            if _firstRun then
-                init () |> this.addState
-            else
-                this.getState ()
-
-        state, (fun v -> this.setState (index, v))
-
-    member this.useRef<'T>(init: unit -> 'T) : RefValue<'T> =
-        this.checkRendering ()
-
-        if _firstRun then
-            init ()
-            |> Lit.createRef<'T>
-            |> this.addState
-            |> snd
-        else
-            this.getState () |> snd
-
-    member _.useEffect(effect) : unit =
-        if _firstRun then
-            _effects.Add(Effect.OnRender effect)
-
-    member _.useEffectOnce(effect) : unit =
-        if _firstRun then
-            _effects.Add(Effect.OnConnected effect)
-
-    member this.useElmish
-        (
-            init: unit -> 'State * Cmd<'Msg>,
-            update: 'Msg -> 'State -> 'State * Cmd<'Msg>
-        ) : 'State * ('Msg -> unit) =
-        if _firstRun then
-            // TODO: Error handling? (also when running update)
-            let exec dispatch cmd =
-                cmd |> List.iter (fun call -> call dispatch)
-
-            let (model, cmd) = init ()
-            let index, (model, _) = this.addState (model, null)
-
-            let setState (model: 'State) (dispatch: 'Msg -> unit) =
-                this.setState (
-                    index,
-                    (model, dispatch),
-                    equals = fun (oldModel, _) (newModel, _) -> oldModel = newModel
-                )
-
-            let rb = RingBuffer 10
-            let mutable reentered = false
-            let mutable state = model
-
-            let rec dispatch msg =
-                if reentered then
-                    rb.Push msg
-                else
-                    reentered <- true
-                    let mutable nextMsg = Some msg
-
-                    while Option.isSome nextMsg do
-                        let msg = nextMsg.Value
-                        let (model', cmd') = update msg state
-                        setState model' dispatch
-                        cmd' |> exec dispatch
-                        state <- model'
-                        nextMsg <- rb.Pop()
-
-                    reentered <- false
-
-            _effects.Add(
-                Effect.OnConnected
-                    (fun () ->
-                        cmd |> exec dispatch
-
-                        { new IDisposable with
-                            member _.Dispose() =
-                                let (state, _) = _states.[index] :?> _
-
-                                match box state with
-                                | :? IDisposable as disp -> disp.Dispose()
-                                | _ -> () })
-            )
-
-            _states.[index] <- (state, dispatch)
-            state, dispatch
-        else
-            this.getState () |> snd
-
     member _.disconnected() =
         for disp in _disposables do
             disp.Dispose()
@@ -248,6 +165,93 @@ type HookDirective() =
     member this.reconnected() =
         this.runEffects (onConnected = true, onRender = false)
 
+    interface HookProvider with
+        member this.useState(init: unit -> 'T) : 'T * ('T -> unit) =
+            this.checkRendering ()
+
+            let index, state =
+                if _firstRun then
+                    init () |> this.addState
+                else
+                    this.getState ()
+
+            state, (fun v -> this.setState (index, v))
+
+        member this.useRef(init: unit -> 'T) : RefValue<'T> =
+            this.checkRendering ()
+
+            if _firstRun then
+                init ()
+                |> Lit.createRef<'T>
+                |> this.addState
+                |> snd
+            else
+                this.getState () |> snd
+
+        member _.useEffect(effect) : unit =
+            if _firstRun then
+                _effects.Add(Effect.OnRender effect)
+
+        member _.useEffectOnce(effect) : unit =
+            if _firstRun then
+                _effects.Add(Effect.OnConnected effect)
+
+        member this.useElmish(init, update) =
+            if _firstRun then
+                // TODO: Error handling? (also when running update)
+                let exec dispatch cmd =
+                    cmd |> List.iter (fun call -> call dispatch)
+
+                let (model, cmd) = init ()
+                let index, (model, _) = this.addState (model, null)
+
+                let setState (model: 'State) (dispatch: 'Msg -> unit) =
+                    this.setState (
+                        index,
+                        (model, dispatch),
+                        equals = fun (oldModel, _) (newModel, _) -> (box oldModel).Equals(newModel)
+                    )
+
+                let rb = RingBuffer 10
+                let mutable reentered = false
+                let mutable state = model
+
+                let rec dispatch msg =
+                    if reentered then
+                        rb.Push msg
+                    else
+                        reentered <- true
+                        let mutable nextMsg = Some msg
+
+                        while Option.isSome nextMsg do
+                            let msg = nextMsg.Value
+                            let (model', cmd') = update msg state
+                            setState model' dispatch
+                            cmd' |> exec dispatch
+                            state <- model'
+                            nextMsg <- rb.Pop()
+
+                        reentered <- false
+
+                _effects.Add(
+                    Effect.OnConnected
+                        (fun () ->
+                            cmd |> exec dispatch
+
+                            { new IDisposable with
+                                member _.Dispose() =
+                                    let (state, _) = _states.[index] :?> _
+
+                                    match box state with
+                                    | :? IDisposable as disp -> disp.Dispose()
+                                    | _ -> () })
+                )
+
+                _states.[index] <- (state, dispatch)
+                state, dispatch
+            else
+                this.getState () |> snd
+
 type HookComponentAttribute() =
     inherit JS.DecoratorAttribute()
 
@@ -257,34 +261,6 @@ type HookComponentAttribute() =
         :?> _
 
 type Hook() =
-    static member inline useState(v: 'Value) =
-        jsThis<HookDirective>.useState (fun () -> v)
-
-    static member inline useState(init: unit -> 'Value) = jsThis<HookDirective>.useState (init)
-
-    static member inline useRef<'Value>() : RefValue<'Value option> =
-        jsThis<HookDirective>
-            .useRef<'Value option> (fun () -> None)
-
-    static member inline useRef(v: 'Value) : RefValue<'Value> =
-        jsThis<HookDirective>.useRef (fun () -> v)
-
-    static member inline useMemo(init: unit -> 'Value) : 'Value =
-        jsThis<HookDirective>.useRef(init).value
-
-    // TODO: Dependencies?
-    static member inline useEffect(effect: unit -> unit) =
-        jsThis<HookDirective>.useEffect (effect)
-
-    static member inline useEffectOnce(effect: unit -> unit) =
-        jsThis<HookDirective>.useEffectOnce
-            (fun () ->
-                effect ()
-                Hook.emptyDisposable)
-
-    static member inline useEffectOnce(effect: unit -> IDisposable) =
-        jsThis<HookDirective>.useEffectOnce (effect)
-
     static member createDisposable(f: unit -> unit) =
         { new IDisposable with
             member _.Dispose() = f () }
@@ -293,16 +269,42 @@ type Hook() =
         { new IDisposable with
             member _.Dispose() = () }
 
-    static member inline useElmish<'State, 'Msg when 'State: equality>
-        (
-            init: unit -> 'State * Cmd<'Msg>,
-            update: 'Msg -> 'State -> 'State * Cmd<'Msg>
-        ) =
-        jsThis<HookDirective>.useElmish (init, update)
+    static member inline useState(v: 'Value) =
+        jsThis<HookProvider>.useState (fun () -> v)
 
-    static member inline useCancellationToken() = Hook.useCancellationToken (jsThis)
+    static member inline useState(init: unit -> 'Value) =
+        jsThis<HookProvider>.useState (init)
 
-    static member useCancellationToken(this: HookDirective) =
+    static member inline useRef<'Value>() : RefValue<'Value option> =
+        jsThis<HookProvider>
+            .useRef<'Value option> (fun () -> None)
+
+    static member inline useRef(v: 'Value) : RefValue<'Value> =
+        jsThis<HookProvider>.useRef (fun () -> v)
+
+    static member inline useMemo(init: unit -> 'Value) : 'Value =
+        jsThis<HookProvider>.useRef(init).value
+
+    // TODO: Dependencies?
+    static member inline useEffect(effect: unit -> unit) =
+        jsThis<HookProvider>.useEffect (effect)
+
+    static member inline useEffectOnce(effect: unit -> unit) =
+        jsThis<HookProvider>.useEffectOnce
+            (fun () ->
+                effect ()
+                Hook.emptyDisposable)
+
+    static member inline useEffectOnce(effect: unit -> IDisposable) =
+        jsThis<HookProvider>.useEffectOnce (effect)
+
+    static member inline useElmish(init, update) =
+        jsThis<HookProvider>.useElmish(init, update)
+
+    static member inline useCancellationToken() =
+        Hook.useCancellationToken (jsThis)
+
+    static member useCancellationToken(this: HookProvider) =
         let cts =
             this.useRef (fun () -> new Threading.CancellationTokenSource())
 
