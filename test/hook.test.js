@@ -16,7 +16,7 @@ async function withEl(f) {
 }
 
 function sleep(ms = 0) {
-    return new Promise(resolve => setTimeout(() => resolve()), ms);
+    return new Promise(resolve => setTimeout(() => resolve(), ms));
 }
 
 describe('Hook', () => {
@@ -43,7 +43,7 @@ describe('Hook', () => {
 
         // Effect is run asynchronously after after render
         expect(r.value).to.equals(8);
-        await sleep();
+        await sleep(100);
         expect(r.value).to.equals(9);
 
         // Effect is not run again on rerenders
