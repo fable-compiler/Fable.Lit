@@ -24,6 +24,12 @@ type AsyncDirective() =
     member _.isConnected: bool = jsNative
     member _.setValue(value: obj): unit = jsNative
 
+[<Import("LitElement", "lit")>]
+type LitElementBase() =
+    member _.isConnected: bool = jsNative
+    member _.connectedCallback(): unit = jsNative
+    member _.disconnectedCallback(): unit = jsNative
+
 type Part =
     interface end
 
@@ -35,12 +41,18 @@ type ElementPart =
     inherit Part
     abstract element: Element
 
+type Styles =
+    interface end
+
 type LitHtml =
     [<ImportMember("lit-html")>]
     static member html: Template.JsTag<TemplateResult> = jsNative
 
     [<ImportMember("lit-html")>]
     static member svg: Template.JsTag<TemplateResult> = jsNative
+
+    [<ImportMember("lit")>]
+    static member css: Template.JsTag<Styles> = jsNative
 
     [<ImportMember("lit-html")>]
     static member render (t: TemplateResult, el: Element): unit = jsNative
@@ -85,12 +97,15 @@ type LitHtml =
 module LitTemplates =
     let html: Template.Tag<_> = Template.transform LitHtml.html
     let svg: Template.Tag<_> = Template.transform LitHtml.svg
+    let css: Template.Tag<_> = Template.transform LitHtml.css
 
 type Lit() =
     static member html = html
 
     /// svg is required for nested templates within an svg element
     static member svg = svg
+
+    static member css = css
 
     static member nothing = LitHtml.nothing
 

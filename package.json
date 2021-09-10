@@ -7,7 +7,7 @@
         "test:watch": "dotnet fable watch test --run web-test-runner test/**/*.test.js --node-resolve --watch"
     },
     "dependencies": {
-        "lit-html": "^2.0.0-rc.4"
+        "lit": "^2.0.0-rc.4"
     },
     "devDependencies": {
         "@open-wc/testing": "^2.5.33",

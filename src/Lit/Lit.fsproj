@@ -15,6 +15,7 @@
     <Compile Include="Template.fs" />
     <Compile Include="Lit.fs" />
     <Compile Include="Hook.fs" />
+    <Compile Include="LitElement.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />
