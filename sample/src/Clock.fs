@@ -144,9 +144,9 @@ let styles() =
 
 [<LitElement("my-clock")>]
 let Clock() =
-    let props = LitEl.init({| hourColor = Prop "lightgreen" |}, styles())
+    let props = LitEl.init<{| hourColor: string; internalState |}>([ "hourColor", [CustomAttribute "hour-color"] ], styles())
     let model, dispatch = Hook.useElmish(init, update)
-    view props.hourColor.Value model dispatch
+    view props.hourColor model dispatch
 
 // Make sure this file is being called by the app entry
 let register() = ()
