@@ -6,7 +6,7 @@ open Browser.Types
 open Elmish
 open Lit
 open Helpers
-
+open Fable.Core.JsInterop
 type Model =
     { CurrentTime: DateTime
       IntervalId: int
@@ -144,8 +144,13 @@ let styles() =
 
 [<LitElement("my-clock")>]
 let Clock() =
-    let props = LitEl.init<{| hourColor: string; internalState |}>([ "hourColor", [CustomAttribute "hour-color"] ], styles())
+    let props =
+        LitEl.init<{| hourColor: string; |}>(
+            [ "hourColor", [CustomAttribute "hour-color"; InitialValue "purple"; Reflect ] ],
+            styles()
+        )
     let model, dispatch = Hook.useElmish(init, update)
+    JS.setTimeout (fun () -> props?("hourColor") <- "green") 2000
     view props.hourColor model dispatch
 
 // Make sure this file is being called by the app entry

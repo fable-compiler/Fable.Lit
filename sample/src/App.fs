@@ -183,7 +183,7 @@ let view model dispatch =
         {if model.ShowReact then ReactLitComponent model.ShowClock else Lit.nothing}
 
         <!--{buttonFeliz model dispatch}-->
-        <my-clock hour-color="red"></my-clock>
+        <my-clock></my-clock>
 
         {nameInput model.Value (ChangeValue >> dispatch)}
         {NameInput()}
