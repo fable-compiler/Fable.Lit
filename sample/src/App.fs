@@ -182,14 +182,16 @@ let view model dispatch =
         {buttonLit model dispatch}
         {if model.ShowReact then ReactLitComponent model.ShowClock else Lit.nothing}
 
-        {buttonFeliz model dispatch}
-        {if model.ShowClock then Clock.Clock() else Lit.nothing}
+        <!--{buttonFeliz model dispatch}-->
+        <my-clock hourColor="red"></my-clock>
 
         {nameInput model.Value (ChangeValue >> dispatch)}
         {NameInput()}
       </div>
     """
     //   {itemList model}
+
+Clock.register()
 
 Program.mkProgram initialState update view
 |> Program.withLit "app-container"

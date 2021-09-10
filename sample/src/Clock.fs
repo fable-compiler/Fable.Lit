@@ -93,7 +93,7 @@ let select options value dispatch =
         </div>
     """
 
-let view model dispatch =
+let view hourColor model dispatch =
     let time = model.CurrentTime
 
     html $"""
@@ -105,7 +105,7 @@ let view model dispatch =
             r="45"
             fill="#0B79CE"></circle>
 
-          {clockHand "lightgreen" time.AsHour}
+          {clockHand hourColor time.AsHour}
           {clockHand model.MinuteHandColor time.AsMinute}
           {clockHand "#023963" time.AsSecond}
 
@@ -119,10 +119,34 @@ let view model dispatch =
           </circle>
         </svg>
 
-        {select colors model.MinuteHandColor (MinuteHandColor >> dispatch)}
+        <div class="container">
+            <p>This is a clock</p>
+            {select colors model.MinuteHandColor (MinuteHandColor >> dispatch)}
+        </div>
     """
 
-[<HookComponent>]
+let styles() =
+    css $"""
+        .container {{
+            display: flex;
+            align-items: center;
+            margin-bottom: .5em;
+        }}
+        p {{
+            flex-grow: 1;
+            margin: 0 10px;
+            border: 2px dashed firebrick;
+            color: deeppink;
+            font-size: large;
+            text-align: center;
+        }}
+    """
+
+[<LitElement("my-clock")>]
 let Clock() =
+    let props = LitEl.init({| hourColor = Prop "lightgreen" |}, styles())
     let model, dispatch = Hook.useElmish(init, update)
-    view model dispatch
+    view props.hourColor.Value model dispatch
+
+// Make sure this file is being called by the app entry
+let register() = ()
