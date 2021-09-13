@@ -88,12 +88,43 @@ let select options value dispatch =
     html $"""
         <div class="select mb-2">
             <select value={value} @change={fun (ev: Event) -> ev.target.Value |> dispatch}>
-                {colors |> List.map option}
+                {options |> List.map option}
             </select>
         </div>
     """
 
-let view hourColor model dispatch =
+let initEl (config: LitConfig<_>) =
+    config.props <-
+        {|
+            hourColor = Prop.Of("lightgreen", attribute="hour-color")
+        |}
+
+    config.styles <- [
+        css $"""
+            .container {{
+                display: flex;
+                align-items: center;
+                margin-bottom: .5em;
+            }}
+            p {{
+                flex-grow: 1;
+                margin: 0 10px;
+                border-style: dotted;
+                border-width: 4px;
+                border-color: firebrick;
+                color: deeppink;
+                font-size: large;
+                text-align: center;
+            }}
+        """
+    ]
+
+[<LitElement("my-clock")>]
+let Clock() =
+    let props = LitElement.init initEl
+    let hourColor = props.hourColor.Value
+
+    let model, dispatch = Hook.useElmish(init, update)
     let time = model.CurrentTime
 
     html $"""
@@ -124,34 +155,6 @@ let view hourColor model dispatch =
             {select colors model.MinuteHandColor (MinuteHandColor >> dispatch)}
         </div>
     """
-
-let styles() =
-    css $"""
-        .container {{
-            display: flex;
-            align-items: center;
-            margin-bottom: .5em;
-        }}
-        p {{
-            flex-grow: 1;
-            margin: 0 10px;
-            border: 2px dashed firebrick;
-            color: deeppink;
-            font-size: large;
-            text-align: center;
-        }}
-    """
-
-[<LitElement("my-clock")>]
-let Clock() =
-    let props =
-        LitEl.init<{| hourColor: string; |}>(
-            [ "hourColor", [CustomAttribute "hour-color"; InitialValue "purple"; Reflect ] ],
-            styles()
-        )
-    let model, dispatch = Hook.useElmish(init, update)
-    JS.setTimeout (fun () -> props?("hourColor") <- "green") 2000
-    view props.hourColor model dispatch
 
 // Make sure this file is being called by the app entry
 let register() = ()

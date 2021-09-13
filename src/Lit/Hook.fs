@@ -269,14 +269,25 @@ type HookDirective() =
         member _.useEffectOnce(effect) = provider.useEffectOnce(effect)
         member _.useElmish(init, update) = provider.useElmish(init, update)
 
+/// <summary>
+/// Use this decorator to enable "stateful" functions
+/// (i.e. functions that can use hooks like <see cref="Lit.Hook.useState">Hook.useState</see>)
+/// </summary>
 type HookComponentAttribute() =
     inherit JS.DecoratorAttribute()
 
     override _.Decorate(fn) =
         emitJsExpr (jsConstructor<HookDirective>, fn) "class extends $0 { renderFn = $1 }"
-        |> LitHtml.directive
+        |> LitBindings.directive
         :?> _
 
+/// <summary>
+/// A static class that contains react like hooks.
+/// </summary>
+/// <remarks>
+/// These hooks use directives under the hood
+/// and may not be 100% compatible with the react hooks.
+/// </remarks>
 type Hook() =
     static member createDisposable(f: unit -> unit) =
         { new IDisposable with
@@ -286,36 +297,126 @@ type Hook() =
         { new IDisposable with
             member _.Dispose() = () }
 
+    /// <summary>
+    /// returns a tuple with an immutable value and a setter function for the provided value
+    /// </summary>
+    /// <example>
+    ///     let counter, setCounter = Hook.useState 0
+    /// </example>
+    /// <param name="v">
+    ///  the initial value of the state
+    /// </param>
     static member inline useState(v: 'Value) =
         jsThis<IHookProvider>.useState (fun () -> v)
 
+    /// <summary>
+    /// returns a tuple with an immutable value and a setter function, when you supply a callback it will be used
+    /// to initialize the value but it will not be called again
+    /// </summary>
+    /// <example>
+    ///     let counter, setCounter = Hook.useState (fun _ -> expensiveInitializationLogic(0))
+    /// </example>
+    /// <param name="init">
+    /// A function to initialize the state, usually this function may perform expensive operations
+    /// </param>
     static member inline useState(init: unit -> 'Value) =
         jsThis<IHookProvider>.useState (init)
 
-    static member inline useRef<'Value>() : RefValue<'Value option> =
-        jsThis<IHookProvider>
-            .useRef<'Value option> (fun () -> None)
+    /// <summary>
+    /// Creates and returns a mutable object (a 'ref') whose .current property is initialized to the hosting element.
+    /// This differs from useState in that state is immutable and can only be changed via setState which will cause a rerender.
+    /// That rerender will allow you to be able to see the updated state value. A ref, on the other hand, can only be changed via
+    /// .current and since changes to it are mutations, no rerender is required to view the updated value in your component's code (e.g. listeners, callbacks, effects).
+    /// </summary>
+    static member inline useRef<'Value>(): RefValue<'Value option> =
+        jsThis<IHookProvider>.useRef<'Value option>(fun () -> None)
 
-    static member inline useRef(v: 'Value) : RefValue<'Value> =
-        jsThis<IHookProvider>.useRef (fun () -> v)
+    /// <summary>
+    /// Creates and returns a mutable object (a 'ref') whose .current property is initialized to the passed argument.
+    /// This differs from useState in that state is immutable and can only be changed via setState which will cause a rerender.
+    /// That rerender will allow you to be able to see the updated state value. A ref, on the other hand, can only be changed via
+    /// .current and since changes to it are mutations, no rerender is required to view the updated value in your component's code (e.g. listeners, callbacks, effects).
+    /// </summary>
+    static member inline useRef(v: 'Value): RefValue<'Value> =
+        jsThis<IHookProvider>.useRef(fun () -> v)
 
-    static member inline useMemo(init: unit -> 'Value) : 'Value =
+    /// <summary>
+    /// Create a memoized state value. Only reruns the function when dependent values have changed.
+    /// </summary>
+    static member inline useMemo(init: unit -> 'Value): 'Value =
         jsThis<IHookProvider>.useRef(init).value
 
     // TODO: Dependencies?
+    /// <summary>
+    /// Used to run a side-effect when the component re-renders.
+    /// </summary>
+    /// <example>
+    ///     [&lt;HookComponent>]
+    ///     let app () =
+    ///         let counter, setCounter = Hook.useState 0
+    ///         Hook.useEffect (fun _ -> printfn "log to the console on every re-render")
+    ///         html $"""
+    ///             &lt;header>Click the counter&lt;/header>
+    ///             &lt;div id="count">{counter}&lt;/div>
+    ///             &lt;button type="button" @click=${fun _ -> setCount(counter + 1)}>
+    ///               Cause rerender
+    ///             &lt;/button>
+    ///        """
+    /// </example>
     static member inline useEffect(effect: unit -> unit) =
         jsThis<IHookProvider>.useEffect (effect)
 
+    /// <summary>
+    /// Fire a side effect once in the lifetime of the function
+    /// </summary>
+    /// <example>
+    ///     Hook.useEffectOnce (fun _ -> printfn "Mounted")
+    /// </example>
     static member inline useEffectOnce(effect: unit -> unit) =
         jsThis<IHookProvider>.useEffectOnce
             (fun () ->
                 effect ()
                 Hook.emptyDisposable)
 
+    /// <summary>
+    /// Fire a side effect once in the lifetime of the function
+    /// </summary>
+    /// <example>
+    ///     Hook.useEffectOnce (fun _ -> { new IDisposable with member _.Dispose() = (* code *))})
+    /// </example>
     static member inline useEffectOnce(effect: unit -> IDisposable) =
         jsThis<IHookProvider>.useEffectOnce (effect)
 
-    static member inline useElmish(init, update) =
+    /// <summary>
+    /// Start an [Elmish](https://elmish.github.io/elmish/) loop. for a function.
+    /// </summary>
+    /// <example>
+    ///      type State = { counter: int }
+    ///
+    ///      type Msg = Increment | Decrement
+    ///
+    ///      let init () = { counter = 0 }
+    ///
+    ///      let update msg state =
+    ///          match msg with
+    ///          | Increment -&gt; { state with counter = state.counter + 1 }
+    ///          | Decrement -&gt; { state with counter = state.counter - 1 }
+    ///
+    ///      [&lt;HookComponent>]
+    ///      let app () =
+    ///          let state, dispatch = Hook.useElmish(init, update)
+    ///         html $"""
+    ///               &lt;header>Click the counter&lt;/header>
+    ///               &lt;div id="count">{state.counter}&lt;/div>
+    ///               &lt;button type="button" @click=${fun _ -> dispatch Increment}>
+    ///                 Increment
+    ///               &lt;/button>
+    ///               &lt;button type="button" @click=${fun _ -> dispatch Decrement}>
+    ///                   Decrement
+    ///                &lt;/button>
+    ///              """
+    /// </example>
+    static member inline useElmish<'State,'Msg when 'State : equality> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
         jsThis<IHookProvider>.useElmish(init, update)
 
     static member inline useCancellationToken() =

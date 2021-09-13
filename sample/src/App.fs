@@ -3,10 +3,8 @@ module App
 open System
 open Browser.Types
 open Feliz
-open type length
 open Elmish
 open Lit
-open Lit.Feliz
 open Lit.Elmish
 open Lit.Elmish.HMR
 open Helpers
@@ -33,20 +31,24 @@ let update msg model =
     | ToggleReact -> { model with ShowReact = not model.ShowReact }, Cmd.none
 
 module Styles =
-    let verticalContainer = [
-        Css.marginLeft(rem 2)
-        Css.displayFlex
-        Css.justifyContentCenter
-        Css.alignItemsCenter
-        Css.flexDirectionColumn
-    ]
+    let verticalContainer =
+        inline_css """.{
+            margin-left: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }"""
 
-    let nameInput = [
-      Css.padding(rem 0.25)
-      Css.fontSize(px 16)
-      Css.width(px 250)
-      Css.marginBottom(rem 1)
-    ]
+    let nameInput (color: string) =
+        inline_css $""".{{
+            color: {color};
+            background-color: lavender;
+            padding: 0.25rem;
+            font-size: 16px;
+            width: 250px;
+            margin-bottom: 1rem;
+        }}"""
 
 module ReactLib =
     open Fable.React
@@ -77,58 +79,31 @@ module ReactLib =
 let ReactLitComponent =
     React.toLit ReactLib.MyComponent
 
-let buttonLit (model: Model) dispatch =
-    let strong txt =
-        html $"""<strong>{txt}</strong>"""
-
+let toggleVisible (txt: string) (isVisible: bool) (onClick: unit -> unit) =
     html $"""
         <button class="button"
-                style={ LitHtml.styleMap {| margin = "1rem 0"  |} }
-                @click={fun _ -> ToggleReact |> dispatch}>
-          {if model.ShowReact then Lit.ofText "Hide React" else strong "Show React"}
+                style="margin: 1rem 0"
+                @click={onClick}>
+          {if isVisible then Lit.ofText $"Hide {txt}"
+           else html $"<strong>Show {txt}</strong>"}
         </button>
     """
 
-// This is the equivalent to the function above using Feliz.Engine
-// Note we cannot change nested nodes dynamically (except for text and css) unless we convert them to lit first
-let buttonFeliz (model: Model) dispatch =
-    Feliz.toLit <| Html.button [
-        Attr.className "button"
-        Css.margin(rem 1, zero)
-        Ev.onClick (fun _ -> ToggleClock |> dispatch)
-
-        // This doesn't work, template is only built once and cached
-        // if model.ShowClock then Html.text "Hide clock"
-        // else Html.strong "Show clock"
-
-        // Do this instead
-        Feliz.ofLit <|
-            if model.ShowClock then Lit.ofText "Hide clock"
-            else Feliz.toLit <| Html.strong "Show clock"
-
-        // Alternatively you can just embed a Lit template in a Feliz node
-        // Note text and css nodes are considered values and can appear in a condition
-
-        // if model.ShowClock then Html.text "Hide clock"
-        // else Feliz.lit_html $"""<strong>Show clock</strong>"""
-    ]
-
 // This render function integrates with Elmish and doesn't keep local state
-let nameInput value dispatch =
+let elmishNameInput value dispatch =
     html $"""
       <div class="content">
         <p>Elmish state: <i>Hello {value}!</i></p>
         <input
-          style={Feliz.styles Styles.nameInput}
+          style={Styles.nameInput value}
           value={value}
-          @keyup={fun (ev: Event) ->
-            ev.target.Value |> dispatch}>
+          @keyup={evTargetValue >> dispatch}>
       </div>
     """
 
 // This function keeps local state and can use hooks
 [<HookComponent>]
-let NameInput() =
+let LocalNameInput() =
     let value, setValue = Hook.useState "Local"
     let inputRef = Hook.useRef<HTMLInputElement>()
 
@@ -136,13 +111,12 @@ let NameInput() =
       <div class="content">
         <p>Local state: <i>Hello {value}!</i></p>
         <input
-          style={Feliz.styles Styles.nameInput}
+          style={Styles.nameInput value}
           value={value}
           {Lit.refValue inputRef}
           @focus={fun _ ->
             inputRef.value |> Option.iter (fun el -> el.select())}
-          @keyup={fun (ev: Event) ->
-            ev.target.Value |> setValue}>
+          @keyup={evTargetValue >> setValue}>
       </div>
     """
 
@@ -153,7 +127,7 @@ let itemList model =
         """
 
     let shuffle (li:_ list) =
-        let rng = new Random()
+        let rng = Random()
         let arr = List.toArray li
         let max = (arr.Length - 1)
         let randomSwap (arr:_[]) i =
@@ -177,16 +151,18 @@ let itemList model =
 
 let view model dispatch =
     html $"""
-      <div style={Feliz.styles Styles.verticalContainer}>
+      <div style={Styles.verticalContainer}>
 
-        {buttonLit model dispatch}
-        {if model.ShowReact then ReactLitComponent model.ShowClock else Lit.nothing}
+        {toggleVisible "React" model.ShowReact (fun () -> dispatch ToggleReact)}
+        {if not model.ShowReact then Lit.nothing
+         else ReactLitComponent model.ShowClock}
 
-        <!--{buttonFeliz model dispatch}-->
-        <my-clock></my-clock>
+        {toggleVisible "Clock" model.ShowClock (fun () -> dispatch ToggleClock)}
+        {if not model.ShowClock then Lit.nothing
+         else html $"<my-clock hour-color=\"yellow\"></my-clock>"}
 
-        {nameInput model.Value (ChangeValue >> dispatch)}
-        {NameInput()}
+        {elmishNameInput model.Value (ChangeValue >> dispatch)}
+        {LocalNameInput()}
       </div>
     """
     //   {itemList model}
