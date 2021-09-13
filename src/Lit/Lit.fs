@@ -61,7 +61,7 @@ type ElementPart =
 type Styles =
     interface end
 
-type LitHtml =
+type LitBindings =
     /// <summary>
     /// Interprets a template literal as an HTML template that can efficiently render to and update a container.
     /// </summary>
@@ -174,10 +174,18 @@ type LitHtml =
     static member createRef<'T>() : RefValue<'T> = jsNative
 
 [<AutoOpen>]
-module LitTemplates =
-    let html: Template.Tag<_> = Template.transform LitHtml.html
-    let svg: Template.Tag<_> = Template.transform LitHtml.svg
-    let css: Template.Tag<_> = Template.transform LitHtml.css
+module LitHelpers =
+    let html: Template.Tag<_> = Template.transform LitBindings.html
+    let svg: Template.Tag<_> = Template.transform LitBindings.svg
+    let css: Template.Tag<_> = Template.transform LitBindings.css
+
+    let inline_css (css: string) =
+        match css.IndexOf("{") with
+        | -1 -> css
+        | i ->
+            match css.LastIndexOf("}") with
+            | i2 when i2 > i -> css.[i+1..i2-1]
+            | _ -> css
 
 type Lit() =
     /// <summary>
@@ -195,14 +203,14 @@ type Lit() =
     /// <summary>
     /// A sentinel value that signals a ChildPart to fully clear its content.
     /// </summary>
-    static member nothing = LitHtml.nothing
+    static member nothing = LitBindings.nothing
 
     /// <summary>
     /// Renders a value, usually a lit-html TemplateResult, to the container.
     /// </summary>
     /// <param name="el">The container to render into.</param>
     /// <param name="t">A <see cref="Lit.TemplateResult">TemplateResult</see> to be rendered.</param>
-    static member render el t = LitHtml.render (t, el)
+    static member render el t = LitBindings.render (t, el)
 
     /// <summary>
     /// Generates a single string that filters out false-y values from a tuple sequence.
@@ -221,7 +229,7 @@ type Lit() =
     /// Use memoize only when the template argument can change considerable depending on some condition (e.g. a modal or nothing).
     /// </summary>
     /// <param name="template">A template to be rendered.</param>
-    static member memoize(template: TemplateResult) : TemplateResult = LitHtml.cache template
+    static member memoize(template: TemplateResult) : TemplateResult = LitBindings.cache template
 
     static member ofSeq(items: TemplateResult seq) : TemplateResult = unbox items
 
@@ -234,7 +242,7 @@ type Lit() =
     /// <param name="template">A rendering function based on the items of the sequence.</param>
     /// <param name="items">A sequence of items to be rendered.</param>
     static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq) =
-        LitHtml.repeat (items, getId, (fun x _ -> template x))
+        LitBindings.repeat (items, getId, (fun x _ -> template x))
 
     /// <summary>
     /// Prevents re-render of a template function until a single value or an array of values changes.
@@ -243,7 +251,7 @@ type Lit() =
     /// <param name="view">A render function.</param>
     static member ofLazy (dependencies: obj list) (view: unit -> TemplateResult) : TemplateResult =
         // TODO: Should we try to use F# equality here?
-        LitHtml.guard (List.toArray dependencies, view)
+        LitBindings.guard (List.toArray dependencies, view)
 
     /// <summary>
     /// Shows the placeholder until the promise is resolved
@@ -251,7 +259,7 @@ type Lit() =
     /// <param name="deferred">A promise to be resolved.</param>
     /// <param name="placeholder">A placeholder to be shown while the promise is pending.</param>
     static member ofPromise (placeholder: TemplateResult) (deferred: JS.Promise<TemplateResult>) =
-        LitHtml.until (deferred, placeholder)
+        LitBindings.until (deferred, placeholder)
 
     static member ofStr(v: string) : TemplateResult = unbox v
 
@@ -265,18 +273,18 @@ type Lit() =
     /// Sets the attribute if the value is defined and removes the attribute if the value is undefined.
     /// </summary>
     /// <param name="attributeValue">A value to set the attribute to</param>
-    static member attrOfOption(attributeValue: string option) = LitHtml.ifDefined attributeValue
+    static member attrOfOption(attributeValue: string option) = LitBindings.ifDefined attributeValue
 
-    static member createRef<'T>() : RefValue<'T option> = LitHtml.createRef<'T option> ()
+    static member createRef<'T>() : RefValue<'T option> = LitBindings.createRef<'T option> ()
 
     static member createRef(value: 'T) : RefValue<'T> =
-        let r = LitHtml.createRef<'T> ()
+        let r = LitBindings.createRef<'T> ()
         r.value <- value
         r
 
-    static member refValue<'El when 'El :> Element>(v: RefValue<'El option>) = LitHtml.ref v
+    static member refValue<'El when 'El :> Element>(v: RefValue<'El option>) = LitBindings.ref v
 
-    static member refFn<'El when 'El :> Element>(fn: 'El option -> unit) = LitHtml.ref fn
+    static member refFn<'El when 'El :> Element>(fn: 'El option -> unit) = LitBindings.ref fn
 
     static member inline directive<'Class, 'Arg>() : 'Arg -> TemplateResult =
-        LitHtml.directive JsInterop.jsConstructor<'Class> :?> _
+        LitBindings.directive JsInterop.jsConstructor<'Class> :?> _

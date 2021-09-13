@@ -278,7 +278,7 @@ type HookComponentAttribute() =
 
     override _.Decorate(fn) =
         emitJsExpr (jsConstructor<HookDirective>, fn) "class extends $0 { renderFn = $1 }"
-        |> LitHtml.directive
+        |> LitBindings.directive
         :?> _
 
 /// <summary>

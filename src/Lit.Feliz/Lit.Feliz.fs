@@ -37,7 +37,7 @@ module Util =
         |> Seq.iter (function
             | Style(key, value) -> map?(key) <- value
             | _ -> ())
-        LitHtml.styleMap map
+        LitBindings.styleMap map
 
     let cache = Constructors.WeakMap.Create<string[], string[]>()
 
@@ -136,8 +136,8 @@ module Util =
                 let values = getValues node
                 strings, values
         match node with
-        | SvgNode _ -> LitHtml.svg.Invoke(strings, values)
-        | _ -> LitHtml.html.Invoke(strings, values)
+        | SvgNode _ -> LitBindings.svg.Invoke(strings, values)
+        | _ -> LitBindings.html.Invoke(strings, values)
 
 type Feliz =
     /// Unlike attributes, properties can accept non-string objects

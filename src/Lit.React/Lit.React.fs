@@ -43,7 +43,7 @@ type React =
     static member toLit (reactComponent: 'Props -> ReactElement, ?className: string): 'Props -> TemplateResult =
         emitJsExpr (jsConstructor<ReactDirective>, reactComponent, defaultArg className "")
             "class extends $0 { renderFn = $1; className = $2 }"
-        |> LitHtml.directive :?> _
+        |> LitBindings.directive :?> _
 
     /// <summary>
     /// Renders a lit-html template into a React element
