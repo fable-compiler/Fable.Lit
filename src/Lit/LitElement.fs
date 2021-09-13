@@ -107,12 +107,12 @@ type Prop internal (defaultValue: obj, options: obj) =
     /// Creates a property accessor.
     /// </summary>
     /// <param name="defaultValue">The initialization Value.</param>
-    /// <param name="attribute">The default value of the property.</param>
-    /// <param name="state">The options for the property.</param>
-    /// <param name="reflect">The options for the property.</param>
-    /// <param name="noAccessor">The options for the property.</param>
-    /// <param name="converter">The options for the property.</param>
-    /// <param name="hasChanged">The options for the property.</param>
+    /// <param name="attribute">Name of the HTML attribute (e.g. "my-prop").</param>
+    /// <param name="state">Indicates that this is an internal property not part of the public API.</param>
+    /// <param name="reflect">When the property changes, it should reflect it's value back to the HTML Attribute.</param>
+    /// <param name="noAccessor">Prevent Lit from creating an accessor for this property.</param>
+    /// <param name="converter">Provide a facility to convert between attributes and properties.</param>
+    /// <param name="hasChanged">Provide custom Value Change detection.</param>
     /// <returns>The property accessor.</returns>
     static member Of
         (
