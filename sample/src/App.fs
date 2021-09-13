@@ -159,7 +159,7 @@ let view model dispatch =
 
         {toggleVisible "Clock" model.ShowClock (fun () -> dispatch ToggleClock)}
         {if not model.ShowClock then Lit.nothing
-         else html $"<my-clock hour-color=\"yellow\"></my-clock>"}
+         else html $"<my-clock hour-color=\"yellow\" .reactiveProp={model.ShowReact}></my-clock>"}
 
         {elmishNameInput model.Value (ChangeValue >> dispatch)}
         {LocalNameInput()}

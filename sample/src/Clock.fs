@@ -97,6 +97,7 @@ let initEl (config: LitConfig<_>) =
     config.props <-
         {|
             hourColor = Prop.Of("lightgreen", attribute="hour-color")
+            reactiveProp = Prop.Of(true)
         |}
 
     config.styles <- [
@@ -123,6 +124,7 @@ let initEl (config: LitConfig<_>) =
 let Clock() =
     let props = LitElement.init initEl
     let hourColor = props.hourColor.Value
+    let reactiveProp = props.reactiveProp.Value
 
     let model, dispatch = Hook.useElmish(init, update)
     let time = model.CurrentTime
@@ -152,6 +154,7 @@ let Clock() =
 
         <div class="container">
             <p>This is a clock</p>
+            <p>React is {if reactiveProp then "On" else "Off"} </p>
             {select colors model.MinuteHandColor (MinuteHandColor >> dispatch)}
         </div>
     """
