@@ -6,6 +6,9 @@ open Fable.Core.JsInterop
 open Browser
 
 module internal HookUtil =
+    let delay ms f =
+        JS.setTimeout f ms |> ignore
+
     [<RequireQualifiedAccess>]
     type Effect =
         | OnConnected of (unit -> IDisposable)
@@ -58,6 +61,15 @@ module internal HookUtil =
 
 open HookUtil
 
+[<RequireQualifiedAccess>]
+type Transition = Entering | IsIn | Leaving | IsOut
+
+type TransitionManager =
+    abstract state: Transition
+    abstract active: bool
+    abstract triggerEnter: ?onComplete: (unit -> unit) -> unit
+    abstract triggerLeave: ?onComplete: (unit -> unit) -> unit
+
 type Cmd<'Msg> = (('Msg -> unit) -> unit) list
 
 type IHookProvider =
@@ -65,7 +77,7 @@ type IHookProvider =
     abstract useRef: init: (unit -> 'T) -> RefValue<'T>
     abstract useEffect: effect: (unit -> unit) -> unit
     abstract useEffectOnce: effect: (unit -> IDisposable) -> unit
-    abstract useElmish : init: (unit -> 'State * Cmd<'Msg>) * update: ('Msg -> 'State -> 'State * Cmd<'Msg>) -> 'State * ('Msg -> unit)
+    abstract useElmish: init: (unit -> 'State * Cmd<'Msg>) * update: ('Msg -> 'State -> 'State * Cmd<'Msg>) -> 'State * ('Msg -> unit)
 
 type RenderFn = delegate of [<ParamArray>] args: obj[] -> TemplateResult
 
@@ -436,3 +448,31 @@ type Hook() =
                         cts.value.Dispose()))
 
         token
+
+    static member inline useTransition(ms: int) =
+        Hook.useTransition(jsThis, ms)
+
+    static member useTransition(this: IHookProvider, ms: int): TransitionManager =
+        let transition, setTransition = this.useState(fun () -> Transition.IsOut)
+
+        let trigger onComplete middleState finalState =
+            delay ms (fun () ->
+                onComplete |> Option.iter (fun f -> f())
+                setTransition finalState)
+            setTransition middleState
+
+        this.useEffectOnce(fun () ->
+            trigger None Transition.Entering Transition.IsIn
+            Hook.emptyDisposable)
+
+        { new TransitionManager with
+            member _.state = transition
+            member _.active =
+                match transition with
+                | Transition.Entering | Transition.Leaving -> true
+                | Transition.IsIn | Transition.IsOut -> false
+            member _.triggerEnter(?onComplete) =
+                trigger onComplete Transition.Entering Transition.IsIn
+            member _.triggerLeave(?onComplete) =
+                trigger onComplete Transition.Leaving Transition.IsOut
+        }
