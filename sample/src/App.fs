@@ -170,7 +170,7 @@ let clockDisplay model dispatch =
     let clockContainer() =
         html $"""
             <div style={style}>
-                <my-clock hour-color="yellow"></my-clock>"
+                <my-clock hour-color="yellow" .reactiveProp={model.ShowReact}></my-clock>"
             </div>
         """
 
@@ -197,7 +197,6 @@ let view model dispatch =
          else ReactLitComponent model.ShowClock}
 
         <br />
-
         {clockDisplay model dispatch}
 
         {elmishNameInput model.Value (ChangeValue >> dispatch)}
