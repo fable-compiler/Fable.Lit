@@ -4,6 +4,13 @@ open Fable.Core
 open Fable.Core.JsInterop
 
 module private LitElementUtil =
+    module Types =
+        let [<Global>] String = obj()
+        let [<Global>] Number = obj()
+        let [<Global>] Boolean = obj()
+        let [<Global>] Array = obj()
+        let [<Global>] Object = obj()
+
     let isDefined (x: obj) = not(isNull x)
     let failInit() = failwith "LitElement.init must be called on top of the render function"
     let failProps(key: string) = failwith $"'{key}' field in `props` record is not of Prop<'T> type"
@@ -16,52 +23,27 @@ module private LitElementUtil =
 
 open LitElementUtil
 
-/// <summary>
-/// The first parameter is the value from the HTML Attribute
-/// The second parameter is the kind of the property provided in the `type` field of the `Prop` type
-/// This should convert the value from a string to the correct representation of the property type
-/// </summary>
-type FromAttributeConverter = 
-    string option -> obj option -> obj
-
-/// <summary>
-/// The first parameter is the object from the Custom Element
-/// The second parameter is the kind of the property provided in the `type` field of the `Prop` type
-/// This should serialize the object value propperly to a string that can be deserialized back with the `FromAttributeConverter` function
-/// </summary>
-type ToAttributeConverter = 
-    obj option -> obj option -> string
-
-/// <summary>
-/// The first parameter is the old value
-/// The second parameter is the new value
-/// this should return true if the new value is different from the old value
-/// </summary>
-type HasPropertyChanged = 
-    obj -> obj -> bool
+type Converter =
+    abstract fromAttribute: JS.Function with get, set
+    abstract toAttribute: JS.Function with get, set
 
 type PropConfig =
     /// <summary>
     /// JS Constructor to help with value change detection and comparison.
     /// Indicates the type of the property. This is used only as a hint for the
-    /// `converter` to determine how to convert the attribute
-    /// to/from a property.
+    /// `converter` to determine how to convert the attribute to/from a property.
     /// `Boolean`, `String`, `Number`, `Object`, and `Array` should be used.
     /// </summary>
-    abstract ``type``: string with get, set
+    abstract ``type``: obj with get, set
     /// <summary>
     /// Indicates the property becomes an observed attribute.
-    /// the lowercase.
-    /// Indicates the property becomes an observed attribute.
-    /// the string value is observed (e.g 'color-depth').
     /// </summary>
     /// <remarks>The value has to be lower-cased and dash-cased due to the HTML Spec.</remarks>
     abstract attribute: U2<string, bool> with get, set
     /// <summary>
-    /// Indicates the property is internal private state. The
-    /// property should not be set by users. A common
-    /// practice to use a leading `_` in the name. The property is not added to
-    /// `observedAttributes`.
+    /// Indicates the property is internal private state. The property should not be set by users.
+    /// A common practice is to use a leading `_` in the name.
+    /// The property is not added to `observedAttributes`.
     /// </summary>
     abstract state: bool with get, set
     /// <summary>
@@ -72,7 +54,6 @@ type PropConfig =
     /// from the `converter` property option.
     /// </summary>
     abstract reflect: bool with get, set
-
     /// <summary>
     /// Indicates whether an accessor will be created for this property. By
     /// default, an accessor will be generated for this property that requests an
@@ -92,72 +73,66 @@ type PropConfig =
     /// and the converter is used to update the attribute,
     /// the property is never updated again as a result of the attribute changing, and vice versa.
     /// </summary>
-    abstract converter:
-        U2<{| fromAttribute: FromAttributeConverter
-              toAttribute: ToAttributeConverter |}, FromAttributeConverter> with get, set
+    abstract converter: Converter with get, set
 
-    abstract hasChanged: HasPropertyChanged with get, set
+    abstract hasChanged: JS.Function with get, set
 
 type Prop internal (defaultValue: obj, options: obj) =
     member internal _.ToConfig() = defaultValue, options
 
     // Using static member instead of constructor in case we need to inline later
     // (e.g. to get the type of an empty array)
+
     /// <summary>
     /// Creates a property accessor.
     /// </summary>
-    /// <param name="defaultValue">The initialization Value.</param>
-    /// <param name="attribute">Name of the HTML attribute (e.g. "my-prop").</param>
-    /// <param name="state">Indicates that this is an internal property not part of the public API.</param>
-    /// <param name="reflect">When the property changes, it should reflect it's value back to the HTML Attribute.</param>
-    /// <param name="noAccessor">Prevent Lit from creating an accessor for this property.</param>
-    /// <param name="converter">Provide a facility to convert between attributes and properties.</param>
-    /// <param name="hasChanged">Provide custom Value Change detection.</param>
+    /// <param name="defaultValue">The initialization value.</param>
+    /// <param name="attribute">Custom name of the HTML attribute (e.g. "my-prop"). Pass an empty string to disable exposing an HTML attribute. [More info](https://lit.dev/docs/components/properties/#observed-attributes).</param>
+    /// <param name="hasChanged">Custom value change detection. [More info](https://lit.dev/docs/components/properties/#haschanged)</param>
+    /// <param name="fromAttribute">Convert from the string attribute to the typed property. [More info](https://lit.dev/docs/components/properties/#conversion-converter).</param>
+    /// <param name="toAttribute">Convert from the typed property to the string attribute. [More info](https://lit.dev/docs/components/properties/#conversion-converter).</param>
+    /// <param name="reflect">When the property changes, reflect its value back to the HTML attribute (default: false). [More info](https://lit.dev/docs/components/properties/#reflected-attributes).</param>
     /// <returns>The property accessor.</returns>
     static member Of
         (
             defaultValue: 'T,
             ?attribute: string,
-            ?state: bool,
-            ?reflect: bool,
-            ?noAccessor: bool,
-            ?converter: FromAttributeConverter,
-            ?hasChanged: HasPropertyChanged
+            ?hasChanged: 'T -> 'T -> bool,
+            ?fromAttribute: string -> 'T,
+            ?toAttribute: 'T -> string,
+            ?reflect: bool
         ) =
         let options = jsOptions<PropConfig>(fun o ->
-            // 
-            match state with
-            | Some true -> o.state <- true
-            | Some false
-            | None ->
-                let typ =
-                    match box defaultValue with
-                    | :? string -> Some "String"
-                    | :? int | :? float -> Some "Number"
-                    // TODO: I'm having issues with boolean attributes,
-                    // maybe they're faulty in the current Lit 2 RC?
-                    | :? bool -> Some "Boolean"
-                    // even for custom types, Lit uses JSON. stringify/parse by default
-                    | _ -> Some "Object"
-                state |> Option.iter (fun s -> o.state <- s)
-                typ |> Option.iter (fun v -> o.``type`` <- v)
-                state |> Option.iter (fun v -> o.state <- v)
-                reflect |> Option.iter (fun v -> o.reflect <- v)
-                noAccessor |> Option.iter (fun v -> o.noAccessor <- v)
-                converter |> Option.iter (fun v -> o.converter <- unbox v)
-                hasChanged |> Option.iter (fun v -> o.hasChanged <- v)
-                attribute |> Option.iter (fun att ->
-                    match att.Trim() with
-                    // Let's use empty string to sign no attribute,
-                    // although we may need to be more explicit later
-                    | null | "" -> o.attribute <- !^false
-                    | att -> o.attribute <- !^att)
+            let typ =
+                match box defaultValue with
+                | :? string -> Some Types.String
+                | :? int | :? float -> Some Types.Number
+                | :? bool -> Some Types.Boolean
+                // TODO: Detect if it's an array of primitives or a record and use Array/Object
+                | _ -> None
+            typ |> Option.iter (fun v -> o.``type`` <- v)
+            reflect |> Option.iter (fun v -> o.reflect <- v)
+            hasChanged |> Option.iter (fun v -> o.hasChanged <- unbox v)
+            attribute |> Option.iter (fun att ->
+                match att.Trim() with
+                // Let's use empty string to sign no attribute,
+                // although we may need to be more explicit later
+                | null | "" -> o.attribute <- !^false
+                | att -> o.attribute <- !^att)
+            match fromAttribute, toAttribute with
+            | Some _, _ | _, Some _ ->
+                o.converter <- jsOptions<Converter>(fun o ->
+                    fromAttribute |> Option.iter (fun v -> o.fromAttribute <- unbox v)
+                    toAttribute |> Option.iter (fun v -> o.toAttribute <- unbox v)
+                )
+            | _ -> ()
         )
         Prop<'T>(defaultValue, options)
 
 and Prop<'T> internal (defaultValue: 'T, options: obj) =
     inherit Prop(defaultValue, options)
-    [<Emit("$0")>] member _.Value = defaultValue
+    [<Emit("$0{{ = $1}}")>]
+    member _.Value with get() = defaultValue and set(_: 'T) = ()
 
 type LitConfig<'Props> =
     abstract props: 'Props with get, set

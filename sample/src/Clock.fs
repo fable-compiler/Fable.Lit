@@ -6,7 +6,7 @@ open Browser.Types
 open Elmish
 open Lit
 open Helpers
-open Fable.Core.JsInterop
+
 type Model =
     { CurrentTime: DateTime
       IntervalId: int
@@ -74,13 +74,6 @@ let clockHand (color: string) (time: Time) =
         {handTop color time}
     """
 
-let colors = [
-    "white"
-    "red"
-    "yellow"
-    "purple"
-]
-
 let select options value dispatch =
     let option value =
         html $"""<option value={value}>{value}</option>"""
@@ -94,14 +87,28 @@ let select options value dispatch =
     """
 
 let initEl (config: LitConfig<_>) =
+    let split (str: string) =
+        str.Split(',') |> Array.map (fun x -> x.Trim()) |> Array.toList
+
     config.props <-
         {|
             hourColor = Prop.Of("lightgreen", attribute="hour-color")
-            reactiveProp = Prop.Of(true)
+            minuteColors = Prop.Of([], attribute="minute-colors", fromAttribute = split)
+            evenColor = Prop.Of(false, attribute="even-color", reflect=true)
         |}
 
     config.styles <- [
         css $"""
+            :host {{
+                display: block;
+                /* Add also the border width to prevent jumps when (de)activating it */
+                padding: 8px;
+            }}
+            :host([even-color]) {{
+                padding: 5px;
+                border: 3px solid palevioletred;
+                border-radius: 20px;
+            }}
             .container {{
                 display: flex;
                 align-items: center;
@@ -124,7 +131,7 @@ let initEl (config: LitConfig<_>) =
 let Clock() =
     let props = LitElement.init initEl
     let hourColor = props.hourColor.Value
-    let reactiveProp = props.reactiveProp.Value
+    let colors = props.minuteColors.Value
 
     let model, dispatch = Hook.useElmish(init, update)
     let time = model.CurrentTime
@@ -154,8 +161,11 @@ let Clock() =
 
         <div class="container">
             <p>This is a clock</p>
-            <p>React is {if reactiveProp then "On" else "Off"} </p>
-            {select colors model.MinuteHandColor (MinuteHandColor >> dispatch)}
+            {select colors model.MinuteHandColor (fun color ->
+                List.tryFindIndex ((=) color) colors
+                |> Option.iter (fun i ->
+                    props.evenColor.Value <- (i + 1) % 2 = 0)
+                MinuteHandColor color |> dispatch)}
         </div>
     """
 

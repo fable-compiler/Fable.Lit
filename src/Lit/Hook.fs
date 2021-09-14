@@ -61,7 +61,6 @@ module internal HookUtil =
 
 open HookUtil
 
-[<RequireQualifiedAccess>]
 type Transition = Entering | IsIn | Leaving | IsOut
 
 type TransitionManager =
@@ -453,7 +452,7 @@ type Hook() =
         Hook.useTransition(jsThis, ms)
 
     static member useTransition(this: IHookProvider, ms: int): TransitionManager =
-        let transition, setTransition = this.useState(fun () -> Transition.IsOut)
+        let transition, setTransition = this.useState(fun () -> IsOut)
 
         let trigger onComplete middleState finalState =
             delay ms (fun () ->
@@ -462,17 +461,17 @@ type Hook() =
             setTransition middleState
 
         this.useEffectOnce(fun () ->
-            trigger None Transition.Entering Transition.IsIn
+            trigger None Entering IsIn
             Hook.emptyDisposable)
 
         { new TransitionManager with
             member _.state = transition
             member _.active =
                 match transition with
-                | Transition.Entering | Transition.Leaving -> true
-                | Transition.IsIn | Transition.IsOut -> false
+                | Entering | Leaving -> true
+                | IsIn | IsOut -> false
             member _.triggerEnter(?onComplete) =
-                trigger onComplete Transition.Entering Transition.IsIn
+                trigger onComplete Entering IsIn
             member _.triggerLeave(?onComplete) =
-                trigger onComplete Transition.Leaving Transition.IsOut
+                trigger onComplete Leaving IsOut
         }

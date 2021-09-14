@@ -156,21 +156,29 @@ let clockDisplay model dispatch =
     let transition = Hook.useTransition(transitionMs)
 
     let style =
-        String.concat " " [
+        [
             inline_css $""".{{
-                transition-property: all;
-                transition-duration: {transitionMs}ms;
+                transition-duration: {transitionMs}ms
             }}"""
             match transition.state with
-            | Transition.IsOut -> inline_css """.{ opacity: 0; transform: scale(0.1) }"""
-            | Transition.Entering | Transition.IsIn -> inline_css """.{ opacity: 1; transform: scale(1)}"""
-            | Transition.Leaving -> inline_css """.{ opacity: 0; transform: scale(2) }"""
+            | Entering | IsIn -> ""
+            | IsOut -> inline_css $""".{{
+                opacity: 0;
+                transform: scale(2) rotate(0.5turn)
+            }}"""
+            | Leaving -> inline_css $""".{{
+                opacity: 0;
+                transform: scale(0.1) rotate(-0.5turn)
+            }}"""
         ]
+        |> String.concat "; "
 
     let clockContainer() =
         html $"""
             <div style={style}>
-                <my-clock hour-color="yellow" .reactiveProp={model.ShowReact}></my-clock>"
+                <my-clock
+                    minute-colors="white, red, yellow, purple"
+                    hour-color="yellow"></my-clock>
             </div>
         """
 
