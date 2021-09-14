@@ -33,3 +33,13 @@ let Disposable(r: RefValue<int>) =
         <button class="decr" @click={fun _ -> value - 1 |> setValue}>Decrement</value>
       </div>
     """
+
+[<HookComponent>]
+let DisposableContainer(r: RefValue<int>) =
+    let disposed, setDisposed = Hook.useState false
+    html $"""
+      <div>
+        <button class="dispose" @click={fun _ -> setDisposed true}>Dispose!</button>
+        {if not disposed then Disposable(r) else Lit.nothing}
+      </div>
+    """
