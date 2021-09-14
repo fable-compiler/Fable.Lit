@@ -151,31 +151,25 @@ let itemList model =
     """
 
 [<HookComponent>]
-let clockDisplay model dispatch =
-    let transitionMs = 500
-    let transition = Hook.useTransition(transitionMs)
-
-    let style =
-        [
-            inline_css $""".{{
-                transition-duration: {transitionMs}ms
-            }}"""
-            match transition.state with
-            | Entering | IsIn -> ""
-            | IsOut -> inline_css $""".{{
+let ClockDisplay model dispatch =
+    let transition =
+        Hook.useTransition(
+            ms = 800,
+            cssBefore = inline_css $""".{{
                 opacity: 0;
-                transform: scale(2) rotate(0.5turn)
-            }}"""
-            | Leaving -> inline_css $""".{{
+                transform: scale(2) rotate(1turn)
+            }}""",
+            cssAfter = inline_css $""".{{
                 opacity: 0;
-                transform: scale(0.1) rotate(-0.5turn)
-            }}"""
-        ]
-        |> String.concat "; "
+                transform: scale(0.1) rotate(-1.5turn)
+            }}""",
+            onComplete = fun isIn ->
+                if model.ShowClock <> isIn then dispatch ToggleClock
+        )
 
     let clockContainer() =
         html $"""
-            <div style={style}>
+            <div style={transition.css}>
                 <my-clock
                     minute-colors="white, red, yellow, purple"
                     hour-color="yellow"></my-clock>
@@ -186,14 +180,9 @@ let clockDisplay model dispatch =
     html $"""
         <div style="{Styles.verticalContainer}">
             {toggleVisible "Clock" model.ShowClock isButtonEnabled (fun () ->
-                if model.ShowClock then
-                    transition.triggerLeave(fun () -> dispatch ToggleClock)
-                else
-                    dispatch ToggleClock
-                    transition.triggerEnter()
-            )}
+                transition.trigger(not model.ShowClock))}
 
-            {if not model.ShowClock then Lit.nothing else clockContainer()}
+            {if transition.out then Lit.nothing else clockContainer()}
         </div>
     """
 
@@ -205,7 +194,7 @@ let view model dispatch =
          else ReactLitComponent model.ShowClock}
 
         <br />
-        {clockDisplay model dispatch}
+        {ClockDisplay model dispatch}
 
         {elmishNameInput model.Value (ChangeValue >> dispatch)}
         {LocalNameInput()}

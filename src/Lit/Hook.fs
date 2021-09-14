@@ -6,6 +6,13 @@ open Fable.Core.JsInterop
 open Browser
 
 module internal HookUtil =
+    let createDisposable(f: unit -> unit) =
+        { new IDisposable with
+            member _.Dispose() = f () }
+
+    let emptyDisposable =
+        createDisposable ignore
+
     let delay ms f =
         JS.setTimeout f ms |> ignore
 
@@ -61,13 +68,24 @@ module internal HookUtil =
 
 open HookUtil
 
-type Transition = Entering | IsIn | Leaving | IsOut
+type TransitionState = IsOut | AboutToEnter | Entering | IsIn | Leaving
+
+type Transition(ms: int, ?cssBefore: string, ?cssIdle: string, ?cssAfter: string, ?onComplete: bool -> unit) =
+    member _.ms = ms
+    member _.cssBefore = defaultArg cssBefore ""
+    member _.cssIdle = defaultArg cssIdle ""
+    member _.cssAfter =
+        match cssAfter, cssBefore with
+        | Some v, _ | _, Some v -> v
+        | None, None -> ""
+    member _.onComplete(isIn: bool) = match onComplete with Some f -> f isIn | None -> ()
 
 type TransitionManager =
-    abstract state: Transition
+    abstract state: TransitionState
     abstract active: bool
-    abstract triggerEnter: ?onComplete: (unit -> unit) -> unit
-    abstract triggerLeave: ?onComplete: (unit -> unit) -> unit
+    abstract out: bool
+    abstract css: string
+    abstract trigger: isIn: bool -> unit
 
 type Cmd<'Msg> = (('Msg -> unit) -> unit) list
 
@@ -78,6 +96,24 @@ type IHookProvider =
     abstract useEffectOnce: effect: (unit -> IDisposable) -> unit
     abstract useElmish: init: (unit -> 'State * Cmd<'Msg>) * update: ('Msg -> 'State -> 'State * Cmd<'Msg>) -> 'State * ('Msg -> unit)
 
+[<AutoOpen>]
+module HookExtensions =
+    type TransitionManager with
+        member this.triggerEnter() = this.trigger(true)
+        member this.triggerLeave() = this.trigger(false)
+
+    type IHookProvider with
+        member this.useEffectOnce(effect: (unit -> unit)) =
+            this.useEffectOnce(fun () ->
+                effect()
+                emptyDisposable)
+
+        member this.useState(v: 'T) =
+            this.useState(fun () -> v)
+
+        member this.useRef(v: 'T) =
+            this.useRef(fun () -> v)
+
 type RenderFn = delegate of [<ParamArray>] args: obj[] -> TemplateResult
 
 [<AttachMembers>]
@@ -86,8 +122,8 @@ type HookProvider(renderFn: RenderFn, triggerRender: Action<HookProvider>, isCon
     let mutable _rendering = false
 
     let mutable _stateIndex = 0
+    let mutable _effectIndex = 0
     let _states = ResizeArray<obj>()
-
     let _effects = ResizeArray<Effect>()
     let _disposables = ResizeArray<IDisposable>()
 
@@ -99,10 +135,13 @@ type HookProvider(renderFn: RenderFn, triggerRender: Action<HookProvider>, isCon
 
     member this.render() =
         _stateIndex <- 0
+        _effectIndex <- 0
         _rendering <- true
+
         let res = renderFn.Invoke(this.args)
-        // TODO: Do same check for effects?
-        if not _firstRun && _stateIndex <> _states.Count then
+
+        if not _firstRun &&
+            (_stateIndex <> _states.Count || _effectIndex <> _effects.Count) then
             this.fail ()
 
         _rendering <- false
@@ -116,9 +155,9 @@ type HookProvider(renderFn: RenderFn, triggerRender: Action<HookProvider>, isCon
     member this.checkRendering() = if not _rendering then this.fail ()
 
     member _.runAsync(f: unit -> unit) =
-        // JS.setTimeout f 0 |> ignore
-        window.requestAnimationFrame (fun _ -> f ())
-        |> ignore
+        // When using requestAnimationFrame some browsers (Firefox) skip renders
+        // window.requestAnimationFrame (fun _ -> f ()) |> ignore
+        JS.setTimeout f 0 |> ignore
 
     member this.runEffects(onConnected: bool, onRender: bool) =
         this.runAsync
@@ -187,13 +226,24 @@ type HookProvider(renderFn: RenderFn, triggerRender: Action<HookProvider>, isCon
         else
             this.getState () |> snd
 
-    member _.useEffect(effect) : unit =
-        if _firstRun then
-            _effects.Add(Effect.OnRender effect)
+    member private this.setEffect(effect) : unit =
+        this.checkRendering ()
 
-    member _.useEffectOnce(effect) : unit =
         if _firstRun then
-            _effects.Add(Effect.OnConnected effect)
+            _effects.Add(effect)
+        else
+            if _effectIndex >= _effects.Count then
+                this.fail ()
+
+            let idx = _effectIndex
+            _effectIndex <- idx + 1
+            _effects.[idx] <- effect
+
+    member this.useEffect(effect) : unit =
+        this.setEffect(Effect.OnRender effect)
+
+    member this.useEffectOnce(effect) : unit =
+        this.setEffect(Effect.OnConnected effect)
 
     member this.useElmish(init, update) =
         if _firstRun then
@@ -249,6 +299,7 @@ type HookProvider(renderFn: RenderFn, triggerRender: Action<HookProvider>, isCon
             _states.[index] <- (state, dispatch)
             state, dispatch
         else
+            _effectIndex <- _effectIndex + 1
             this.getState () |> snd
 
 [<AttachMembers>]
@@ -300,13 +351,9 @@ type HookComponentAttribute() =
 /// and may not be 100% compatible with the react hooks.
 /// </remarks>
 type Hook() =
-    static member createDisposable(f: unit -> unit) =
-        { new IDisposable with
-            member _.Dispose() = f () }
+    static member createDisposable(f: unit -> unit) = createDisposable f
 
-    static member emptyDisposable =
-        { new IDisposable with
-            member _.Dispose() = () }
+    static member emptyDisposable = emptyDisposable
 
     /// <summary>
     /// returns a tuple with an immutable value and a setter function for the provided value
@@ -448,30 +495,43 @@ type Hook() =
 
         token
 
-    static member inline useTransition(ms: int) =
-        Hook.useTransition(jsThis, ms)
+    static member inline useTransition(ms, ?cssBefore, ?cssIdle, ?cssAfter, ?onComplete) =
+        Hook.useTransition(jsThis, Transition(ms, ?cssBefore=cssBefore, ?cssIdle=cssIdle, ?cssAfter=cssAfter, ?onComplete=onComplete))
 
-    static member useTransition(this: IHookProvider, ms: int): TransitionManager =
-        let transition, setTransition = this.useState(fun () -> IsOut)
+    static member useTransition(this: IHookProvider, transition: Transition): TransitionManager =
+        let state, setState = this.useState(fun () -> AboutToEnter)
 
-        let trigger onComplete middleState finalState =
-            delay ms (fun () ->
-                onComplete |> Option.iter (fun f -> f())
-                setTransition finalState)
-            setTransition middleState
+        let trigger isIn =
+            let middleState, finalState =
+                if isIn then Entering, IsIn
+                else Leaving, IsOut
+            delay transition.ms (fun () ->
+                transition.onComplete(isIn)
+                setState finalState)
+            setState middleState
 
-        this.useEffectOnce(fun () ->
-            trigger None Entering IsIn
-            Hook.emptyDisposable)
+        this.useEffect(fun () ->
+            match state with
+            | AboutToEnter -> trigger true
+            | _ -> ())
 
         { new TransitionManager with
-            member _.state = transition
+            member _.css =
+                $"transition-duration: {transition.ms}ms; " +
+                    match state with
+                    | IsOut | AboutToEnter -> transition.cssBefore
+                    | Entering | IsIn -> transition.cssIdle
+                    | Leaving -> transition.cssAfter
+            member _.state = state
             member _.active =
-                match transition with
-                | Entering | Leaving -> true
+                match state with
+                | AboutToEnter | Entering | Leaving -> true
                 | IsIn | IsOut -> false
-            member _.triggerEnter(?onComplete) =
-                trigger onComplete Entering IsIn
-            member _.triggerLeave(?onComplete) =
-                trigger onComplete Leaving IsOut
+            member _.out =
+                match state with
+                | IsOut -> true
+                | _ -> false
+            member _.trigger(isIn) =
+                if isIn then setState AboutToEnter
+                else trigger false
         }
