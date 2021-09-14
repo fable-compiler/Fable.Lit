@@ -14,6 +14,7 @@ type TemplateResult =
 type RefValue<'T> =
     abstract value : 'T with get, set
 
+    /// Alias of `value` for compatibility with React's refs
     [<Emit("$0.value")>]
     abstract current : 'T with get, set
 

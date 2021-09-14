@@ -79,11 +79,12 @@ module ReactLib =
 let ReactLitComponent =
     React.toLit ReactLib.MyComponent
 
-let toggleVisible (txt: string) (isVisible: bool) (onClick: unit -> unit) =
+let toggleVisible (txt: string) (isVisible: bool) (isEnabled: bool) (onClick: unit -> unit) =
     html $"""
         <button class="button"
                 style="margin: 1rem 0"
-                @click={onClick}>
+                @click={onClick}
+                ?disabled={not isEnabled}>
           {if isVisible then Lit.ofText $"Hide {txt}"
            else html $"<strong>Show {txt}</strong>"}
         </button>
@@ -149,17 +150,54 @@ let itemList model =
       </div>
     """
 
+[<HookComponent>]
+let clockDisplay model dispatch =
+    let transitionMs = 500
+    let transition = Hook.useTransition(transitionMs)
+
+    let style =
+        String.concat " " [
+            inline_css $""".{{
+                transition-property: all;
+                transition-duration: {transitionMs}ms;
+            }}"""
+            match transition.state with
+            | Transition.IsOut -> inline_css """.{ opacity: 0; transform: scale(0.1) }"""
+            | Transition.Entering | Transition.IsIn -> inline_css """.{ opacity: 1; transform: scale(1)}"""
+            | Transition.Leaving -> inline_css """.{ opacity: 0; transform: scale(2) }"""
+        ]
+
+    let clockContainer() =
+        html $"""
+            <div style={style}>
+                <my-clock hour-color="yellow" .reactiveProp={model.ShowReact}></my-clock>"
+            </div>
+        """
+
+    let isButtonEnabled = not transition.active
+    html $"""
+        <div style="{Styles.verticalContainer}">
+            {toggleVisible "Clock" model.ShowClock isButtonEnabled (fun () ->
+                if model.ShowClock then
+                    transition.triggerLeave(fun () -> dispatch ToggleClock)
+                else
+                    dispatch ToggleClock
+                    transition.triggerEnter()
+            )}
+
+            {if not model.ShowClock then Lit.nothing else clockContainer()}
+        </div>
+    """
+
 let view model dispatch =
     html $"""
       <div style={Styles.verticalContainer}>
-
-        {toggleVisible "React" model.ShowReact (fun () -> dispatch ToggleReact)}
+        {toggleVisible "React" model.ShowReact true (fun () -> dispatch ToggleReact)}
         {if not model.ShowReact then Lit.nothing
          else ReactLitComponent model.ShowClock}
 
-        {toggleVisible "Clock" model.ShowClock (fun () -> dispatch ToggleClock)}
-        {if not model.ShowClock then Lit.nothing
-         else html $"<my-clock hour-color=\"yellow\" .reactiveProp={model.ShowReact}></my-clock>"}
+        <br />
+        {clockDisplay model dispatch}
 
         {elmishNameInput model.Value (ChangeValue >> dispatch)}
         {LocalNameInput()}
