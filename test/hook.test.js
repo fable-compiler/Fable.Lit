@@ -43,4 +43,48 @@ describe('Hook', () => {
         expect(r.value).to.equals(19);
     });
 
+    it("useMemo doesn't change without dependencies", async () => {
+        const el = await fixture(html`${Components.MemoizedValue()}`);
+        const state = el.querySelector("#state-btn");
+        const second = el.querySelector("#second-btn");
+
+        state.click();
+        expect(el.querySelector("#state")).dom.text('11');
+        // un-related re-renders shouldn't affect memoized value
+        expect(el.querySelector("#memoized")).dom.text('1');
+        // change second value trice
+        second.click(); second.click(); second.click();
+
+        // second should have changed
+        expect(el.querySelector("#second")).dom.text('3');
+        // memoized value should have not changed
+        expect(el.querySelector("#memoized")).dom.text('1');
+    });
+
+    it("useElmish dispatches messages correctly", async () => {
+        const el = await fixture(html`${Components.ElmishComponent()}`);
+        const inc = el.querySelector("#inc");
+        const decr = el.querySelector("#decr");
+        const delayedReset = el.querySelector("#delay-reset");
+        // normal dispatch works
+        expect(el.querySelector("#count")).dom.text("0");
+        inc.click(); inc.click();
+
+        // normal dispatch works
+        expect(el.querySelector("#count")).dom.text("2");
+        decr.click(); decr.click();
+
+        expect(el.querySelector("#count")).dom.text("0");
+        decr.click(); decr.click();
+
+        // normal dispatch works
+        expect(el.querySelector("#count")).dom.text("-2");
+
+        delayedReset.click();
+        await sleep(500);
+        // dispatch with async cmd works
+        expect(el.querySelector("#count")).dom.text("0");
+    });
+
+
 });
