@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Hook.fs" />
+    <Compile Include="LitElement.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\Lit\Lit.fsproj" />
