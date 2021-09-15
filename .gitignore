@@ -3,6 +3,7 @@
 */public/*.txt
 */public/*.png
 out/
+bundle.js*
 
 .idea/
 
