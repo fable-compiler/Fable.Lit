@@ -39,5 +39,4 @@ type System.DateTime with
 type Browser.Types.EventTarget with
     member this.Value = (this :?> Browser.Types.HTMLInputElement).value
 
-let evTargetValue (ev: Browser.Types.Event) =
-    ev.target.Value
+let inline Ev (f: Browser.Types.Event -> unit) = f

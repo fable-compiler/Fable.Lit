@@ -1,5 +1,6 @@
 module App
 
+open Browser
 open Browser.Types
 open Fable.Core
 open Fable.Core.JsInterop
@@ -18,7 +19,7 @@ module Ionic =
         abstract onDidDismiss: unit -> JS.Promise<Role>
 
     type PopoverOptions =
-        abstract ``component``: string with get, set
+        abstract ``component``: obj with get, set
         abstract componentProps: obj with get, set
         abstract event: Event with get, set
         abstract translucent: bool with get, set
@@ -28,14 +29,25 @@ module Ionic =
 
     let popoverController: PopoverController = importMember "@ionic/core/dist/ionic/index.esm.js"
 
+    let showPopover (render: Popover -> Lit.TemplateResult) (ev: Event) =
+        promise {
+            let contentEl = document.createElement("div")
+            let! p = popoverController.create(jsOptions(fun o ->
+                o.event <- ev
+                o.translucent <- true
+                o.``component`` <- contentEl
+            ))
+            render p |> Lit.render contentEl
+            do! p.present()
+            return p
+        }
+
 open Ionic
 
 type Model = unit
 
 type Msg =
     | OpenDocs
-    | PopoverClosed of Role
-    | OpenPopover of Event * componentName: string * componentProps: obj
 
 let initialState() =
     (), Cmd.none
@@ -43,33 +55,11 @@ let initialState() =
 let update msg model =
     match msg with
     | OpenDocs ->
-        JS.console.log("Open docs")
+        console.log("Open docs")
         model, Cmd.none
-    | PopoverClosed role ->
-        JS.console.log("Popover closed", role)
-        model, Cmd.none
-    | OpenPopover(ev, componentName, componentProps) ->
-        model, promise {
-            let! p = popoverController.create(jsOptions(fun o ->
-                o.event <- ev
-                o.translucent <- true
-                o.``component`` <- componentName
-                o.componentProps <- componentProps
-            ))
-            do! p.present()
-            let! role = p.onDidDismiss()
-            return PopoverClosed role
-        } |> Cmd.OfPromise.result
 
-[<LitElement("popover-content")>]
-let PopoverContent() =
-    let props = LitElement.init (fun cfg ->
-        cfg.props <- {| dispatch = Prop.Of<Msg -> unit>()
-                        // This property is assigned automatically by the popover
-                        popover = Prop.Of<Popover>() |}
-    )
-    let dispatch = props.dispatch.Value
-    let dismiss() = props.popover.Value.dismiss() |> Promise.start
+let popoverContent dispatch (p: Popover)  =
+    let dismiss() = p.dismiss() |> Promise.start
     html $"""
       <ion-list>
         <ion-list-header>Ionic</ion-list-header>
@@ -102,8 +92,7 @@ let view model dispatch =
     </ion-header>
 
     <ion-content fullscreen class="ion-padding">
-      <ion-button expand="block" @click={fun (ev: Event) ->
-        OpenPopover(ev, "popover-content", {| dispatch = dispatch |}) |> dispatch}>
+      <ion-button expand="block" @click={showPopover (popoverContent dispatch)}>
         Show Popover
       </ion-button>
     </ion-content>
