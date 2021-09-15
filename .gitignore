@@ -4,6 +4,8 @@
 */public/*.png
 out/
 bundle.js*
+sample/public/assets
+sample/android
 
 .idea/
 

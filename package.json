@@ -1,7 +1,7 @@
 {
     "private": true,
     "scripts": {
-        "install": "dotnet tool restore",
+        "postinstall": "dotnet tool restore",
         "publish": "dotnet fsi build.fsx publish",
         "test": "dotnet fable test --run web-test-runner test/**/*.test.js --node-resolve",
         "test:watch": "dotnet fable watch test --run web-test-runner test/**/*.test.js --node-resolve --watch"

@@ -129,6 +129,10 @@ type Prop internal (defaultValue: obj, options: obj) =
         )
         Prop<'T>(defaultValue, options)
 
+    static member Of<'T>() =
+        let options = jsOptions<PropConfig>(fun o -> o.attribute <- !^false)
+        Prop<'T>(Unchecked.defaultof<'T>, options)
+
 and Prop<'T> internal (defaultValue: 'T, options: obj) =
     inherit Prop(defaultValue, options)
     [<Emit("$0{{ = $1}}")>]
@@ -235,7 +239,8 @@ type LitElementAttribute(name: string) =
                         // We could return `v, obj()` here but let's make devs used to
                         // initialize Props, which should make the code more consistent
                         | _ -> failProps(k)
-                    propsValues.Add(k, defVal)
+                    if not(isNull defVal) then
+                        propsValues.Add(k, defVal)
                     propsOptions?(k) <- options)
 
                 let initProps (this: obj) =

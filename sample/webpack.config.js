@@ -7,7 +7,7 @@ console.log(`Bundling for ${mode}...`)
 
 module.exports = {
 	entry: {
-		bundle: ['./out/App.js']
+		bundle: ['./out/Main.js']
 	},
 	output: {
 		path: __dirname + '/public',
@@ -15,13 +15,18 @@ module.exports = {
 		chunkFilename: '[name].[id].js',
 	},
 	mode,
-	devtool: prod ? false : 'source-map',
+	devtool: prod ? false : 'eval-source-map',
     devServer: {
         contentBase: path.join(__dirname, "public"),
         hot: true,
 	},
 	module: {
 		rules: [
+            {
+                test: /\.js$/,
+                enforce: "pre",
+                use: ["source-map-loader"],
+            },
 			{
 				test: /\.css$/i,
 				use: ["style-loader", "css-loader", "resolve-url-loader"],

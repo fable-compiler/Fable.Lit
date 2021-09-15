@@ -1,5 +1,7 @@
 module Helpers
 
+open Fable.Core
+
 type Time =
     | Hour of int
     | Minute of int

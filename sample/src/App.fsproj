@@ -6,13 +6,12 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="Clock.fs" />
     <Compile Include="App.fs" />
+    <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Lit.React\Lit.React.fsproj" />
     <ProjectReference Include="..\..\src\Lit.Elmish\Lit.Elmish.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Promise" Version="3.0.0-beta-002" />
-    <PackageReference Include="Feliz.CompilerPlugins" Version="1.6.0" />
   </ItemGroup>
 </Project>

@@ -1,209 +1,116 @@
 module App
 
-open System
 open Browser.Types
-open Feliz
+open Fable.Core
+open Fable.Core.JsInterop
 open Elmish
 open Lit
 open Lit.Elmish
 open Lit.Elmish.HMR
-open Helpers
 
-type Model =
-    { Value: string
-      ShowClock: bool
-      ShowReact: bool }
+module Ionic =
+    type Role =
+        interface end
+
+    type Popover =
+        abstract present: unit -> JS.Promise<unit>
+        abstract dismiss: unit -> JS.Promise<unit>
+        abstract onDidDismiss: unit -> JS.Promise<Role>
+
+    type PopoverOptions =
+        abstract ``component``: string with get, set
+        abstract componentProps: obj with get, set
+        abstract event: Event with get, set
+        abstract translucent: bool with get, set
+
+    type PopoverController =
+        abstract create: PopoverOptions -> JS.Promise<Popover>
+
+    let popoverController: PopoverController = importMember "@ionic/core/dist/ionic/index.esm.js"
+
+open Ionic
+
+type Model = unit
 
 type Msg =
-    | ChangeValue of string
-    | ToggleClock
-    | ToggleReact
+    | OpenDocs
+    | PopoverClosed of Role
+    | OpenPopover of Event * componentName: string * componentProps: obj
 
 let initialState() =
-    { Value = "World"
-      ShowClock = true
-      ShowReact = true }, Cmd.none
+    (), Cmd.none
 
 let update msg model =
     match msg with
-    | ChangeValue v -> { model with Value = v }, Cmd.none
-    | ToggleClock -> { model with ShowClock = not model.ShowClock }, Cmd.none
-    | ToggleReact -> { model with ShowReact = not model.ShowReact }, Cmd.none
+    | OpenDocs ->
+        JS.console.log("Open docs")
+        model, Cmd.none
+    | PopoverClosed role ->
+        JS.console.log("Popover closed", role)
+        model, Cmd.none
+    | OpenPopover(ev, componentName, componentProps) ->
+        model, promise {
+            let! p = popoverController.create(jsOptions(fun o ->
+                o.event <- ev
+                o.translucent <- true
+                o.``component`` <- componentName
+                o.componentProps <- componentProps
+            ))
+            do! p.present()
+            let! role = p.onDidDismiss()
+            return PopoverClosed role
+        } |> Cmd.OfPromise.result
 
-module Styles =
-    let verticalContainer =
-        inline_css """.{
-            margin-left: 2rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }"""
-
-    let nameInput (color: string) =
-        inline_css $""".{{
-            color: {color};
-            background-color: lavender;
-            padding: 0.25rem;
-            font-size: 16px;
-            width: 250px;
-            margin-bottom: 1rem;
-        }}"""
-
-module ReactLib =
-    open Fable.React
-    open Fable.React.Props
-
-    [<ReactComponent>]
-    let MyComponent showClock =
-        let state = Hooks.useState 0
-        Hooks.useEffectDisposable((fun () ->
-            printfn "Initializing React component..."
-            Hook.createDisposable(fun () ->
-                printfn "Disposing React component..."
-            )
-        ), [||])
-
-        div [ Class "card" ] [
-            div [ Class "card-content" ] [
-                div [ Class "content" ] [
-                    p [] [str $"""I'm a React component. Clock is {if showClock then "visible" else "hidden"}"""]
-                    button [
-                        Class "button"
-                        OnClick (fun _ -> state.update(state.current + 1))
-                    ] [ str $"""Clicked {state.current} time{if state.current = 1 then "" else "s"}!"""]
-                ]
-            ]
-        ]
-
-let ReactLitComponent =
-    React.toLit ReactLib.MyComponent
-
-let toggleVisible (txt: string) (isVisible: bool) (isEnabled: bool) (onClick: unit -> unit) =
+[<LitElement("popover-content")>]
+let PopoverContent() =
+    let props = LitElement.init (fun cfg ->
+        cfg.props <- {| dispatch = Prop.Of<Msg -> unit>()
+                        // This property is assigned automatically by the popover
+                        popover = Prop.Of<Popover>() |}
+    )
+    let dispatch = props.dispatch.Value
+    let dismiss() = props.popover.Value.dismiss() |> Promise.start
     html $"""
-        <button class="button"
-                style="margin: 1rem 0"
-                @click={onClick}
-                ?disabled={not isEnabled}>
-          {if isVisible then Lit.ofText $"Hide {txt}"
-           else html $"<strong>Show {txt}</strong>"}
-        </button>
-    """
-
-// This render function integrates with Elmish and doesn't keep local state
-let elmishNameInput value dispatch =
-    html $"""
-      <div class="content">
-        <p>Elmish state: <i>Hello {value}!</i></p>
-        <input
-          style={Styles.nameInput value}
-          value={value}
-          @keyup={evTargetValue >> dispatch}>
-      </div>
-    """
-
-// This function keeps local state and can use hooks
-[<HookComponent>]
-let LocalNameInput() =
-    let value, setValue = Hook.useState "Local"
-    let inputRef = Hook.useRef<HTMLInputElement>()
-
-    html $"""
-      <div class="content">
-        <p>Local state: <i>Hello {value}!</i></p>
-        <input
-          style={Styles.nameInput value}
-          value={value}
-          {Lit.refValue inputRef}
-          @focus={fun _ ->
-            inputRef.value |> Option.iter (fun el -> el.select())}
-          @keyup={evTargetValue >> setValue}>
-      </div>
-    """
-
-let itemList model =
-    let renderNumber (value: int) =
-        html $"""
-          <li>Value: <strong>{value}</strong></li>
-        """
-
-    let shuffle (li:_ list) =
-        let rng = Random()
-        let arr = List.toArray li
-        let max = (arr.Length - 1)
-        let randomSwap (arr:_[]) i =
-            let pos = rng.Next(max)
-            let tmp = arr.[pos]
-            arr.[pos] <- arr.[i]
-            arr.[i] <- tmp
-            arr
-
-        [|0..max|] |> Array.fold randomSwap arr |> Array.toList
-
-    let items = shuffle [1; 2; 3; 4; 5]
-    html $"""
-      <div class={Lit.classes ["content", true; "px-4", true; "has-text-primary", DateTime.Now.Second % 2 = 0]}>
-        <p>No Key Item List</p>
-        <ul>{items |> List.map renderNumber}</ul>
-        <p>Keyed Item List</p>
-        <ul>{items |> Lit.mapUnique string renderNumber}</ul>
-      </div>
-    """
-
-[<HookComponent>]
-let ClockDisplay model dispatch =
-    let transition =
-        Hook.useTransition(
-            ms = 800,
-            cssBefore = inline_css $""".{{
-                opacity: 0;
-                transform: scale(2) rotate(1turn)
-            }}""",
-            cssAfter = inline_css $""".{{
-                opacity: 0;
-                transform: scale(0.1) rotate(-1.5turn)
-            }}""",
-            onComplete = fun isIn ->
-                if model.ShowClock <> isIn then dispatch ToggleClock
-        )
-
-    let clockContainer() =
-        html $"""
-            <div style={transition.css}>
-                <my-clock
-                    minute-colors="white, red, yellow, purple"
-                    hour-color="yellow"></my-clock>
-            </div>
-        """
-
-    let isButtonEnabled = not transition.active
-    html $"""
-        <div style="{Styles.verticalContainer}">
-            {toggleVisible "Clock" model.ShowClock isButtonEnabled (fun () ->
-                transition.trigger(not model.ShowClock))}
-
-            {if transition.out then Lit.nothing else clockContainer()}
-        </div>
+      <ion-list>
+        <ion-list-header>Ionic</ion-list-header>
+        <ion-item button>Learn Ionic</ion-item>
+        <ion-item button @click={fun _ -> dismiss(); dispatch OpenDocs}>
+            Documentation
+        </ion-item>
+        <ion-item button>Showcase</ion-item>
+        <ion-item button>GitHub Repo</ion-item>
+        <ion-item lines="none" detail="false" button
+                @click={fun _ -> dismiss()}>
+            Close
+        </ion-item>
+      </ion-list>
     """
 
 let view model dispatch =
     html $"""
-      <div style={Styles.verticalContainer}>
-        {toggleVisible "React" model.ShowReact true (fun () -> dispatch ToggleReact)}
-        {if not model.ShowReact then Lit.nothing
-         else ReactLitComponent model.ShowClock}
+  <ion-app>
+    <ion-header translucent>
+      <ion-toolbar>
+        <ion-title>Popover</ion-title>
 
-        <br />
-        {ClockDisplay model dispatch}
+        <ion-buttons slot="end">
+          <ion-button>
+            <ion-icon slot="icon-only" ios="ellipsis-horizontal" md="ellipsis-vertical"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
 
-        {elmishNameInput model.Value (ChangeValue >> dispatch)}
-        {LocalNameInput()}
-      </div>
-    """
-    //   {itemList model}
+    <ion-content fullscreen class="ion-padding">
+      <ion-button expand="block" @click={fun (ev: Event) ->
+        OpenPopover(ev, "popover-content", {| dispatch = dispatch |}) |> dispatch}>
+        Show Popover
+      </ion-button>
+    </ion-content>
+  </ion-app>
+"""
 
-Clock.register()
-
-Program.mkProgram initialState update view
-|> Program.withLit "app-container"
-|> Program.run
+let run() =
+    Program.mkProgram initialState update view
+    |> Program.withLit "app-container"
+    |> Program.run
