@@ -8,7 +8,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <NpmDependencies>
-      <NpmPackage Name="lit-html" Version="&gt;= 2.0.0 &lt; 3.0.0" ResolutionStrategy="Max" />
+      <NpmPackage Name="lit" Version="&gt;= 2.0.0-rc.4 &lt; 3.0.0" ResolutionStrategy="Max" />
     </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>

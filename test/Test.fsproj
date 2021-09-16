@@ -12,6 +12,5 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.4.4" />
-    <PackageReference Include="Fable.Promise" Version="3.0.0-beta-002" />
   </ItemGroup>
 </Project>

@@ -8,7 +8,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <NpmDependencies>
-      <NpmPackage Name="lit-html" Version="&gt;= 2.0.0 &lt; 3.0.0" ResolutionStrategy="Max" />
+      <NpmPackage Name="lit" Version="&gt;= 2.0.0-rc.4 &lt; 3.0.0" ResolutionStrategy="Max" />
     </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>
@@ -22,7 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.4.4" />
-    <PackageReference Include="Fable.Core" Version="3.3.0-beta-001" />
-    <PackageReference Include="Fable.Promise" Version="3.0.0-beta-002" />
+    <PackageReference Include="Fable.Core" Version="3.3.1" />
+    <PackageReference Include="Fable.Promise" Version="3.0.0" />
   </ItemGroup>
 </Project>

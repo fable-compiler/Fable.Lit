@@ -7,7 +7,6 @@ open PublishUtils
 let packages = [
     "Lit"
     "Lit.React"
-    "Lit.Feliz"
     "Lit.Elmish"
   ]
 

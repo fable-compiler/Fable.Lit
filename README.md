@@ -1,18 +1,16 @@
 # Fable.Lit
 
-Fable.Lit is a collection of tools to help you write [Fable](https://fable.io/) apps by embedding HTML code into your F# code with the power of [Lit](https://lit.dev/). Thanks to this, you can use HTML from a designer or a [component library](https://ionicframework.com/docs/api/) right away, without any kind of conversion to F#. Lit only weighs 5KB minified and gzipped so it's very cheap to integrate in your existing app (see below for React integration). And if you're using VS Code and install the [Highlight HTML/SQL templates in F#](https://marketplace.visualstudio.com/items?itemName=alfonsogarciacaro.vscode-template-fsharp-highlight) extension the integration will be even smoother:
-
-![Example](docs/screenshot.png)
+Fable.Lit is a collection of tools to help you write [Fable](https://fable.io/) apps by embedding HTML code into your F# code with the power of [Lit](https://lit.dev/). Thanks to this, you can use HTML from a designer or a [component library](https://ionicframework.com/docs/api/) right away, without any kind of conversion to F#. Lit only weighs 5KB minified and gzipped so it's very cheap to integrate in your existing app (see below for React integration). If you're using VS Code and install the [Highlight HTML/SQL templates in F#](https://marketplace.visualstudio.com/items?itemName=alfonsogarciacaro.vscode-template-fsharp-highlight) extension the integration will be even smoother.
 
 There's an example in the `sample` directory, but you can find [here a more detailed tutorial](https://dev.to/tunaxor/using-Lit-with-f-3i8b) by Angel Munoz.
 
 ## Requirements
 
-Fable.Lit packages require Lit 2 from npm and fable 3.3 dotnet tool which are both, at the time of writing, in prerelease state.
+Fable.Lit packages require **fable 3.3** dotnet tool and **Lit 2** from npm which, at the time of writing, is in release candidate state.
 
 ```
-npm install html-lit@next
-dotnet tool install fable --version 3.3.0-beta-002
+dotnet tool update fable
+npm install lit@next
 ```
 
 Then, in the directory of your .fsproj, install the packages you need (see below for details), which are also in prelease. Note the package ids are prefixed by `Fable.` but not the actual namespaces.
@@ -21,7 +19,6 @@ Then, in the directory of your .fsproj, install the packages you need (see below
 dotnet add package Fable.Lit --prerelease
 dotnet add package Fable.Lit.React --prerelease
 dotnet add package Fable.Lit.Elmish --prerelease
-dotnet add package Fable.Lit.Feliz --prerelease
 ```
 
 ## Lit
