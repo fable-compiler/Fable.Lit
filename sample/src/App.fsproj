@@ -12,6 +12,6 @@
     <ProjectReference Include="..\..\src\Lit.Elmish\Lit.Elmish.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Feliz.CompilerPlugins" Version="1.6.0" />
+    <PackageReference Include="Feliz" Version="1.52.0" />
   </ItemGroup>
 </Project>

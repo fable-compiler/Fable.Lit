@@ -2,11 +2,7 @@ module App
 
 open System
 open Browser.Types
-open Feliz
 open Elmish
-open Lit
-open Lit.Elmish
-open Lit.Elmish.HMR
 open Helpers
 
 type Model =
@@ -30,6 +26,46 @@ let update msg model =
     | ToggleClock -> { model with ShowClock = not model.ShowClock }, Cmd.none
     | ToggleReact -> { model with ShowReact = not model.ShowReact }, Cmd.none
 
+module ReactLib =
+    open Feliz
+
+    [<ReactComponent>]
+    let MyComponent showClock =
+        let state, setState = React.useState 0
+        React.useEffectOnce((fun () ->
+            printfn "Initializing React component..."
+            React.createDisposable (fun () ->
+                printfn "Disposing React component..."
+            )
+        ))
+
+        Html.div [
+            prop.className "card"
+            prop.children [
+                Html.div [
+                    prop.className "card-content"
+                    prop.children [
+                        Html.div [
+                            prop.className "content"
+                            prop.children [
+                                Html.p $"""I'm a React component. Clock is {if showClock then "visible" else "hidden"}"""
+                                Html.button [
+                                    prop.className "button"
+                                    prop.onClick(fun _ -> setState(state + 1))
+                                    prop.text $"""Clicked {state} time{if state = 1 then "" else "s"}!"""
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+open Lit
+
+let ReactLitComponent =
+    React.toLit ReactLib.MyComponent
+
 module Styles =
     let verticalContainer =
         inline_css """.{
@@ -49,35 +85,6 @@ module Styles =
             width: 250px;
             margin-bottom: 1rem;
         }}"""
-
-module ReactLib =
-    open Fable.React
-    open Fable.React.Props
-
-    [<ReactComponent>]
-    let MyComponent showClock =
-        let state = Hooks.useState 0
-        Hooks.useEffectDisposable((fun () ->
-            printfn "Initializing React component..."
-            Hook.createDisposable(fun () ->
-                printfn "Disposing React component..."
-            )
-        ), [||])
-
-        div [ Class "card" ] [
-            div [ Class "card-content" ] [
-                div [ Class "content" ] [
-                    p [] [str $"""I'm a React component. Clock is {if showClock then "visible" else "hidden"}"""]
-                    button [
-                        Class "button"
-                        OnClick (fun _ -> state.update(state.current + 1))
-                    ] [ str $"""Clicked {state.current} time{if state.current = 1 then "" else "s"}!"""]
-                ]
-            ]
-        ]
-
-let ReactLitComponent =
-    React.toLit ReactLib.MyComponent
 
 let toggleVisible (txt: string) (isVisible: bool) (isEnabled: bool) (onClick: unit -> unit) =
     html $"""
@@ -118,35 +125,6 @@ let LocalNameInput() =
           @focus={fun _ ->
             inputRef.value |> Option.iter (fun el -> el.select())}
           @keyup={evTargetValue >> setValue}>
-      </div>
-    """
-
-let itemList model =
-    let renderNumber (value: int) =
-        html $"""
-          <li>Value: <strong>{value}</strong></li>
-        """
-
-    let shuffle (li:_ list) =
-        let rng = Random()
-        let arr = List.toArray li
-        let max = (arr.Length - 1)
-        let randomSwap (arr:_[]) i =
-            let pos = rng.Next(max)
-            let tmp = arr.[pos]
-            arr.[pos] <- arr.[i]
-            arr.[i] <- tmp
-            arr
-
-        [|0..max|] |> Array.fold randomSwap arr |> Array.toList
-
-    let items = shuffle [1; 2; 3; 4; 5]
-    html $"""
-      <div class={Lit.classes ["content", true; "px-4", true; "has-text-primary", DateTime.Now.Second % 2 = 0]}>
-        <p>No Key Item List</p>
-        <ul>{items |> List.map renderNumber}</ul>
-        <p>Keyed Item List</p>
-        <ul>{items |> Lit.mapUnique string renderNumber}</ul>
       </div>
     """
 
@@ -200,7 +178,9 @@ let view model dispatch =
         {LocalNameInput()}
       </div>
     """
-    //   {itemList model}
+
+open Lit.Elmish
+open Lit.Elmish.HMR
 
 Clock.register()
 
