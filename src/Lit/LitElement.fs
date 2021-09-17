@@ -159,42 +159,34 @@ type LitElementInit<'Props>() =
             Unchecked.defaultof<'Props>
 
     interface IHookProvider with
-        member _.useState(init) = failInit()
-        member _.useRef(init) = failInit()
-        member _.useEffect(effect) = failInit()
-        member _.useEffectOnce(effect) = failInit()
-        member _.useElmish(init, update) = failInit()
+        member _.hooks = failInit()
 
 [<AttachMembers>]
 type LitHookElement<'Props>(renderFn: JS.Function, ?initProps: JS.Function) =
     inherit LitElementBase()
     do initProps |> Option.iter(fun f -> f.Invoke([|jsThis|]) |> ignore)
-    let provider =
-        HookProvider(
+    let context =
+        HookContext(
             emitJsExpr renderFn "() => $0.apply(this)",
             emitJsExpr () "() => this.requestUpdate()",
             emitJsExpr () "() => this.isConnected")
 
     member _.render() =
-        provider.render()
+        context.render()
 
     member _.disconnectedCallback() =
         base.disconnectedCallback()
-        provider.disconnect()
+        context.disconnect()
 
     member _.connectedCallback() =
         base.connectedCallback()
-        provider.runEffects (onConnected = true, onRender = false)
+        context.runEffects (onConnected = true, onRender = false)
 
     interface ILitElementInit<'Props> with
         member this.init(_): 'Props = box this :?> 'Props
 
     interface IHookProvider with
-        member _.useState(init) = provider.useState(init)
-        member _.useRef(init) = provider.useRef(init)
-        member _.useEffect(effect) = provider.useEffect(effect)
-        member _.useEffectOnce(effect) = provider.useEffectOnce(effect)
-        member _.useElmish(init, update) = provider.useElmish(init, update)
+        member _.hooks = context
 
 type LitElementAttribute(name: string) =
     inherit JS.DecoratorAttribute()
@@ -206,7 +198,7 @@ type LitElementAttribute(name: string) =
     member _.defineGetter(target: obj, name: string, f: unit -> 'V) = ()
 
     override this.Decorate(renderFn) =
-        if renderFn?length > 0 then
+        if renderFn.length > 0 then
             failwith "Render function for LitElement cannot take arguments"
 
         let config = LitElementInit()
