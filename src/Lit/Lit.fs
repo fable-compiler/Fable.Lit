@@ -4,6 +4,22 @@ open System
 open Browser.Types
 open Fable.Core
 
+[<AutoOpen>]
+module DomHelpers =
+    /// Wrapper for event handlers to help type checking.
+    let inline Ev (handler: Event -> unit) = handler
+
+    /// Wrapper for event handlers to help type checking.
+    /// Extracts `event.target.value` and passes it to the handler.
+    let inline EvVal (handler: string -> unit) = handler
+
+    type Browser.Types.EventTarget with
+        /// Casts the event target to HTMLInputElement and gets the `value` property.
+        member this.Value = (this :?> Browser.Types.HTMLInputElement).value
+
+        /// Casts the event target to HTMLInputElement and gets the `checked` property.
+        member this.Checked = (this :?> Browser.Types.HTMLInputElement).``checked``
+
 /// <summary>
 /// The return type of the template tag functions.
 /// </summary>
@@ -14,9 +30,9 @@ type TemplateResult =
 type RefValue<'T> =
     abstract value : 'T with get, set
 
-    /// Alias of `value` for compatibility with React's refs
-    [<Emit("$0.value")>]
-    abstract current : 'T with get, set
+    // /// Alias of `value` for compatibility with React's refs
+    // [<Emit("$0.value")>]
+    // abstract current : 'T with get, set
 
 type RefValue = RefValue<obj>
 
@@ -176,10 +192,21 @@ type LitBindings =
 
 [<AutoOpen>]
 module LitHelpers =
+    /// <summary>
+    /// Interprets a template literal as an HTML template that can efficiently render to and update a container.
+    /// </summary>
     let html: Template.Tag<_> = Template.transform LitBindings.html
+
+    /// <summary>
+    /// Interprets a template literal as an SVG template that can efficiently render to and update a container.
+    /// svg is required for nested templates within an svg element
+    /// </summary>
     let svg: Template.Tag<_> = Template.transform LitBindings.svg
+
+    /// CSS used in the Shadow DOM of LitElements
     let css: Template.Tag<_> = Template.transform LitBindings.css
 
+    /// Just trims the braces {} out of a css block to be used in a `style` attribute
     let inline_css (css: string) =
         match css.IndexOf("{") with
         | -1 -> css
@@ -193,12 +220,14 @@ type Lit() =
     /// Interprets a template literal as an HTML template that can efficiently render to and update a container.
     /// </summary>
     static member html = html
+
     /// <summary>
     /// Interprets a template literal as an SVG template that can efficiently render to and update a container.
     /// svg is required for nested templates within an svg element
     /// </summary>
     static member svg = svg
 
+    /// CSS used in the Shadow DOM of LitElements
     static member css = css
 
     /// <summary>
@@ -276,16 +305,25 @@ type Lit() =
     /// <param name="attributeValue">A value to set the attribute to</param>
     static member attrOfOption(attributeValue: string option) = LitBindings.ifDefined attributeValue
 
+    /// Creates an optional ref with no content. The ref can be used with Lit.refValue or Lit.refFn to get a reference of a DOM element.
     static member createRef<'T>() : RefValue<'T option> = LitBindings.createRef<'T option> ()
 
+    /// Creates a ref with the given value. The ref can be used with Lit.refValue or Lit.refFn to get a reference of a DOM element.
     static member createRef(value: 'T) : RefValue<'T> =
         let r = LitBindings.createRef<'T> ()
         r.value <- value
         r
 
+    /// When placed on an element in the template, the ref directive will retrieve a reference to that element once rendered.
+    /// Example: <input {Lit.refValue inputRef}>
     static member refValue<'El when 'El :> Element>(v: RefValue<'El option>) = LitBindings.ref v
 
+    /// When placed on an element in the template, the callback will be called each time the referenced element changes.
+    /// If a ref callback is rendered to a different element position or is removed in a subsequent render,
+    /// it will first be called with undefined, followed by another call with the new element it was rendered to (if any).
+    /// Example: <input {Lit.refFn inputFn}>
     static member refFn<'El when 'El :> Element>(fn: 'El option -> unit) = LitBindings.ref fn
 
+    /// Used when building custom directives. [More info](https://lit.dev/docs/templates/custom-directives/).
     static member inline directive<'Class, 'Arg>() : 'Arg -> TemplateResult =
         LitBindings.directive JsInterop.jsConstructor<'Class> :?> _

@@ -80,7 +80,7 @@ let select options value dispatch =
 
     html $"""
         <div class="select mb-2">
-            <select value={value} @change={fun (ev: Event) -> ev.target.Value |> dispatch}>
+            <select value={value} @change={EvVal dispatch}>
                 {options |> List.map option}
             </select>
         </div>

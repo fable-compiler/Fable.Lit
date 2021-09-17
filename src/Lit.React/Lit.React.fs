@@ -65,8 +65,13 @@ type React =
             Props.RefValue container
         ] []
 
+    /// Renders a Lit HTML template as a ReactElement.
+    /// Must be used at the root of a React functional component (like a hook).
     static member inline lit_html (s: FormattableString) =
         React.ofLit(Lit.html s)
 
+    /// Renders a Lit SVG template as a ReactElement.
+    /// svg is required for nested templates within an svg element.
+    /// Must be used at the root of a React functional component (like a hook).
     static member inline lit_svg (s: FormattableString) =
         React.ofLit(Lit.html s)

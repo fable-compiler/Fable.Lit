@@ -33,9 +33,3 @@ type System.DateTime with
     member this.AsHour = Hour this.Hour
     member this.AsMinute = Minute this.Minute
     member this.AsSecond = Second this.Second
-
-type Browser.Types.EventTarget with
-    member this.Value = (this :?> Browser.Types.HTMLInputElement).value
-
-let evTargetValue (ev: Browser.Types.Event) =
-    ev.target.Value

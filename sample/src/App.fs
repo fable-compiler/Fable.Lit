@@ -86,11 +86,11 @@ module Styles =
             margin-bottom: 1rem;
         }}"""
 
-let toggleVisible (txt: string) (isVisible: bool) (isEnabled: bool) (onClick: unit -> unit) =
+let toggleVisible (txt: string) (isVisible: bool) (isEnabled: bool) (onClick: Event -> unit) =
     html $"""
         <button class="button"
                 style="margin: 1rem 0"
-                @click={onClick}
+                @click={Ev onClick}
                 ?disabled={not isEnabled}>
           {if isVisible then Lit.ofText $"Hide {txt}"
            else html $"<strong>Show {txt}</strong>"}
@@ -103,9 +103,9 @@ let elmishNameInput value dispatch =
       <div class="content">
         <p>Elmish state: <i>Hello {value}!</i></p>
         <input
-          style={Styles.nameInput value}
           value={value}
-          @keyup={evTargetValue >> dispatch}>
+          style={Styles.nameInput value}
+          @keyup={EvVal dispatch}>
       </div>
     """
 
@@ -119,12 +119,13 @@ let LocalNameInput() =
       <div class="content">
         <p>Local state: <i>Hello {value}!</i></p>
         <input
-          style={Styles.nameInput value}
-          value={value}
           {Lit.refValue inputRef}
-          @focus={fun _ ->
-            inputRef.value |> Option.iter (fun el -> el.select())}
-          @keyup={evTargetValue >> setValue}>
+          value={value}
+          style={Styles.nameInput value}
+          @keyup={EvVal setValue}
+          @focus={Ev(fun _ ->
+            inputRef.value
+            |> Option.iter (fun el -> el.select()))}>
       </div>
     """
 
@@ -157,7 +158,7 @@ let ClockDisplay model dispatch =
     let isButtonEnabled = not transition.active
     html $"""
         <div style="{Styles.verticalContainer}">
-            {toggleVisible "Clock" model.ShowClock isButtonEnabled (fun () ->
+            {toggleVisible "Clock" model.ShowClock isButtonEnabled (fun _ ->
                 transition.trigger(not model.ShowClock))}
 
             {if transition.out then Lit.nothing else clockContainer()}
@@ -167,7 +168,7 @@ let ClockDisplay model dispatch =
 let view model dispatch =
     html $"""
       <div style={Styles.verticalContainer}>
-        {toggleVisible "React" model.ShowReact true (fun () -> dispatch ToggleReact)}
+        {toggleVisible "React" model.ShowReact true (fun _ -> dispatch ToggleReact)}
         {if not model.ShowReact then Lit.nothing
          else ReactLitComponent model.ShowClock}
 
