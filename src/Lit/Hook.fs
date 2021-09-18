@@ -288,16 +288,36 @@ module HookExtensions =
         member this.triggerLeave() = this.trigger(false)
 
     type HookContext with
-        member this.useEffectOnce(effect: (unit -> unit)) =
-            this.useEffectOnce(fun () ->
+        member ctx.useEffectOnce(effect: (unit -> unit)) =
+            ctx.useEffectOnce(fun () ->
                 effect()
                 emptyDisposable)
 
-        member this.useState(v: 'T) =
-            this.useState(fun () -> v)
+        member ctx.useState(v: 'T) =
+            ctx.useState(fun () -> v)
 
-        member this.useRef(v: 'T) =
-            this.useRef(fun () -> v)
+        member ctx.useRef(v: 'T) =
+            ctx.useRef(fun () -> v)
+
+        member ctx.useRef<'T>() =
+            ctx.useRef(fun () -> None: 'T option)
+
+        member ctx.useEffectOnChange(value: 'T, effect: 'T -> unit) =
+            ctx.useEffectOnChange(value, fun v ->
+                effect v
+                emptyDisposable)
+
+        member ctx.useEffectOnChange(value: 'T, effect: 'T -> IDisposable) =
+            let prev = ctx.useRef<'T * IDisposable>()
+            ctx.useEffect(fun () ->
+                match prev.value with
+                | None ->
+                    prev.value <- Some(value, effect value)
+                | Some(prevValue, disp) ->
+                    if prevValue <> value then
+                        disp.Dispose()
+                        prev.value <- Some(value, effect value)
+            )
 
 [<AttachMembers>]
 type HookDirective() =
@@ -344,11 +364,15 @@ type HookComponentAttribute() =
 /// and may not be 100% compatible with the react hooks.
 /// </remarks>
 type Hook() =
-    /// Only call this in an inlined function with jsThis argument if you're writing your own hook
+    /// Use `getContext()`
     static member getContext(this: IHookProvider) =
         if isNull this || not(box this.hooks :? HookContext) then
             failwith "Cannot access hook context, make sure the hooks is called on top of a HookComponent function"
         this.hooks
+
+    /// Only call `getContext` from an inlined function when implementing a custom hook
+    static member inline getContext() =
+        Hook.getContext(jsThis)
 
     static member createDisposable(f: unit -> unit) = createDisposable f
 
@@ -364,7 +388,7 @@ type Hook() =
     ///  the initial value of the state
     /// </param>
     static member inline useState(v: 'Value) =
-        Hook.getContext(jsThis).useState (fun () -> v)
+        Hook.getContext().useState (fun () -> v)
 
     /// <summary>
     /// returns a tuple with an immutable value and a setter function, when you supply a callback it will be used
@@ -377,7 +401,7 @@ type Hook() =
     /// A function to initialize the state, usually this function may perform expensive operations
     /// </param>
     static member inline useState(init: unit -> 'Value) =
-        Hook.getContext(jsThis).useState (init)
+        Hook.getContext().useState (init)
 
     /// <summary>
     /// Creates and returns a mutable object (a 'ref') whose .current property is initialized to the hosting element.
@@ -386,7 +410,7 @@ type Hook() =
     /// .current and since changes to it are mutations, no rerender is required to view the updated value in your component's code (e.g. listeners, callbacks, effects).
     /// </summary>
     static member inline useRef<'Value>(): RefValue<'Value option> =
-        Hook.getContext(jsThis).useRef<'Value option>(fun () -> None)
+        Hook.getContext().useRef<'Value option>(fun () -> None)
 
     /// <summary>
     /// Creates and returns a mutable object (a 'ref') whose .current property is initialized to the passed argument.
@@ -395,13 +419,13 @@ type Hook() =
     /// .current and since changes to it are mutations, no rerender is required to view the updated value in your component's code (e.g. listeners, callbacks, effects).
     /// </summary>
     static member inline useRef(v: 'Value): RefValue<'Value> =
-        Hook.getContext(jsThis).useRef(fun () -> v)
+        Hook.getContext().useRef(fun () -> v)
 
     /// <summary>
     /// Create a memoized state value. Only reruns the function when dependent values have changed.
     /// </summary>
     static member inline useMemo(init: unit -> 'Value): 'Value =
-        Hook.getContext(jsThis).useRef(init).value
+        Hook.getContext().useRef(init).value
 
     // TODO: Dependencies?
     /// <summary>
@@ -421,7 +445,7 @@ type Hook() =
     ///        """
     /// </example>
     static member inline useEffect(effect: unit -> unit) =
-        Hook.getContext(jsThis).useEffect (effect)
+        Hook.getContext().useEffect (effect)
 
     /// <summary>
     /// Fire a side effect once in the lifetime of the function
@@ -430,7 +454,7 @@ type Hook() =
     ///     Hook.useEffectOnce (fun _ -> printfn "Mounted")
     /// </example>
     static member inline useEffectOnce(effect: unit -> unit) =
-        Hook.getContext(jsThis).useEffectOnce
+        Hook.getContext().useEffectOnce
             (fun () ->
                 effect ()
                 Hook.emptyDisposable)
@@ -442,7 +466,13 @@ type Hook() =
     ///     Hook.useEffectOnce (fun _ -> { new IDisposable with member _.Dispose() = (* code *))})
     /// </example>
     static member inline useEffectOnce(effect: unit -> IDisposable) =
-        Hook.getContext(jsThis).useEffectOnce (effect)
+        Hook.getContext().useEffectOnce (effect)
+
+    static member inline useEffectOnChange(value: 'T, effect: 'T -> IDisposable) =
+        Hook.getContext().useEffectOnChange(value, effect)
+
+    static member inline useEffectOnChange(value: 'T, effect: 'T -> unit) =
+        Hook.getContext().useEffectOnChange(value, effect)
 
     /// <summary>
     /// Start an [Elmish](https://elmish.github.io/elmish/) loop. for a function.
@@ -474,13 +504,13 @@ type Hook() =
     ///              """
     /// </example>
     static member inline useElmish<'State,'Msg when 'State : equality> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
-        Hook.getContext(jsThis).useElmish(init, update)
+        Hook.getContext().useElmish(init, update)
 
     static member inline useTransition(ms, ?cssBefore, ?cssIdle, ?cssAfter, ?onComplete) =
-        Hook.useTransition(Hook.getContext(jsThis), Transition(ms, ?cssBefore=cssBefore, ?cssIdle=cssIdle, ?cssAfter=cssAfter, ?onComplete=onComplete))
+        Hook.useTransition(Hook.getContext(), Transition(ms, ?cssBefore=cssBefore, ?cssIdle=cssIdle, ?cssAfter=cssAfter, ?onComplete=onComplete))
 
-    static member useTransition(this: HookContext, transition: Transition): TransitionManager =
-        let state, setState = this.useState(AboutToEnter)
+    static member useTransition(ctx: HookContext, transition: Transition): TransitionManager =
+        let state, setState = ctx.useState(AboutToEnter)
 
         let trigger isIn =
             let middleState, finalState =
@@ -491,8 +521,7 @@ type Hook() =
                 setState finalState)
             setState middleState
 
-        this.useEffect(fun () ->
-            match state with
+        ctx.useEffectOnChange(state, function
             | AboutToEnter -> trigger true
             | _ -> ())
 
