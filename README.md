@@ -2,7 +2,7 @@
 
 Fable.Lit is a collection of tools to help you write [Fable](https://fable.io/) apps by embedding HTML code into your F# code with the power of [Lit](https://lit.dev/). Thanks to this, you can use HTML from a designer or a [component library](https://ionicframework.com/docs/api/) right away, without any kind of conversion to F#. Lit only weighs 5KB minified and gzipped so it's very cheap to integrate in your existing app (see below for React integration). If you're using VS Code and install the [Highlight HTML/SQL templates in F#](https://marketplace.visualstudio.com/items?itemName=alfonsogarciacaro.vscode-template-fsharp-highlight) extension the integration will be even smoother.
 
-There's an example in the `sample` directory, but you can find [here a more detailed tutorial](https://dev.to/tunaxor/using-Lit-with-f-3i8b) by Angel Munoz.
+There's an example in the `sample` directory, but you can find [here a more detailed tutorial](https://dev.to/tunaxor/using-lit-html-with-f-3i8b) by Angel Munoz.
 
 ## Requirements
 
