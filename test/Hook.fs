@@ -7,6 +7,9 @@ open Elmish
 open Lit
 open Lit.Elmish
 
+let createRef (v: 'T) = ref v
+let refValue (r: 'T ref) = r.Value
+
 [<HookComponent>]
 let Counter () =
     let value, setValue = Hook.useState 5
@@ -21,13 +24,13 @@ let Counter () =
     """
 
 [<HookComponent>]
-let Disposable (r: RefValue<int>) =
+let Disposable (r: ref<int>) =
     let value, setValue = Hook.useState 5
 
     Hook.useEffectOnce
         (fun () ->
-            r.value <- r.value + 1
-            Hook.createDisposable (fun () -> r.value <- r.value + 10))
+            r := r.Value + 1
+            Hook.createDisposable (fun () -> r := r.Value + 10))
 
     html
         $"""
@@ -39,7 +42,7 @@ let Disposable (r: RefValue<int>) =
     """
 
 [<HookComponent>]
-let DisposableContainer (r: RefValue<int>) =
+let DisposableContainer (r: ref<int>) =
     let disposed, setDisposed = Hook.useState false
 
     html

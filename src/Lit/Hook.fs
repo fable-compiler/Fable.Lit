@@ -190,12 +190,12 @@ type HookContext(renderFn: RenderFn, triggerRender: Action<HookContext>, isConne
 
         state, (fun v -> this.setState (index, v))
 
-    member this.useRef(init: unit -> 'T) : RefValue<'T> =
+    member this.useRef(init: unit -> 'T) : ref<'T> =
         this.checkRendering ()
 
         if _firstRun then
             init ()
-            |> Lit.createRef<'T>
+            |> ref
             |> this.addState
             |> snd
         else
@@ -310,13 +310,13 @@ module HookExtensions =
         member ctx.useEffectOnChange(value: 'T, effect: 'T -> IDisposable) =
             let prev = ctx.useRef<'T * IDisposable>()
             ctx.useEffect(fun () ->
-                match prev.value with
+                match prev.Value with
                 | None ->
-                    prev.value <- Some(value, effect value)
+                    prev := Some(value, effect value)
                 | Some(prevValue, disp) ->
                     if prevValue <> value then
                         disp.Dispose()
-                        prev.value <- Some(value, effect value)
+                        prev := Some(value, effect value)
             )
 
 [<AttachMembers>]
@@ -409,7 +409,7 @@ type Hook() =
     /// That rerender will allow you to be able to see the updated state value. A ref, on the other hand, can only be changed via
     /// .current and since changes to it are mutations, no rerender is required to view the updated value in your component's code (e.g. listeners, callbacks, effects).
     /// </summary>
-    static member inline useRef<'Value>(): RefValue<'Value option> =
+    static member inline useRef<'Value>(): ref<'Value option> =
         Hook.getContext().useRef<'Value option>(fun () -> None)
 
     /// <summary>
@@ -418,14 +418,14 @@ type Hook() =
     /// That rerender will allow you to be able to see the updated state value. A ref, on the other hand, can only be changed via
     /// .current and since changes to it are mutations, no rerender is required to view the updated value in your component's code (e.g. listeners, callbacks, effects).
     /// </summary>
-    static member inline useRef(v: 'Value): RefValue<'Value> =
+    static member inline useRef(v: 'Value): ref<'Value> =
         Hook.getContext().useRef(fun () -> v)
 
     /// <summary>
     /// Create a memoized state value. Only reruns the function when dependent values have changed.
     /// </summary>
     static member inline useMemo(init: unit -> 'Value): 'Value =
-        Hook.getContext().useRef(init).value
+        Hook.getContext().useRef(init).Value
 
     // TODO: Dependencies?
     /// <summary>

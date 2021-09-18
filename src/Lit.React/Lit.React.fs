@@ -20,8 +20,7 @@ type ReactDirective() =
     member _.renderFn = Unchecked.defaultof<obj -> ReactElement>
 
     member this.render(props: obj) =
-        Lit.html $"""<div class={this.className} {Lit.refFn (fun el ->
-            match el with
+        Lit.html $"""<div class={this.className} {Lit.ref (function
             | Some el when this.isConnected ->
                 _domEl <- el
                 let reactEl = this.renderFn props

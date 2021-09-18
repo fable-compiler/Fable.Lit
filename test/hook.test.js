@@ -1,6 +1,5 @@
 import { expect, fixture, aTimeout } from '@open-wc/testing';
 import { html } from 'lit/static-html.js';
-import { createRef } from 'lit/directives/ref.js';
 import * as Components from './Hook.fs.js';
 
 describe('Hook', () => {
@@ -19,24 +18,23 @@ describe('Hook', () => {
     });
 
     it('useEffectOnce runs on mount/dismount', async () => {
-        const r = createRef();
-        r.value = 8;
+        const r = Components.createRef(8);
 
         const el = await fixture(html`${Components.DisposableContainer(r)}`);
         expect(el.querySelector("p")).dom.text('Value: 5');
 
         // Effect is run asynchronously after after render
-        expect(r.value).to.equals(9);
+        expect(Components.refValue(r)).to.equals(9);
 
         // Effect is not run again on rerenders
         el.querySelector(".incr").click();
         expect(el.querySelector("p")).dom.text('Value: 6');
-        expect(r.value).to.equals(9);
+        expect(Components.refValue(r)).to.equals(9);
 
         // Cause the component to be dismounted
         el.querySelector(".dispose").click();
         // Effect has been disposed
-        expect(r.value).to.equals(19);
+        expect(Components.refValue(r)).to.equals(19);
     });
 
     it("useMemo doesn't change without dependencies", async () => {

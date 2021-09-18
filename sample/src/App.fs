@@ -119,12 +119,12 @@ let LocalNameInput() =
       <div class="content">
         <p>Local state: <i>Hello {value}!</i></p>
         <input
-          {Lit.refValue inputRef}
+          {Lit.ref inputRef}
           value={value}
           style={Styles.nameInput value}
           @keyup={EvVal setValue}
           @focus={Ev(fun _ ->
-            inputRef.value
+            inputRef.Value
             |> Option.iter (fun el -> el.select()))}>
       </div>
     """
