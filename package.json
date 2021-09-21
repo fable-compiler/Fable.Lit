@@ -3,8 +3,9 @@
     "scripts": {
         "install": "dotnet tool restore",
         "publish": "dotnet fsi build.fsx publish",
-        "test": "dotnet fable test --run web-test-runner test/**/*.test.js --node-resolve",
-        "test:watch": "dotnet fable watch test --run web-test-runner test/**/*.test.js --node-resolve --watch"
+        "test": "dotnet fable test --run web-test-runner test/**/*Test.fs.js --node-resolve",
+        "test:watch": "dotnet fable watch test --run web-test-runner test/**/*Test.fs.js --node-resolve --watch",
+        "test:update-snapshots": "dotnet fable test --run web-test-runner test/**/*Test.fs.js --node-resolve --update-snapshots"
     },
     "dependencies": {
         "lit": "^2.0.0-rc.4"
@@ -12,6 +13,10 @@
     "devDependencies": {
         "@open-wc/testing": "^3.0.0-next.3",
         "@web/test-runner": "^0.13.16",
-        "fable-publish-utils": "^2.2.0"
+        "aria-query": "^4.2.2",
+        "dom-accessibility-api": "^0.5.7",
+        "fable-publish-utils": "^2.2.0",
+        "webpack": "^5.53.0",
+        "webpack-cli": "^4.8.0"
     }
 }
