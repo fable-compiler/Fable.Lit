@@ -3,14 +3,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Hook.fs" />
-    <Compile Include="LitElement.fs" />
+    <Compile Include="HookTest.fs" />
+    <Compile Include="LitElementTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\Lit\Lit.fsproj" />
     <ProjectReference Include="..\src\Lit.Elmish\Lit.Elmish.fsproj" />
+    <ProjectReference Include="..\src\Lit.Test\Lit.Test.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Browser.Dom" Version="2.4.4" />
+    <PackageReference Include="Fable.Browser.Dom" Version="2.5.0-beta-001" />
   </ItemGroup>
 </Project>

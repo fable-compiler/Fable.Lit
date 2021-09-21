@@ -6,12 +6,12 @@ open Fable.Core
 
 [<AutoOpen>]
 module DomHelpers =
-    type Browser.Types.EventTarget with
+    type EventTarget with
         /// Casts the event target to HTMLInputElement and gets the `value` property.
-        member this.Value = (this :?> Browser.Types.HTMLInputElement).value
+        member this.Value = (this :?> HTMLInputElement).value
 
         /// Casts the event target to HTMLInputElement and gets the `checked` property.
-        member this.Checked = (this :?> Browser.Types.HTMLInputElement).``checked``
+        member this.Checked = (this :?> HTMLInputElement).``checked``
 
     /// Wrapper for event handlers to help type checking.
     let inline Ev (handler: Event -> unit) = handler
@@ -184,6 +184,11 @@ type LitBindings =
     /// </summary>
     [<ImportMember("lit-html/directives/ref.js")>]
     static member createRef<'T>() : RefValue<'T> = jsNative
+
+    /// Renders the argument as HTML, rather than text.
+    /// Note, this is unsafe to use with any user-provided input that hasn't been sanitized or escaped, as it may lead to cross-site-scripting vulnerabilities.
+    [<ImportMember("lit-html/directives/unsafe-html.js")>]
+    static member unsafeHTML(html: string) : TemplateResult = jsNative
 
 [<AutoOpen>]
 module LitHelpers =
