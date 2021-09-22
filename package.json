@@ -14,10 +14,7 @@
         "react-dom": "^17.0.2"
     },
     "devDependencies": {
-        "@open-wc/testing": "^3.0.0-next.3",
         "@web/test-runner": "^0.13.16",
-        "aria-query": "^4.2.2",
-        "dom-accessibility-api": "^0.5.7",
         "fable-publish-utils": "^2.2.0",
         "webpack": "^5.53.0",
         "webpack-cli": "^4.8.0",

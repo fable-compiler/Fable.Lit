@@ -206,10 +206,6 @@ type LitElementAttribute(name: string) =
     member _.defineGetter(target: obj, name: string, f: unit -> 'V) = ()
 
     override this.Decorate(renderFn) =
-        // We could use ReflectedDecorator to get argument names and set them as properties.
-        // But we'd also need to wrap the render function to apply the properties from `this` as arguments so it can get complicated.
-        // Moreover, we'll still need the initialization function for styles and property configuration,
-        // it can be confusing to have multiple ways to define the properties.
         if renderFn.length > 0 then
             failwith "Render function for LitElement cannot take arguments"
 
@@ -258,12 +254,7 @@ type LitElementAttribute(name: string) =
         // Register custom element
         this.defineCustomElement(name, classExpr)
 
-        box(fun () ->
-            // TODO: Let the user call this as function?
-            // let template = $"<{name}></{name}>"
-            // html $"""{LitBindings.unsafeHTML(template)}"""
-            failwith $"{name} is not immediately callable, it must be created in HTML"
-        ) :?> _
+        box(fun () -> failwith $"{name} is not immediately callable, it must be created in HTML") :?> _
 
 type LitElement =
     static member inline init() =

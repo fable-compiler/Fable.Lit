@@ -2,7 +2,9 @@ module LitElement
 
 open Fable.Core.JsInterop
 open Lit
-open Lit.Test
+open Expect
+open Expect.Dom
+open WebTestRunner
 
 [<LitElement("fable-element")>]
 let MyEl () =
@@ -54,8 +56,8 @@ let AttributeReflects () =
 
 describe "LitElement" <| fun () ->
     it "fable-element renders" <| fun () -> promise {
-        let! el = fixture_plain_html "<fable-element></fable-element>"
-        return! el |> Expect.matchShadowRootSnapshot "fable-element"
+        use! el = render_html $"<fable-element></fable-element>"
+        return! el.El |> Expect.matchShadowRootSnapshot "fable-element"
     }
 
     // it "Can render LitElement as function" <| fun () -> promise {
@@ -64,7 +66,8 @@ describe "LitElement" <| fun () ->
     // }
 
     it "Reacts to attribute/property changes" <| fun () -> promise {
-        let! el = fixture_plain_html "<fel-attribute-changes></fel-attribute-changes>"
+        use! el = render_html $"<fel-attribute-changes></fel-attribute-changes>"
+        let el = el.El
         // check the default value
         el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
         el.setAttribute("f-name", "fable")
@@ -78,7 +81,8 @@ describe "LitElement" <| fun () ->
     }
 
     it "Doesn't react to attribute changes" <| fun () -> promise {
-        let! el = fixture_plain_html "<fel-attribute-doesnt-change></fel-attribute-doesnt-change>"
+        use! el = render_html $"<fel-attribute-doesnt-change></fel-attribute-doesnt-change>"
+        let el = el.El
         // check the default value
         el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
         el.setAttribute("f-name", "fable")
@@ -92,7 +96,8 @@ describe "LitElement" <| fun () ->
     }
 
     it "Reflect Attribute changes" <| fun () -> promise {
-        let! el = fixture_plain_html "<fel-attribute-reflects></fel-attribute-reflects>"
+        use! el = render_html $"<fel-attribute-reflects></fel-attribute-reflects>"
+        let el = el.El
         // check the default value
         el.shadowRoot.querySelector("#f-value") |> Expect.innerText "default"
         el.getAttribute("f-name") |> Expect.equal "default"
@@ -105,6 +110,7 @@ describe "LitElement" <| fun () ->
     }
 
     it "From Attribute works" <| fun () -> promise {
-        let! el = fixture_plain_html """<fel-attribute-reflects rev-name="aloh"></fel-attribute-reflects>"""
+        use! el = render_html $"""<fel-attribute-reflects rev-name="aloh"></fel-attribute-reflects>"""
+        let el = el.El
         el.shadowRoot.querySelector("#rev-value") |> Expect.innerText "h-o-l-a"
     }
