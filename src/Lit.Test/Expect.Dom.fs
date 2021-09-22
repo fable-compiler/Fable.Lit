@@ -1,9 +1,11 @@
-module Lit.Test
+module Expect.Dom
 
-open System.Text.RegularExpressions
+open System
 open Fable.Core
 open Fable.Core.JsInterop
+open Browser
 open Browser.Types
+open Lit
 
 type Queries =
     abstract getByRole: Element * role: string * accessibleNamePattern: string -> Element
@@ -11,23 +13,6 @@ type Queries =
 
 [<ImportAll("./queries.min.js")>]
 let private queries: Queries = jsNative
-
-type SnapshotConfig =
-    abstract updateSnapshots: bool
-
-type WebTestRunner =
-    // getSnapshots,
-    // removeSnapshot,
-    abstract getSnapshotConfig: unit -> JS.Promise<SnapshotConfig>
-    [<Emit("$0.getSnapshot({ name: $1 })")>]
-    abstract getSnapshot: name: string -> JS.Promise<SnapshotConfig>
-    [<Emit("$0.saveSnapshot({ name: $1, content: $2 })")>]
-    abstract saveSnapshot: name: string * content: string -> JS.Promise<unit>
-    [<Emit("$0.compareSnapshot({ name: $1, content: $2 })")>]
-    abstract compareSnapshot: name: string * content: string -> JS.Promise<unit>
-
-[<ImportAll("@web/test-runner-commands")>]
-let private wtr: WebTestRunner = jsNative
 
 type Element with
     member this.cast<'El when 'El :> Element>() =
@@ -101,36 +86,49 @@ type Element with
             return res
         }
 
-[<ImportMember("@open-wc/testing")>]
-let private fixture (template: U2<TemplateResult, string>): JS.Promise<Element> = jsNative
+type Container =
+    inherit IDisposable
+    abstract El: HTMLElement
 
-let fixture_html template: JS.Promise<HTMLElement> =
-    !^(html template) |> fixture |> Promise.map (fun el -> el :?> HTMLElement)
+/// Creates an HTML element with the specified tag an puts it in `document.body`.
+/// When disposed, the element will be removed from `document.body`.
+let createContainer (tagName: string) =
+    let el = document.createElement(tagName)
+    document.body.appendChild(el) |> ignore
+    { new Container with
+        member _.El = el
+        member _.Dispose() = document.body.removeChild(el) |> ignore }
 
-let fixture_plain_html (template: string): JS.Promise<HTMLElement> =
-    fixture !^template |> Promise.map (fun el -> el :?> HTMLElement)
-
-[<Global>]
-let describe (msg: string) (suite: unit -> unit): unit = jsNative
-
-[<Global>]
-let it (msg: string) (test: unit -> JS.Promise<unit>): unit = jsNative
-
-module Expect =
-    let private cleanHtml (html: string) =
-        // TODO: Remove whitespace between tags too?
-        Regex(@"<\!--.*?-->").Replace(html, "").Trim()
-
-    let matchSnapshot (name: string) (content: string) = promise {
-        let! config = wtr.getSnapshotConfig()
-        if config.updateSnapshots then
-            return! wtr.saveSnapshot(name, content)
+/// Creates a div wrapper an puts it in `document.body`, then renders the Lit template
+/// on the element, waits until render is complete and returns first element child.
+/// When disposed, the wrapper will be removed from `document.body`.
+let render (template: TemplateResult) = promise {
+    let wrapper = createContainer "div"
+    Lit.render wrapper.El template
+    // TODO: We should have firstElementChild in Browser.Dom
+    let el: HTMLElement = wrapper.El?firstElementChild
+    do!
+        if not(isNull el.updateComplete) then el.updateComplete
         else
-            return! wtr.compareSnapshot(name, content)
-    }
+            Promise.create(fun resolve _ ->
+                window.requestAnimationFrame(fun _ -> resolve()) |> ignore)
+    return { new Container with
+        member _.El = el
+        member _.Dispose() = wrapper.Dispose() }
+}
 
-    let matchHtmlSnapshot (name: string) (el: HTMLElement) =
-        el.outerHTML |> cleanHtml |> matchSnapshot name
+/// Creates a div wrapper an puts it in `document.body`, then renders the HTML template
+/// on the element with Lit, waits until render is complete and returns first element child.
+/// When disposed, the wrapper will be removed from `document.body`.
+let render_html (template: FormattableString) =
+    html template |> render
 
-    let matchShadowRootSnapshot (name: string) (el: Element) =
-        el.shadowRoot.innerHTML |> cleanHtml |> matchSnapshot name
+[<RequireQualifiedAccess>]
+module Expect =
+    let innerText (expected: string) (el: Element) =
+        let el = el :?> HTMLElement
+        if not(el.innerText = expected) then
+            let prefix = $"{el.tagName.ToLower()}.innerText"
+            AssertionError.Throw("equal", actual=el.innerText, expected=expected, prefix=prefix)
+
+        Expect.equal expected el.innerText

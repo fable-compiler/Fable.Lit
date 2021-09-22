@@ -2,7 +2,9 @@ module HookTest
 
 open Elmish
 open Lit
-open Lit.Test
+open Expect
+open Expect.Dom
+open WebTestRunner
 
 [<HookComponent>]
 let Counter () =
@@ -111,12 +113,13 @@ let ElmishComponent () =
 
 describe "Hook" <| fun () ->
     it "counter renders" <| fun () -> promise {
-        let! el = fixture_html $"{Counter()}"
-        return! el |> Expect.matchHtmlSnapshot "counter"
+        use! el = Counter() |> render
+        return! el.El |> Expect.matchHtmlSnapshot "counter"
     }
 
     it "increases/decreases the counter on button click" <| fun () -> promise {
-        let! el = fixture_html $"{Counter()}"
+        use! el = Counter() |> render
+        let el = el.El
         let valuePar = el.getByText("value")
         let incrButton = el.getButton("increment")
         let decrButton = el.getButton("decrement")
@@ -129,7 +132,8 @@ describe "Hook" <| fun () ->
 
     it "useEffectOnce runs on mount/dismount" <| fun () -> promise {
         let aRef = ref 8
-        let! el = fixture_html $"{DisposableContainer(aRef)}"
+        use! el = DisposableContainer(aRef) |> render
+        let el = el.El
         el.getByText("value") |> Expect.innerText "Value: 5"
 
         // Effect is run asynchronously after after render
@@ -149,7 +153,8 @@ describe "Hook" <| fun () ->
     }
 
     it "useMemo doesn't change without dependencies" <| fun () -> promise {
-        let! el = fixture_html $"{MemoizedValue()}"
+        use! el = MemoizedValue() |> render
+        let el = el.El
         let state = el.getButton("state")
         let second = el.getButton("second")
 
@@ -169,7 +174,8 @@ describe "Hook" <| fun () ->
     }
 
     it "useElmish dispatches messages correctly" <| fun () -> promise {
-        let! el = fixture_html $"{ElmishComponent()}"
+        use! el = ElmishComponent() |> render
+        let el = el.El
         let inc = el.getButton("increment")
         let decr = el.getButton("decrement")
 

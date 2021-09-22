@@ -8,10 +8,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Expect.fs" />
-    <Compile Include="Lit.Test.fs" />
+    <Compile Include="Expect.Dom.fs" />
+    <Compile Include="WebTestRunner.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="*.fsproj; *.fs" PackagePath="fable\" />
+    <Content Include="*.fsproj; *.fs; *.js" PackagePath="fable\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lit\Lit.fsproj" />
