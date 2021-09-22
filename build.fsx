@@ -8,6 +8,7 @@ let packages = [
     "Lit"
     "Lit.React"
     "Lit.Elmish"
+    "Lit.Test"
   ]
 
 let ignoreCaseEquals (str1: string) (str2: string) =

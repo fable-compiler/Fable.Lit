@@ -1,3 +1,3 @@
-### 1.0.0-beta-004
+### 1.0.0-rc-001
 
-* Beta release
+* Release candidate
