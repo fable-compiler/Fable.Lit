@@ -57,21 +57,28 @@ type IHMRToken =
 
 /// Internal use, not meant to be used directly.
 type HMRToken() =
-    let listeners = Dictionary<string, (obj -> unit)>()
+    let listeners = Dictionary<Guid, (obj -> unit)>()
 
     interface IHMRToken
 
-    member _.Subscribe(key: string, handler: obj -> unit) =
-        if listeners.ContainsKey(key) then
-            listeners.[key] <- handler
-        else
-            listeners.Add(key, handler)
+    member _.Subscribe(handler: obj -> unit) =
+        let guid = Guid.NewGuid()
+        listeners.Add(guid, handler)
+        { new IDisposable with
+            member _.Dispose() =
+                listeners.Remove(guid)
+                |> ignore }
 
     member _.RequestUpdate(newModule: obj) =
-        listeners |> Seq.iter (fun kv ->
-            kv.Value newModule.[kv.Key])
+        listeners.Values |> Seq.iter (fun handler ->
+            handler newModule)
 
     static member Get(moduleUrl: string): HMRToken =
+        // Dev server may add query params to the url
+        let moduleUrl =
+            match moduleUrl.IndexOf("?") with
+            | -1 -> moduleUrl
+            | i -> moduleUrl.[..i-1]
         let dic = getOrAdd window GLOBAL_KEY obj
         getOrAdd dic moduleUrl HMRToken
 

@@ -326,6 +326,9 @@ module HookExtensions =
 [<AttachMembers>]
 type HookDirective() =
     inherit AsyncDirective()
+#if DEBUG
+    let mutable _hmrSub: IDisposable option = None
+#endif
     let context =
         HookContext(
             emitJsExpr () "(...args) => this.renderFn.apply(this, args)",
@@ -337,6 +340,13 @@ type HookDirective() =
         context.render ()
 
     member _.disconnected() =
+#if DEBUG
+        match _hmrSub with
+        | None -> ()
+        | Some d ->
+            _hmrSub <- None
+            d.Dispose()
+#endif
         context.disconnect()
 
     // In some situations, a disconnected part may be reconnected again,
@@ -347,8 +357,13 @@ type HookDirective() =
 
 #if DEBUG
     member this.subscribeHmr(token: HMRToken) =
-        token.Subscribe(this?name, fun updated ->
-            this?renderFn <- updated?renderFn)
+        match _hmrSub with
+        | Some _ -> ()
+        | None ->
+            _hmrSub <-
+                token.Subscribe(fun updatedModule ->
+                    this?renderFn <- updatedModule?(this?name)?renderFn)
+                |> Some
 #endif
 
     interface IHookProvider with
