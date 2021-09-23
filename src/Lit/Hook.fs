@@ -433,6 +433,10 @@ type Hook() =
     static member inline useState(init: unit -> 'Value) =
         Hook.getContext().useState (init)
 
+    /// Pass the HMR token created with `HMR.createToken()` in **this same file** to activate HMR for this component.
+    ///
+    /// > Currently, only compatible with HookComponent (not LitElement).
+    /// > When compiling in non-debug mode, this has no effect.
     static member inline useHmr(token: IHMRToken) =
 #if !DEBUG
         ()
