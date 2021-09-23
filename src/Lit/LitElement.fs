@@ -142,8 +142,25 @@ and Prop<'T> internal (defaultValue: 'T, options: obj) =
     [<Emit("$0{{ = $1}}")>]
     member _.Value with get() = defaultValue and set(_: 'T) = ()
 
+/// Configuration values for the LitElement instances
 type LitConfig<'Props> =
+    ///<summary>
+    /// An object containing the reactive properties definitions for the web components to react to changes
+    /// </summary>
+    /// <example>
+    ///     {| color = Prop.Of("red", attribute = "my-color")
+    ///        size = Prop.Of(100, attribute = "size") |}
+    /// </example>
     abstract props: 'Props with get, set
+    ///<summary>
+    /// A list of CSS Styles that will be added to the LitElement's styles static property
+    /// </summary>
+    /// <example>
+    ///     [ css $"""
+    ///         :host { display: flex; }
+    ///         .p { color: red; }
+    ///       """]
+    /// </example>
     abstract styles: Styles list with get, set
 
 type ILitElementInit<'Props> =
@@ -270,6 +287,21 @@ module LitElementExt =
     let private createCustomEvent (name: string) (opts: CustomEventInit<'T>): CustomEvent<'T> = jsNative
 
     type LitElement with
+        /// <summary>
+        /// Creates and Dispatches a Browser `Event`
+        /// </summary>
+        /// <remarks>
+        /// By default the event options:
+        /// - bubbles
+        /// - composed
+        /// - cancelable
+        ///
+        /// Are true by default for convenience
+        /// </remarks>
+        /// <param name="name">Name of the event to dispatch</param>
+        /// <param name="bubbles">Allow the event to go through the bubling phase</param>
+        /// <param name="composed">Allow the event to go through the shadow DOM boundary</param>
+        /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`)</param>
         member this.dispatchEvent(name: string, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
             jsOptions<EventInit>(fun o ->
                 o.bubbles <- defaultArg bubbles true
@@ -279,6 +311,22 @@ module LitElementExt =
             |> createEvent name
             |> this.el.dispatchEvent
 
+        /// <summary>
+        /// Creates and Dispatches a Browser `CustomEvent`
+        /// </summary>
+        /// <remarks>
+        /// By default the event options:
+        /// - bubbles
+        /// - composed
+        /// - cancelable
+        ///
+        /// Are true by default for convenience
+        /// </remarks>
+        /// <param name="name"></param>
+        /// <param name="detail">An optional value that will be available to any event listener via the `event.detail` property </param>
+        /// <param name="bubbles">Allow the event to go through the bubling phase</param>
+        /// <param name="composed">Allow the event to go through the shadow DOM boundary</param>
+        /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`)</param>
         member this.dispatchCustomEvent(name: string, ?detail: 'T, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
             jsOptions<CustomEventInit<'T>>(fun o ->
                 // Be careful if `detail` is not option, Fable may wrap it with `Some()`
@@ -291,8 +339,14 @@ module LitElementExt =
             |> createCustomEvent name
             |> this.el.dispatchEvent
 
+        /// <summary>
+        /// Initializes the LitElement instance and registers the element in the custom elements registry
+        /// </summary>
         static member inline init() =
             jsThis<ILitElementInit<unit>>.init(fun _ -> ())
 
+        /// <summary>
+        /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
+        /// </summary>
         static member inline init(initFn: LitConfig<'Props> -> unit) =
             jsThis<ILitElementInit<'Props>>.init(initFn)
