@@ -1,4 +1,4 @@
-module Template
+module Lit.Template
 
 open System
 open Fable.Core

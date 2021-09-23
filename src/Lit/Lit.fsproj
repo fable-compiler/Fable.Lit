@@ -12,9 +12,9 @@
     </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="HMR.fs" />
     <Compile Include="Template.fs" />
     <Compile Include="Lit.fs" />
+    <Compile Include="HMR.fs" />
     <Compile Include="Hook.fs" />
     <Compile Include="LitElement.fs" />
   </ItemGroup>

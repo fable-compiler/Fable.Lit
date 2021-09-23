@@ -1,10 +1,9 @@
 module MyApp.Components
 
-open Fable.Core
-open Fable.Core.JsInterop
 open Browser.Types
+open Lit
 
-let hmr = Lit.HMR.createToken()
+let private hmr = HMR.createToken()
 
 module ReactLib =
     open Feliz
@@ -40,8 +39,6 @@ module ReactLib =
                 ]
             ]
         ]
-
-open Lit
 
 let ReactLitComponent =
     React.toLit ReactLib.MyComponent
