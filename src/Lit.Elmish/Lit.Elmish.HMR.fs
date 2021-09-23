@@ -2,6 +2,7 @@
 // TODO: Abstract this to a common package? It's the same code as for Elmish.Snabbdom
 namespace Lit.Elmish.HMR
 
+open Fable.Core.JsInterop
 open Elmish
 open Lit
 
@@ -22,9 +23,15 @@ module Program =
         Program.runWith arg program
 #else
         let mutable hmrState : obj = null
+
         if HMR.hot.active then
             HMR.hot.accept()
             hmrState <- HMR.hot.getData(nameof(hmrState))
+
+        // Because of the way Webpack parses the file, we cannot reassign import.meta.webpackHot to import.meta.hot
+        if HMR.webpackHot.active then
+            HMR.webpackHot.accept()
+            hmrState <- HMR.webpackHot.getData(nameof(hmrState))
 
         let map (model, cmd) =
             model, cmd |> Cmd.map UserMsg
@@ -66,6 +73,11 @@ module Program =
                 if (HMR.hot.active) then
                     HMR.hot.dispose(fun _ ->
                         HMR.hot.setData(nameof(hmrState), hmrState)
+                        dispatch Stop
+                    )
+                if (HMR.webpackHot.active) then
+                    HMR.webpackHot.dispose(fun data ->
+                        data?(nameof(hmrState)) <- hmrState
                         dispatch Stop
                     )
             [ handler ]
