@@ -129,7 +129,7 @@ let initEl (config: LitConfig<_>) =
 
 [<LitElement("my-clock")>]
 let Clock() =
-    let props = LitElement.init initEl
+    let _, props = LitElement.init initEl
     let hourColor = props.hourColor.Value
     let colors = props.minuteColors.Value
 
