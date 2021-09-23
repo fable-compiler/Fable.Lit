@@ -1,6 +1,7 @@
 namespace Lit
 
 open System
+open System.Collections.Generic
 open Fable.Core
 open Fable.Core.JsInterop
 open Browser
@@ -107,6 +108,9 @@ type HookContext(renderFn: RenderFn, triggerRender: Action<HookContext>, isConne
     // TODO: Improve error message for each situation
     member _.fail() =
         failwith "Hooks must be called consistently for each render call"
+
+    member this.requestUpdate() =
+        triggerRender.Invoke(this)
 
     member this.render() =
         _stateIndex <- 0
@@ -341,6 +345,12 @@ type HookDirective() =
     member _.reconnected() =
         context.runEffects (onConnected = true, onRender = false)
 
+#if DEBUG
+    member this.subscribeHmr(token: HMRToken) =
+        token.Subscribe(this?name, fun updated ->
+            this?renderFn <- updated?renderFn)
+#endif
+
     interface IHookProvider with
         member _.hooks = context
 
@@ -349,12 +359,32 @@ type HookDirective() =
 /// (i.e. functions that can use hooks like <see cref="Lit.Hook.useState">Hook.useState</see>)
 /// </summary>
 type HookComponentAttribute() =
+#if !DEBUG
     inherit JS.DecoratorAttribute()
-
-    override _.Decorate(fn) =
-        emitJsExpr (jsConstructor<HookDirective>, fn) "class extends $0 { renderFn = $1 }"
-        |> LitBindings.directive
-        :?> _
+    override _.Decorate(renderFn) =
+        emitJsExpr (jsConstructor<HookDirective>, renderFn)
+            "class extends $0 { get renderFn() { return $1 } }"
+        |> LitBindings.directive :?> _
+#else
+    inherit JS.ReflectedDecoratorAttribute()
+    override _.Decorate(renderFn, mi) =
+        let renderRef = LitBindings.createRef()
+        renderRef.value <- renderFn
+        let classExpr =
+            emitJsExpr (jsConstructor<HookDirective>, renderRef, mi.Name) """
+                class extends $0 {
+                    get name() { return $2; }
+                    get renderFn() { return $1.value; }
+                    set renderFn(v) {
+                        $1.value = v;
+                        this.context.requestUpdate();
+                    }
+                }"""
+        let directive = classExpr |> LitBindings.directive
+        // This lets us access the updated render function when accepting new modules in HMR
+        directive?renderFn <- renderFn
+        directive :?> _
+#endif
 
 /// <summary>
 /// A static class that contains react like hooks.
@@ -367,7 +397,7 @@ type Hook() =
     /// Use `getContext()`
     static member getContext(this: IHookProvider) =
         if isNull this || not(box this.hooks :? HookContext) then
-            failwith "Cannot access hook context, make sure the hooks is called on top of a HookComponent function"
+            failwith "Cannot access hook context, make sure the hook is called on top of a HookComponent function"
         this.hooks
 
     /// Only call `getContext` from an inlined function when implementing a custom hook
@@ -402,6 +432,22 @@ type Hook() =
     /// </param>
     static member inline useState(init: unit -> 'Value) =
         Hook.getContext().useState (init)
+
+    static member inline useHmr(token: IHMRToken) =
+#if !DEBUG
+        ()
+#else
+        Hook.useHmr(token, jsThis)
+
+    static member useHmr(token: IHMRToken, this: obj) =
+        match token, this with
+        | (:? HMRToken as token), (:? HookDirective as directive) -> directive.subscribeHmr(token)
+        | _ -> JS.console.warn("useHmr can only be used with HookComponent")
+#endif
+
+    static member inline useExternalState(ref: 'Value ref) =
+        let value, setValue = Hook.getContext().useState(ref.Value)
+        value, fun v -> ref := v; setValue v
 
     /// <summary>
     /// Creates and returns a mutable object (a 'ref') whose .current property is initialized to the hosting element.

@@ -4,6 +4,7 @@
 */public/*.png
 out/
 bundle.js*
+dist/
 
 .idea/
 

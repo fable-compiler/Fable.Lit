@@ -1,30 +1,10 @@
-module App
+module MyApp.Components
 
-open System
+open Fable.Core
+open Fable.Core.JsInterop
 open Browser.Types
-open Elmish
-open Helpers
 
-type Model =
-    { Value: string
-      ShowClock: bool
-      ShowReact: bool }
-
-type Msg =
-    | ChangeValue of string
-    | ToggleClock
-    | ToggleReact
-
-let initialState() =
-    { Value = "World"
-      ShowClock = true
-      ShowReact = true }, Cmd.none
-
-let update msg model =
-    match msg with
-    | ChangeValue v -> { model with Value = v }, Cmd.none
-    | ToggleClock -> { model with ShowClock = not model.ShowClock }, Cmd.none
-    | ToggleReact -> { model with ShowReact = not model.ShowReact }, Cmd.none
+let hmr = Lit.HMR.createToken()
 
 module ReactLib =
     open Feliz
@@ -83,7 +63,7 @@ module Styles =
             padding: 0.25rem;
             font-size: 16px;
             width: 250px;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }}"""
 
 let toggleVisible (txt: string) (isVisible: bool) (isEnabled: bool) (onClick: Event -> unit) =
@@ -112,6 +92,7 @@ let elmishNameInput value dispatch =
 // This function keeps local state and can use hooks
 [<HookComponent>]
 let LocalNameInput() =
+    Hook.useHmr(hmr)
     let value, setValue = Hook.useState "Local"
     let inputRef = Hook.useRef<HTMLInputElement>()
 
@@ -164,27 +145,3 @@ let ClockDisplay model dispatch =
             {if transition.out then Lit.nothing else clockContainer()}
         </div>
     """
-
-let view model dispatch =
-    html $"""
-      <div style={Styles.verticalContainer}>
-        {toggleVisible "React" model.ShowReact true (fun _ -> dispatch ToggleReact)}
-        {if not model.ShowReact then Lit.nothing
-         else ReactLitComponent model.ShowClock}
-
-        <br />
-        {ClockDisplay model dispatch}
-
-        {elmishNameInput model.Value (ChangeValue >> dispatch)}
-        {LocalNameInput()}
-      </div>
-    """
-
-open Lit.Elmish
-open Lit.Elmish.HMR
-
-Clock.register()
-
-Program.mkProgram initialState update view
-|> Program.withLit "app-container"
-|> Program.run
