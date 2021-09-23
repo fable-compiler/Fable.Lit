@@ -147,7 +147,7 @@ type LitConfig<'Props> =
     abstract styles: Styles list with get, set
 
 type ILitElementInit<'Props> =
-    abstract init: initFn: (LitConfig<'Props> -> unit) -> 'Props
+    abstract init: initFn: (LitConfig<'Props> -> unit) -> LitElement * 'Props
 
 type LitElementInit<'Props>() =
     let mutable _initialized = false
@@ -164,14 +164,14 @@ type LitElementInit<'Props>() =
         member this.init initFn =
             _initialized <- true
             initFn this
-            Unchecked.defaultof<'Props>
+            Unchecked.defaultof<_>
 
     interface IHookProvider with
         member _.hooks = failInit()
 
 [<AttachMembers>]
 type LitHookElement<'Props>(renderFn: JS.Function, ?initProps: JS.Function) =
-    inherit LitElementBase()
+    inherit LitElement()
     do initProps |> Option.iter(fun f -> f.Invoke([|jsThis|]) |> ignore)
     let context =
         HookContext(
@@ -191,7 +191,7 @@ type LitHookElement<'Props>(renderFn: JS.Function, ?initProps: JS.Function) =
         context.runEffects (onConnected = true, onRender = false)
 
     interface ILitElementInit<'Props> with
-        member this.init(_): 'Props = box this :?> 'Props
+        member this.init(_) = this :> LitElement, box this :?> 'Props
 
     interface IHookProvider with
         member _.hooks = context
@@ -256,9 +256,43 @@ type LitElementAttribute(name: string) =
 
         box(fun () -> failwith $"{name} is not immediately callable, it must be created in HTML") :?> _
 
-type LitElement =
-    static member inline init() =
-        jsThis<ILitElementInit<unit>>.init(fun _ -> ())
+[<AutoOpen>]
+module LitElementExt =
+    open Browser
+    open Browser.Types
 
-    static member inline init(initFn: LitConfig<'Props> -> unit) =
-        jsThis<ILitElementInit<'Props>>.init(initFn)
+    // TODO: Not sure why we don't have this constructor in Fable.Browser, we should add it
+    // CustomEvent constructor is also transpiled incorrectly, not sure why
+    [<Emit("new Event($0, $1)")>]
+    let private createEvent (name: string) (opts: EventInit): Event = jsNative
+
+    [<Emit("new CustomEvent($0, $1)")>]
+    let private createCustomEvent (name: string) (opts: CustomEventInit<'T>): CustomEvent<'T> = jsNative
+
+    type LitElement with
+        member this.dispatchEvent(name: string, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
+            jsOptions<EventInit>(fun o ->
+                o.bubbles <- defaultArg bubbles true
+                o.composed <- defaultArg composed true
+                o.cancelable <- defaultArg cancelable true
+            )
+            |> createEvent name
+            |> this.el.dispatchEvent
+
+        member this.dispatchCustomEvent(name: string, ?detail: 'T, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
+            jsOptions<CustomEventInit<'T>>(fun o ->
+                // Be careful if `detail` is not option, Fable may wrap it with `Some()`
+                // as it's a generic and o.detail expects an option
+                o.detail <- detail
+                o.bubbles <- defaultArg bubbles true
+                o.composed <- defaultArg composed true
+                o.cancelable <- defaultArg cancelable true
+            )
+            |> createCustomEvent name
+            |> this.el.dispatchEvent
+
+        static member inline init() =
+            jsThis<ILitElementInit<unit>>.init(fun _ -> ())
+
+        static member inline init(initFn: LitConfig<'Props> -> unit) =
+            jsThis<ILitElementInit<'Props>>.init(initFn)

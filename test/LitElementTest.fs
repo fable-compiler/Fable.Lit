@@ -8,7 +8,7 @@ open WebTestRunner
 
 [<LitElement("fable-element")>]
 let MyEl () =
-    LitElement.init ()
+    let _ = LitElement.init ()
 
     html
         $"""
@@ -17,7 +17,7 @@ let MyEl () =
 
 [<LitElement("fel-attribute-changes")>]
 let AttributeChanges () =
-    let props =
+    let _, props =
         LitElement.init (fun config -> config.props <- {| fName = Prop.Of("default", attribute = "f-name") |})
 
     html
@@ -27,7 +27,7 @@ let AttributeChanges () =
 
 [<LitElement("fel-attribute-doesnt-change")>]
 let AttributeDoesntChange () =
-    let props =
+    let _, props =
         LitElement.init (fun config -> config.props <- {| fName = Prop.Of("default", attribute = "") |})
 
     html
@@ -40,7 +40,7 @@ let reverse (str: string) =
 
 [<LitElement("fel-attribute-reflects")>]
 let AttributeReflects () =
-    let props =
+    let _, props =
         LitElement.init (fun config ->
             config.props <-
                 {|
