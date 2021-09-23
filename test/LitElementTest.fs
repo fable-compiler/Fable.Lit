@@ -5,6 +5,7 @@ open Lit
 open Expect
 open Expect.Dom
 open WebTestRunner
+open Browser.Types
 
 [<LitElement("fable-element")>]
 let MyEl () =
@@ -52,6 +53,30 @@ let AttributeReflects () =
         $"""
         <p id="f-value">{props.fName.Value}</p>
         <p id="rev-value">{props.revName.Value |> Array.map string |> String.concat "-"}</p>
+    """
+
+[<LitElement("fel-dispatch-events")>]
+let DispatchEvents () =
+    let el, _ = LitElement.init ()
+
+    let onClick _ =
+        el.dispatchEvent("fires-events")
+
+    html
+        $"""
+        <button @click={onClick}></button>
+    """
+
+[<LitElement("fel-dispatch-custom-events")>]
+let DispatchCustomEvents () =
+    let el, _ = LitElement.init()
+
+    let onClick _ =
+        el.dispatchCustomEvent("fires-custom-events", 10)
+
+    html
+        $"""
+        <button @click={onClick}></button>
     """
 
 describe "LitElement" <| fun () ->
@@ -113,4 +138,31 @@ describe "LitElement" <| fun () ->
         use! el = render_html $"""<fel-attribute-reflects rev-name="aloh"></fel-attribute-reflects>"""
         let el = el.El
         el.shadowRoot.querySelector("#rev-value") |> Expect.innerText "h-o-l-a"
+    }
+
+    it "Fires Events" <| fun () -> promise {
+        use! el = render_html $"""<fel-dispatch-events></fel-dispatch-events>"""
+        let el = el.El
+        let! didFire =
+            Expect.toDispatch
+                "fires-events"
+                (fun _ ->
+                    let btn = el.shadowRoot.querySelector "button" :?> HTMLButtonElement
+                    btn.click())
+                el
+        Expect.equal true didFire
+    }
+
+    it "Fires Custom Events" <| fun () -> promise {
+        use! el = render_html $"""<fel-dispatch-custom-events></fel-dispatch-custom-events>"""
+        let el = el.El
+        let! result =
+            Expect.toDispatchCustom<int>
+                "fires-custom-events"
+                (fun _ ->
+                    let btn = el.shadowRoot.querySelector "button" :?> HTMLButtonElement
+                    btn.click())
+                el
+
+        Expect.equal (Some 10) result
     }

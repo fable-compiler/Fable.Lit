@@ -125,6 +125,9 @@ let render_html (template: FormattableString) =
 
 [<RequireQualifiedAccess>]
 module Expect =
+    /// <summary>
+    /// Checks the text content of an element
+    /// </summary>
     let innerText (expected: string) (el: Element) =
         let el = el :?> HTMLElement
         if not(el.innerText = expected) then
@@ -132,3 +135,41 @@ module Expect =
             AssertionError.Throw("equal", actual=el.innerText, expected=expected, prefix=prefix)
 
         Expect.equal expected el.innerText
+
+    /// <summary>
+    /// Registers an event listener for a particular event name, use the action callback to make your component fire up the event.
+    /// The function will return a promise that resolves once the element dispatches the specified event
+    /// </summary>
+    /// <param name="eventName">The name of the event to listen to.</param>
+    /// <param name="action">A callback to make the element dispatch the event. this callback will be fired immediately after the listener has been registered</param>
+    /// <param name="el">Element to monitor for dispatched events.</param>
+    let toDispatch eventName (action: unit -> unit) (el: HTMLElement) =
+        Promise.create
+            (fun resolve reject ->
+                el.addEventListener (
+                    eventName,
+                    fun _ ->
+                        resolve true
+                )
+
+                action())
+
+    /// <summary>
+    /// Registers an event listener for a particular event name, use the action callback to make your component fire up the event.
+    /// The function will return a promise that resolves the detail of the custom event once the element dispatches the specified event
+    /// </summary>
+    /// <param name="eventName">The name of the event to listen to.</param>
+    /// <param name="action">A callback to make the element dispatch the event. this callback will be fired immediately after the listener has been registered</param>
+    /// <param name="el">Element to monitor for dispatched events.</param>
+    /// <returns>The detail that was provided by the custom event </returns>
+    let toDispatchCustom<'T> eventName (action: unit -> unit) (el: HTMLElement) =
+        Promise.create
+            (fun resolve reject ->
+                el.addEventListener (
+                    eventName,
+                    fun (e: Event) ->
+                        let custom = e :?> CustomEvent<'T>
+                        resolve custom.detail
+                )
+
+                action())
