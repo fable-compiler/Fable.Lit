@@ -26,9 +26,6 @@ type IHot =
     [<Emit("import.meta.hot.data[$1] = $2")>]
     abstract setData: key: string * obj -> unit
 
-    [<Emit("import.meta.hot.decline()")>]
-    abstract decline: unit -> unit
-
     [<Emit("import.meta.hot.accept($1...)")>]
     abstract accept: ?handler: (obj -> unit) -> unit
 
@@ -36,6 +33,23 @@ type IHot =
     abstract dispose: (obj -> unit) -> unit
 
     [<Emit("import.meta.hot.invalidate()")>]
+    abstract invalidate: unit -> unit
+
+// Webpack uses import.meta.webpackHot instead :/
+type IWebpackHot =
+    [<Emit("import.meta.webpackHot")>]
+    abstract active: bool
+
+    [<Emit("import.meta.webpackHot.data ? import.meta.webpackHot.data[$1] : null")>]
+    abstract getData: key: string -> obj
+
+    [<Emit("import.meta.webpackHot.accept($1...)")>]
+    abstract accept: ?handler: (obj -> unit) -> unit
+
+    [<Emit("import.meta.webpackHot.dispose($1...)")>]
+    abstract dispose: (obj -> unit) -> unit
+
+    [<Emit("import.meta.webpackHot.invalidate()")>]
     abstract invalidate: unit -> unit
 
 type IHMRToken =
@@ -64,6 +78,9 @@ type HMRToken() =
 type HMR =
     /// Internal use. If you want to interact with HMR API, see https://vitejs.dev/guide/api-hmr.html
     static member hot: IHot = !!obj()
+
+    /// Internal use. If you want to interact with HMR API, see https://webpack.js.org/api/hot-module-replacement/
+    static member webpackHot: IWebpackHot = !!obj()
 
     /// Call this in module/files you want to activate HMR for when using non-bundling dev servers like [Vite](https://vitejs.dev/) or [Snowpack](https://www.snowpack.dev/).
     ///

@@ -7,7 +7,7 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="Clock.fs" />
     <Compile Include="Components.fs" />
-    <Compile Include="Main.fs" />
+    <Compile Include="Entry.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lit.React\Lit.React.fsproj" />
