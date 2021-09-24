@@ -31,7 +31,10 @@ module Expect =
 
     let private cleanHtml (html: string) =
         // Lit inserts comments with different values every time, so remove them
-        Regex(@"<\!--[\s\S]*?-->").Replace(html, "").Trim()
+        let html = Regex(@"<\!--[\s\S]*?-->").Replace(html, "")
+        // Trailing whitespace seems to cause issues too
+        let html = Regex(@"\s+\n").Replace(html, "\n")
+        html.Trim()
 
     /// Compares the content string with the snapshot of the given name within the current file.
     /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
