@@ -97,7 +97,7 @@ let LocalNameInput() =
       <div class="content">
         <p>Local state: <i>Hello {value}!</i></p>
         <input
-          {Lit.ref inputRef}
+          {Ref inputRef}
           value={value}
           style={Styles.nameInput value}
           @keyup={EvVal setValue}

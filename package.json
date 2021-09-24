@@ -4,7 +4,6 @@
         "install": "dotnet tool restore",
         "publish": "dotnet fsi build.fsx publish",
         "test": "dotnet fable test --run web-test-runner test/**/*Test.fs.js --node-resolve",
-        "test:update-snapshots": "dotnet fable test --run web-test-runner test/**/*Test.fs.js --node-resolve --update-snapshots",
         "test:watch": "dotnet fable watch test --run web-test-runner test/**/*Test.fs.js --node-resolve --watch",
         "start": "cd sample && dotnet fable watch src -o out --runFast vite"
     },

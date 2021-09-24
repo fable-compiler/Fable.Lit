@@ -4,23 +4,6 @@ open System
 open Browser.Types
 open Fable.Core
 
-[<AutoOpen>]
-module DomHelpers =
-    type EventTarget with
-        /// Casts the event target to HTMLInputElement and gets the `value` property.
-        member this.Value = (this :?> HTMLInputElement).value
-
-        /// Casts the event target to HTMLInputElement and gets the `checked` property.
-        member this.Checked = (this :?> HTMLInputElement).``checked``
-
-    /// Wrapper for event handlers to help type checking.
-    let inline Ev (handler: Event -> unit) = handler
-
-    /// Wrapper for event handlers to help type checking.
-    /// Extracts `event.target.value` and passes it to the handler.
-    let inline EvVal (handler: string -> unit) =
-        fun (ev: Event) -> handler ev.target.Value
-
 /// <summary>
 /// The return type of the template tag functions.
 /// </summary>
@@ -316,3 +299,23 @@ type Lit() =
     /// Used when building custom directives. [More info](https://lit.dev/docs/templates/custom-directives/).
     static member inline directive<'Class, 'Arg>() : 'Arg -> TemplateResult =
         LitBindings.directive JsInterop.jsConstructor<'Class> :?> _
+
+[<AutoOpen>]
+module DomHelpers =
+    type EventTarget with
+        /// Casts the event target to HTMLInputElement and gets the `value` property.
+        member this.Value = (this :?> HTMLInputElement).value
+
+        /// Casts the event target to HTMLInputElement and gets the `checked` property.
+        member this.Checked = (this :?> HTMLInputElement).``checked``
+
+    /// Wrapper for event handlers to help type checking.
+    let inline Ev (handler: Event -> unit) = handler
+
+    /// Wrapper for event handlers to help type checking.
+    /// Extracts `event.target.value` and passes it to the handler.
+    let inline EvVal (handler: string -> unit) =
+        fun (ev: Event) -> handler ev.target.Value
+
+    /// Alias of `Lit.ref`
+    let inline Ref (r: ref<'El option>) = Lit.ref r

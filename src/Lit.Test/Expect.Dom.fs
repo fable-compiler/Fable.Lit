@@ -144,8 +144,8 @@ module Expect =
     let innerText (expected: string) (el: Element) =
         let el = el :?> HTMLElement
         if not(el.innerText = expected) then
-            let prefix = $"{el.tagName.ToLower()}.innerText"
-            AssertionError.Throw("equal", actual=el.innerText, expected=expected, prefix=prefix)
+            let description = $"{el.tagName.ToLower()}.innerText"
+            AssertionError.Throw("equal", description=description, actual=el.innerText, expected=expected)
 
     /// <summary>
     /// Registers an event listener for a particular event name, use the action callback to make your component fire up the event.

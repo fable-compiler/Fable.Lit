@@ -459,9 +459,12 @@ type Hook() =
         Hook.useHmr(token, jsThis)
 
     static member useHmr(token: IHMRToken, this: obj) =
-        match token, this with
-        | (:? HMRToken as token), (:? HookDirective as directive) -> directive.subscribeHmr(token)
-        | _ -> JS.console.warn("useHmr can only be used with HookComponent")
+        match token with
+        | :? HMRToken as token ->
+            match this with
+            | :? HookDirective as directive -> directive.subscribeHmr(token)
+            | _ -> JS.console.warn("useHmr can only be used with HookComponent")
+        | _ -> ()
 #endif
 
     static member inline useExternalState(ref: 'Value ref) =
