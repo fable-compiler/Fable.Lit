@@ -31,11 +31,11 @@ module Expect =
 
     let private cleanHtml (html: string) =
         // Lit inserts comments with different values every time, so remove them
-        Regex(@"<\!--.*?-->").Replace(html, "").Trim()
+        Regex(@"<\!--[\s\S]*?-->").Replace(html, "").Trim()
 
     /// Compares the content string with the snapshot of the given name within the current file.
     /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
-    let matchSnapshot (name: string) (content: string) = promise {
+    let matchSnapshot (description: string) (name: string) (content: string) = promise {
         let! config = wtr.getSnapshotConfig()
         let! snapshot =
             if config.updateSnapshots then Promise.lift null
@@ -47,15 +47,19 @@ module Expect =
         else
             // Don't use wtr.compareSnapshot because that will update the snapshot
             // without encoding the content even with a successful match
-            return Expect.Expect.equal snapshot content
+            return
+                if not(snapshot = content) then
+                    // Snapshots can be large, so use `brief` argument to hide them in the error message
+                    // (Diffing should be displayed correctly)
+                    Expect.AssertionError.Throw("match snapshot", description=description, actual=content, expected=snapshot, brief=true)
     }
 
     /// Compares `outerHML` of the element with the snapshot of the given name within the current file.
     /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
     let matchHtmlSnapshot (name: string) (el: HTMLElement) =
-        el.outerHTML |> cleanHtml |> matchSnapshot name
+        el.outerHTML |> cleanHtml |> matchSnapshot "outerHTML" name
 
     /// Compares `shadowRoot.innerHTML` of the element with the snapshot of the given name within the current file.
     /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
     let matchShadowRootSnapshot (name: string) (el: Element) =
-        el.shadowRoot.innerHTML |> cleanHtml |> matchSnapshot name
+        el.shadowRoot.innerHTML |> cleanHtml |> matchSnapshot "shadowRoor" name

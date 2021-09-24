@@ -13,6 +13,8 @@ let Counter () =
     html
         $"""
       <div>
+        <!-- Check snapshot can contain # char. See https://github.com/modernweb-dev/web/issues/1690 -->
+        <p>F# counter</p>
         <p>Value: {value}</p>
         <button @click={Ev(fun _ -> value + 1 |> setValue)}>Increment</button>
         <button @click={Ev(fun _ -> value - 1 |> setValue)}>Decrement</button>

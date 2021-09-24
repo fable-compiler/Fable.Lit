@@ -20,14 +20,15 @@ type JsError(message: string) =
     class end
 
 [<AttachMembers>]
-type AssertionError<'T>(assertion: string, ?description: string, ?actual: 'T, ?expected: 'T) =
+type AssertionError<'T>(assertion: string, ?description: string, ?actual: 'T, ?expected: 'T, ?brief: bool) =
     inherit JsError(
+        let brief = defaultArg brief false
         [
             "Expected " |> Some
             description |> Option.map (fun v -> $"'{v}' ")
-            actual |> Option.map (fun v -> $"{quote v} ")
+            if not brief then actual |> Option.map (fun v -> $"{quote v} ")
             $"to {assertion} " |> Some
-            expected |> Option.map (fun v -> $"{quote v} ")
+            if not brief then expected |> Option.map (fun v -> $"{quote v} ")
         ] |> List.choose id |> String.concat ""
     )
     // Test runner requires these properties to be settable, not sure why
@@ -35,8 +36,8 @@ type AssertionError<'T>(assertion: string, ?description: string, ?actual: 'T, ?e
     member val expected = expected with get, set
 
 type AssertionError =
-    static member Throw(assertion: string, ?description, ?actual: 'T, ?expected: 'T) =
-        AssertionError.Throw(assertion, ?description=description, ?actual=actual, ?expected=expected)
+    static member Throw(assertion: string, ?description, ?actual: 'T, ?expected: 'T, ?brief: bool) =
+        AssertionError(assertion, ?description=description, ?actual=actual, ?expected=expected, ?brief=brief) |> throw
 
 // TODO: String and collection assertions
 [<RequireQualifiedAccess>]
@@ -80,6 +81,13 @@ module Expect =
     let isFalse (msg: string) (condition: 'T -> bool) (actual: 'T) =
         if condition actual then
             AssertionError.Throw("be false", description=msg)
+
+    let find (msg: string) (condition: 'T -> bool) (items: 'T seq) =
+        items
+        |> Seq.tryFind condition
+        |> function
+            | Some x -> x
+            | None -> AssertionError.Throw("be found", description=msg)
 
     let error (msg: string) (f: 'T -> 'Result) (actual: 'T) =
         try

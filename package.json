@@ -3,9 +3,9 @@
     "scripts": {
         "install": "dotnet tool restore",
         "publish": "dotnet fsi build.fsx publish",
-        "test": "dotnet fable test --run web-test-runner test/**/*Test.fs.js --node-resolve",
-        "test:watch": "dotnet fable watch test --run web-test-runner test/**/*Test.fs.js --node-resolve --watch",
-        "start": "cd sample && dotnet fable watch src -o out --runFast vite"
+        "test": "dotnet fable test -o build/test --run web-test-runner build/test/*Test.js --node-resolve",
+        "test:watch": "dotnet fable watch test -o build/test --run web-test-runner build/test/*Test.js --node-resolve --watch",
+        "start": "dotnet fable watch sample -o build/sample --runFast vite --open"
     },
     "dependencies": {
         "lit": "^2.0.0",

@@ -1,4 +1,4 @@
-module MyApp.Components
+module Sample.Components
 
 open Browser.Types
 open Lit

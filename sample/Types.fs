@@ -1,4 +1,4 @@
-namespace MyApp
+namespace Sample
 
 type Model =
     { Value: string

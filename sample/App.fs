@@ -1,4 +1,4 @@
-module MyApp.Main
+module Sample.App
 
 open Elmish
 open Lit

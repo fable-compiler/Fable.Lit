@@ -3,15 +3,14 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Types.fs" />
-    <Compile Include="Helpers.fs" />
     <Compile Include="Clock.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="Components.fs" />
-    <Compile Include="Entry.fs" />
+    <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Lit.React\Lit.React.fsproj" />
-    <ProjectReference Include="..\..\src\Lit.Elmish\Lit.Elmish.fsproj" />
+    <ProjectReference Include="..\src\Lit.React\Lit.React.fsproj" />
+    <ProjectReference Include="..\src\Lit.Elmish\Lit.Elmish.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- <PackageReference Include="Fable.Lit.Elmish" Version="1.0.0-rc-001" /> -->

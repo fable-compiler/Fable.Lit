@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="Expect.fs" />
     <Compile Include="Expect.Dom.fs" />
+    <Compile Include="Expect.Elmish.fs" />
     <Compile Include="WebTestRunner.fs" />
   </ItemGroup>
   <ItemGroup>

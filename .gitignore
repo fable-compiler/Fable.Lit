@@ -1,9 +1,6 @@
-*.fs.js
-*/public/*.js
-*/public/*.txt
-*/public/*.png
-out/
-bundle.js*
+build/sample/*
+build/test/*
+!build/test/__snapshots__
 dist/
 
 .idea/
