@@ -99,6 +99,23 @@ let createContainer (tagName: string) =
         member _.El = el
         member _.Dispose() = document.body.removeChild(el) |> ignore }
 
+/// For LitElements, awaits `el.updateComplete`.
+/// For rest of elements, awaits `window.requestAnimationFrame`.
+/// Ensures that ShadyDOM finished its job if available.
+let elementUpdated (el: Element) =
+    match box el with
+    | :? LitElement as el -> el.updateComplete
+    | _ -> Promise.create(fun resolve _ ->
+        window.requestAnimationFrame(fun _ -> resolve()) |> ignore)
+    // Check if ShadyDOM polyfill is being used
+    // https://github.com/webcomponents/polyfills/tree/master/packages/shadydom
+    |> Promise.map (fun () ->
+        emitJsStatement () """
+            if (window.ShadyDOM && typeof window.ShadyDOM.flush === 'function') {
+                window.ShadyDOM.flush();
+            }"""
+    )
+
 /// Creates a div wrapper an puts it in `document.body`, then renders the Lit template
 /// on the element, waits until render is complete and returns first element child.
 /// When disposed, the wrapper will be removed from `document.body`.
@@ -107,11 +124,7 @@ let render (template: TemplateResult) = promise {
     Lit.render wrapper.El template
     // TODO: We should have firstElementChild in Browser.Dom
     let el: HTMLElement = wrapper.El?firstElementChild
-    do!
-        if not(isNull el.updateComplete) then el.updateComplete
-        else
-            Promise.create(fun resolve _ ->
-                window.requestAnimationFrame(fun _ -> resolve()) |> ignore)
+    do! elementUpdated el
     return { new Container with
         member _.El = el
         member _.Dispose() = wrapper.Dispose() }
@@ -134,8 +147,6 @@ module Expect =
             let prefix = $"{el.tagName.ToLower()}.innerText"
             AssertionError.Throw("equal", actual=el.innerText, expected=expected, prefix=prefix)
 
-        Expect.equal expected el.innerText
-
     /// <summary>
     /// Registers an event listener for a particular event name, use the action callback to make your component fire up the event.
     /// The function will return a promise that resolves once the element dispatches the specified event
@@ -143,16 +154,18 @@ module Expect =
     /// <param name="eventName">The name of the event to listen to.</param>
     /// <param name="action">A callback to make the element dispatch the event. this callback will be fired immediately after the listener has been registered</param>
     /// <param name="el">Element to monitor for dispatched events.</param>
-    let toDispatch eventName (action: unit -> unit) (el: HTMLElement) =
+    let dispatch eventName (action: unit -> unit) (el: HTMLElement) =
         Promise.create
             (fun resolve reject ->
                 el.addEventListener (
                     eventName,
                     fun _ ->
-                        resolve true
+                        resolve()
                 )
 
                 action())
+        // The event should be fired immediately so we set a small timeout
+        |> Expect.beforeTimeout 100 $"dispatch {eventName}"
 
     /// <summary>
     /// Registers an event listener for a particular event name, use the action callback to make your component fire up the event.
@@ -162,7 +175,7 @@ module Expect =
     /// <param name="action">A callback to make the element dispatch the event. this callback will be fired immediately after the listener has been registered</param>
     /// <param name="el">Element to monitor for dispatched events.</param>
     /// <returns>The detail that was provided by the custom event </returns>
-    let toDispatchCustom<'T> eventName (action: unit -> unit) (el: HTMLElement) =
+    let dispatchCustom<'T> eventName (action: unit -> unit) (el: HTMLElement) =
         Promise.create
             (fun resolve reject ->
                 el.addEventListener (
@@ -173,3 +186,5 @@ module Expect =
                 )
 
                 action())
+        // The event should be fired immediately so we set a small timeout
+        |> Expect.beforeTimeout 100 $"dispatch {eventName}"

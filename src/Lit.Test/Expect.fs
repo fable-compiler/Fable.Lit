@@ -83,3 +83,15 @@ module Expect =
             let _ = f actual
             AssertionError(msg, actual=actual) |> throw
         with e -> e
+
+    let beforeTimeout (ms: int) (msg: string) (pr: JS.Promise<'T>): JS.Promise<'T> =
+        JS.Constructors.Promise.race [|
+            pr |> Promise.map box
+            Promise.sleep ms |> Promise.map (fun _ -> box "timeout")
+        |]
+        |> Promise.map (function
+            | :? string as s when s = "timeout" ->
+                 $"""Expected "{msg}" before {ms}ms timeout"""
+                 |> JsError
+                 |> throw
+            | v -> v :?> 'T)

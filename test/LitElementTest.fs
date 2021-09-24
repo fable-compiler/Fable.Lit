@@ -64,7 +64,7 @@ let DispatchEvents () =
 
     html
         $"""
-        <button @click={onClick}></button>
+        <button @click={onClick}>Click me!</button>
     """
 
 [<LitElement("fel-dispatch-custom-events")>]
@@ -76,7 +76,7 @@ let DispatchCustomEvents () =
 
     html
         $"""
-        <button @click={onClick}></button>
+        <button @click={onClick}>Click me!</button>
     """
 
 describe "LitElement" <| fun () ->
@@ -97,11 +97,11 @@ describe "LitElement" <| fun () ->
         el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
         el.setAttribute("f-name", "fable")
         // wait for lit's render updates
-        do! el.updateComplete
+        do! elementUpdated el
         el.shadowRoot.querySelector("#value") |> Expect.innerText "fable"
         // update property manually
         el?fName <- "fable-2"
-        do! el.updateComplete
+        do! elementUpdated el
         el.shadowRoot.querySelector("#value") |> Expect.innerText "fable-2"
     }
 
@@ -112,11 +112,11 @@ describe "LitElement" <| fun () ->
         el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
         el.setAttribute("f-name", "fable")
         // wait for lit's render updates
-        do! el.updateComplete
+        do! elementUpdated el
         el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
         // update property manually
         el?fName <- "fable"
-        do! el.updateComplete
+        do! elementUpdated el
         el.shadowRoot.querySelector("#value") |> Expect.innerText "fable"
     }
 
@@ -128,7 +128,7 @@ describe "LitElement" <| fun () ->
         el.getAttribute("f-name") |> Expect.equal "default"
         el?fName <- "fable"
         // wait for lit's render updates
-        do! el.updateComplete
+        do! elementUpdated el
         // setting the property should have updated the value and the attribute
         el.shadowRoot.querySelector("#f-value") |> Expect.innerText "fable"
         el.getAttribute("f-name") |> Expect.equal "fable"
@@ -143,25 +143,20 @@ describe "LitElement" <| fun () ->
     it "Fires Events" <| fun () -> promise {
         use! el = render_html $"""<fel-dispatch-events></fel-dispatch-events>"""
         let el = el.El
-        let! didFire =
-            Expect.toDispatch
+        do!
+            Expect.dispatch
                 "fires-events"
-                (fun _ ->
-                    let btn = el.shadowRoot.querySelector "button" :?> HTMLButtonElement
-                    btn.click())
+                (fun _ -> el.shadowRoot.getButton("click").click())
                 el
-        Expect.equal true didFire
     }
 
     it "Fires Custom Events" <| fun () -> promise {
         use! el = render_html $"""<fel-dispatch-custom-events></fel-dispatch-custom-events>"""
         let el = el.El
         let! result =
-            Expect.toDispatchCustom<int>
+            Expect.dispatchCustom<int>
                 "fires-custom-events"
-                (fun _ ->
-                    let btn = el.shadowRoot.querySelector "button" :?> HTMLButtonElement
-                    btn.click())
+                (fun _ -> el.shadowRoot.getButton("click").click())
                 el
 
         Expect.equal (Some 10) result

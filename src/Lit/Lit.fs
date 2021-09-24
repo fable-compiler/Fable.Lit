@@ -52,16 +52,6 @@ type AsyncDirective() =
     member _.isConnected: bool = jsNative
     member _.setValue(value: obj) : unit = jsNative
 
-// LitElement should inherit HTMLElement but HTMLElement
-// is still implemented as interface in Fable.Browser
-[<Import("LitElement", "lit")>]
-type LitElement() =
-    /// Access the underlying HTMLElement
-    [<Emit("$0")>] member _.el: HTMLElement = jsNative
-    member _.isConnected: bool = jsNative
-    member _.connectedCallback(): unit = jsNative
-    member _.disconnectedCallback(): unit = jsNative
-
 type Part =
     interface
     end

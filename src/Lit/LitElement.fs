@@ -2,14 +2,21 @@ namespace Lit
 
 open Fable.Core
 open Fable.Core.JsInterop
+open Browser
+open Browser.Types
 
-[<AutoOpen>]
-module LitElementExtensions =
-    type Browser.Types.HTMLElement with
-        [<Emit("$0.updateComplete")>]
-        /// Returns a promise that will resolve when the element has finished updating.
-        /// Only accessible in LitElements.
-        member _.updateComplete: JS.Promise<unit> = jsNative
+// LitElement should inherit HTMLElement but HTMLElement
+// is still implemented as interface in Fable.Browser
+[<Import("LitElement", "lit")>]
+type LitElement() =
+    /// Access the underlying HTMLElement
+    [<Emit("$0")>] member _.el: HTMLElement = jsNative
+    member _.isConnected: bool = jsNative
+    member _.connectedCallback(): unit = jsNative
+    member _.disconnectedCallback(): unit = jsNative
+    /// Returns a promise that will resolve when the element has finished updating.
+    /// Only accessible in LitElements.
+    member _.updateComplete: JS.Promise<unit> = jsNative
 
 module private LitElementUtil =
     module Types =
@@ -275,9 +282,6 @@ type LitElementAttribute(name: string) =
 
 [<AutoOpen>]
 module LitElementExt =
-    open Browser
-    open Browser.Types
-
     // TODO: Not sure why we don't have this constructor in Fable.Browser, we should add it
     // CustomEvent constructor is also transpiled incorrectly, not sure why
     [<Emit("new Event($0, $1)")>]
@@ -290,18 +294,10 @@ module LitElementExt =
         /// <summary>
         /// Creates and Dispatches a Browser `Event`
         /// </summary>
-        /// <remarks>
-        /// By default the event options:
-        /// - bubbles
-        /// - composed
-        /// - cancelable
-        ///
-        /// Are true by default for convenience
-        /// </remarks>
         /// <param name="name">Name of the event to dispatch</param>
-        /// <param name="bubbles">Allow the event to go through the bubling phase</param>
-        /// <param name="composed">Allow the event to go through the shadow DOM boundary</param>
-        /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`)</param>
+        /// <param name="bubbles">Allow the event to go through the bubling phase (default true)</param>
+        /// <param name="composed">Allow the event to go through the shadow DOM boundary (default true)</param>
+        /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`) (default true)</param>
         member this.dispatchEvent(name: string, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
             jsOptions<EventInit>(fun o ->
                 o.bubbles <- defaultArg bubbles true
@@ -314,19 +310,11 @@ module LitElementExt =
         /// <summary>
         /// Creates and Dispatches a Browser `CustomEvent`
         /// </summary>
-        /// <remarks>
-        /// By default the event options:
-        /// - bubbles
-        /// - composed
-        /// - cancelable
-        ///
-        /// Are true by default for convenience
-        /// </remarks>
-        /// <param name="name"></param>
-        /// <param name="detail">An optional value that will be available to any event listener via the `event.detail` property </param>
-        /// <param name="bubbles">Allow the event to go through the bubling phase</param>
-        /// <param name="composed">Allow the event to go through the shadow DOM boundary</param>
-        /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`)</param>
+        /// <param name="name">Name of the event to dispatch</param>
+        /// <param name="detail">An optional value that will be available to any event listener via the `event.detail` property</param>
+        /// <param name="bubbles">Allow the event to go through the bubling phase (default true)</param>
+        /// <param name="composed">Allow the event to go through the shadow DOM boundary (default true)</param>
+        /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`) (default true)</param>
         member this.dispatchCustomEvent(name: string, ?detail: 'T, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
             jsOptions<CustomEventInit<'T>>(fun o ->
                 // Be careful if `detail` is not option, Fable may wrap it with `Some()`
