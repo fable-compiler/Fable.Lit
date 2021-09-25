@@ -1,3 +1,3 @@
-### 1.0.0-rc-004
+### 1.0.0-rc-005
 
 * Release candidate
