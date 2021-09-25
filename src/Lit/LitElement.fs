@@ -14,8 +14,8 @@ type LitElement() =
     member _.isConnected: bool = jsNative
     member _.connectedCallback(): unit = jsNative
     member _.disconnectedCallback(): unit = jsNative
+    member _.requestUpdate(): unit = jsNative
     /// Returns a promise that will resolve when the element has finished updating.
-    /// Only accessible in LitElements.
     member _.updateComplete: JS.Promise<unit> = jsNative
 
 module private LitElementUtil =
@@ -194,31 +194,40 @@ type LitElementInit<'Props>() =
         member _.hooks = failInit()
 
 [<AttachMembers>]
-type LitHookElement<'Props>(renderFn: JS.Function, ?initProps: JS.Function) =
+type LitHookElement<'Props>(renderFn: JS.Function, ?initProps: obj -> unit) =
     inherit LitElement()
-    do initProps |> Option.iter(fun f -> f.Invoke([|jsThis|]) |> ignore)
-    let context =
-        HookContext(
-            emitJsExpr renderFn "() => $0.apply(this)",
-            emitJsExpr () "() => this.requestUpdate()",
-            emitJsExpr () "() => this.isConnected")
+    let mutable _hooks: HookContext option = None
+    do
+        match initProps with
+        | None -> ()
+        | Some init -> init(jsThis)
 
-    member _.render() =
-        context.render()
+    member this.render() =
+        (this :> IHookProvider).hooks.render()
 
-    member _.disconnectedCallback() =
+    member this.disconnectedCallback() =
         base.disconnectedCallback()
-        context.disconnect()
+        (this :> IHookProvider).hooks.disconnect()
 
-    member _.connectedCallback() =
+    member this.connectedCallback() =
         base.connectedCallback()
-        context.runEffects (onConnected = true, onRender = false)
+        (this :> IHookProvider).hooks.runEffects (onConnected = true, onRender = false)
 
     interface ILitElementInit<'Props> with
         member this.init(_) = this :> LitElement, box this :?> 'Props
 
     interface IHookProvider with
-        member _.hooks = context
+        member this.hooks =
+            match _hooks with
+            | Some hooks -> hooks
+            | None ->
+                let hooks =
+                    HookContext(
+                        (fun args -> renderFn.apply(jsThis, args) :?> _),
+                        (fun _ -> this.requestUpdate()),
+                        (fun () -> this.isConnected))
+                _hooks <- Some hooks
+                hooks
 
 type LitElementAttribute(name: string) =
     inherit JS.DecoratorAttribute()

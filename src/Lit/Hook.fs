@@ -90,10 +90,10 @@ type TransitionManager =
 
 type Cmd<'Msg> = (('Msg -> unit) -> unit) list
 
-type RenderFn = delegate of [<ParamArray>] args: obj[] -> TemplateResult
+type RenderFn = obj[] -> TemplateResult
 
 [<AttachMembers>]
-type HookContext(renderFn: RenderFn, triggerRender: Action<HookContext>, isConnected: Func<bool>) =
+type HookContext(renderFn: RenderFn, triggerRender: HookContext -> unit , isConnected: unit -> bool) =
     let mutable _firstRun = true
     let mutable _rendering = false
 
@@ -110,14 +110,14 @@ type HookContext(renderFn: RenderFn, triggerRender: Action<HookContext>, isConne
         failwith "Hooks must be called consistently for each render call"
 
     member this.requestUpdate() =
-        triggerRender.Invoke(this)
+        triggerRender(this)
 
     member this.render() =
         _stateIndex <- 0
         _effectIndex <- 0
         _rendering <- true
 
-        let res = renderFn.Invoke(this.args)
+        let res = renderFn(this.args)
 
         if not _firstRun &&
             (_stateIndex <> _states.Count || _effectIndex <> _effects.Count) then
@@ -125,13 +125,14 @@ type HookContext(renderFn: RenderFn, triggerRender: Action<HookContext>, isConne
 
         _rendering <- false
 
-        if isConnected.Invoke() then
+        if isConnected() then
             this.runEffects (onRender = true, onConnected = _firstRun)
 
         _firstRun <- false
         res
 
-    member this.checkRendering() = if not _rendering then this.fail ()
+    member this.checkRendering() =
+        if not _rendering then this.fail ()
 
     member _.runAsync(f: unit -> unit) =
         // When using requestAnimationFrame some browsers (Firefox) skip renders
@@ -161,9 +162,9 @@ type HookContext(renderFn: RenderFn, triggerRender: Action<HookContext>, isConne
             _states.[index] <- newValue
 
             if not _rendering then
-                triggerRender.Invoke(this)
+                triggerRender(this)
             else
-                this.runAsync (fun () -> triggerRender.Invoke(this))
+                this.runAsync (fun () -> triggerRender(this))
 
     member this.getState() : int * 'T =
         if _stateIndex >= _states.Count then
@@ -323,23 +324,23 @@ module HookExtensions =
                         prev := Some(value, effect value)
             )
 
-[<AttachMembers>]
+[<AttachMembers; AbstractClass>]
 type HookDirective() =
     inherit AsyncDirective()
 #if DEBUG
     let mutable _hmrSub: IDisposable option = None
 #endif
-    let context =
-        HookContext(
-            emitJsExpr () "(...args) => this.renderFn.apply(this, args)",
-            emitJsExpr () "(provider) => this.setValue(provider.render())",
-            emitJsExpr () "() => this.isConnected")
+    let mutable _hooks: HookContext option = None
 
-    member _.render([<ParamArray>] args: obj []) =
-        context.args <- args
-        context.render ()
+    abstract renderFn: JS.Function with get, set
+    abstract name: string
 
-    member _.disconnected() =
+    member this.render([<ParamArray>] args: obj []) =
+        let hooks = (this :> IHookProvider).hooks
+        hooks.args <- args
+        hooks.render ()
+
+    member this.disconnected() =
 #if DEBUG
         match _hmrSub with
         | None -> ()
@@ -347,13 +348,13 @@ type HookDirective() =
             _hmrSub <- None
             d.Dispose()
 #endif
-        context.disconnect()
+        (this :> IHookProvider).hooks.disconnect()
 
     // In some situations, a disconnected part may be reconnected again,
     // so we need to re-run the effects but the old state is kept
     // https://lit.dev/docs/api/custom-directives/#AsyncDirective
-    member _.reconnected() =
-        context.runEffects (onConnected = true, onRender = false)
+    member this.reconnected() =
+        (this :> IHookProvider).hooks.runEffects (onConnected = true, onRender = false)
 
 #if DEBUG
     member this.subscribeHmr(token: HMRToken) =
@@ -362,12 +363,22 @@ type HookDirective() =
         | None ->
             _hmrSub <-
                 token.Subscribe(fun updatedModule ->
-                    this?renderFn <- updatedModule?(this?name)?renderFn)
+                    this.renderFn <- updatedModule?(this.name)?renderFn)
                 |> Some
 #endif
 
     interface IHookProvider with
-        member _.hooks = context
+        member this.hooks =
+            match _hooks with
+            | Some hooks -> hooks
+            | None ->
+                let hooks =
+                    HookContext(
+                        (fun args -> this.renderFn.apply(jsThis, args) :?> _),
+                        (fun ctx -> this.setValue(ctx.render())),
+                        (fun () -> this.isConnected))
+                _hooks <- Some hooks
+                hooks
 
 /// <summary>
 /// Use this decorator to enable "stateful" functions
@@ -392,7 +403,7 @@ type HookComponentAttribute() =
                     get renderFn() { return $1.value; }
                     set renderFn(v) {
                         $1.value = v;
-                        this.context.requestUpdate();
+                        this.hooks.requestUpdate();
                     }
                 }"""
         let directive = classExpr |> LitBindings.directive
@@ -466,10 +477,6 @@ type Hook() =
             | _ -> JS.console.warn("useHmr can only be used with HookComponent")
         | _ -> ()
 #endif
-
-    static member inline useExternalState(ref: 'Value ref) =
-        let value, setValue = Hook.getContext().useState(ref.Value)
-        value, fun v -> ref := v; setValue v
 
     /// <summary>
     /// Creates and returns a mutable object (a 'ref') whose .current property is initialized to the hosting element.
@@ -585,8 +592,9 @@ type Hook() =
                 if isIn then Entering, IsIn
                 else Leaving, IsOut
             delay transition.ms (fun () ->
+                setState finalState
                 transition.onComplete(isIn)
-                setState finalState)
+            )
             setState middleState
 
         ctx.useEffectOnChange(state, function

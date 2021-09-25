@@ -123,7 +123,7 @@ type LitBindings =
     /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
     /// <param name="template">A template that will be rendered for each item in the iterable.</param>
     [<ImportMember("lit-html/directives/repeat.js")>]
-    static member repeat<'T>(items: 'T seq, getId: 'T -> string, template: 'T -> int -> TemplateResult) = jsNative
+    static member repeat<'T>(items: 'T seq, getId: 'T -> string, template: 'T -> int -> TemplateResult) : TemplateResult = jsNative
 
     /// <summary>
     /// Enables fast switching between multiple templates by caching the DOM nodes and TemplateInstances produced by the templates.
@@ -248,7 +248,7 @@ type Lit() =
     /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
     /// <param name="template">A rendering function based on the items of the sequence.</param>
     /// <param name="items">A sequence of items to be rendered.</param>
-    static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq) =
+    static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq): TemplateResult =
         LitBindings.repeat (items, getId, (fun x _ -> template x))
 
     /// <summary>
