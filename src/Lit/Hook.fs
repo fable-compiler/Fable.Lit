@@ -69,9 +69,9 @@ module internal HookUtil =
 
 open HookUtil
 
-type TransitionState = IsOut | AboutToEnter | Entering | IsIn | Leaving
+type TransitionState = HasLeft | AboutToEnter | Entering | HasEntered | Leaving
 
-type Transition(ms: int, ?cssBefore: string, ?cssIdle: string, ?cssAfter: string, ?onComplete: bool -> unit) =
+type TransitionConfig(ms: int, ?cssBefore: string, ?cssIdle: string, ?cssAfter: string, ?onComplete: bool -> unit) =
     member _.ms = ms
     member _.cssBefore = defaultArg cssBefore ""
     member _.cssIdle = defaultArg cssIdle ""
@@ -81,12 +81,21 @@ type Transition(ms: int, ?cssBefore: string, ?cssIdle: string, ?cssAfter: string
         | None, None -> ""
     member _.onComplete(isIn: bool) = match onComplete with Some f -> f isIn | None -> ()
 
-type TransitionManager =
+type Transition =
+    /// Indicates the current state of the state of the transition:
+    /// `AboutToEnter | Entering | HasEntered | Leaving | HasLeft`
     abstract state: TransitionState
-    abstract active: bool
-    abstract out: bool
+    /// Indicates whether the transition is currently entering or leaving.
+    /// Useful to disable buttons, for example.
+    abstract isRunning: bool
+    /// Indicates whether the transition has already left.
+    /// Note the transition doesn't remove/hide the element by itself,
+    /// this has to be done in the `onComplete` event.
+    abstract hasLeft: bool
+    /// Gives the style string for the current state (before, idle or after).
     abstract css: string
-    abstract trigger: isIn: bool -> unit
+    /// Trigger the enter `trigger(true)` or leave `trigger(false)` transition.
+    abstract trigger: enter: bool -> unit
 
 type Cmd<'Msg> = (('Msg -> unit) -> unit) list
 
@@ -288,7 +297,7 @@ type IHookProvider =
 
 [<AutoOpen>]
 module HookExtensions =
-    type TransitionManager with
+    type Transition with
         member this.triggerEnter() = this.trigger(true)
         member this.triggerLeave() = this.trigger(false)
 
@@ -435,7 +444,7 @@ type Hook() =
     static member emptyDisposable = emptyDisposable
 
     /// <summary>
-    /// returns a tuple with an immutable value and a setter function for the provided value
+    /// Returns a tuple with an immutable value and a setter function for the provided value
     /// </summary>
     /// <example>
     ///     let counter, setCounter = Hook.useState 0
@@ -447,7 +456,7 @@ type Hook() =
         Hook.getContext().useState (fun () -> v)
 
     /// <summary>
-    /// returns a tuple with an immutable value and a setter function, when you supply a callback it will be used
+    /// Returns a tuple with an immutable value and a setter function, when you supply a callback it will be used
     /// to initialize the value but it will not be called again
     /// </summary>
     /// <example>
@@ -502,9 +511,8 @@ type Hook() =
     static member inline useMemo(init: unit -> 'Value): 'Value =
         Hook.getContext().useRef(init).Value
 
-    // TODO: Dependencies?
     /// <summary>
-    /// Used to run a side-effect when the component re-renders.
+    /// Used to run a side-effect each time after the component renders.
     /// </summary>
     /// <example>
     ///     [&lt;HookComponent>]
@@ -523,7 +531,7 @@ type Hook() =
         Hook.getContext().useEffect (effect)
 
     /// <summary>
-    /// Fire a side effect once in the lifetime of the function
+    /// Fire a side effect once in the lifetime of the function.
     /// </summary>
     /// <example>
     ///     Hook.useEffectOnce (fun _ -> printfn "Mounted")
@@ -535,7 +543,8 @@ type Hook() =
                 Hook.emptyDisposable)
 
     /// <summary>
-    /// Fire a side effect once in the lifetime of the function
+    /// Fire a side effect once in the lifetime of the function.
+    /// The disposable will be run when the item is disconnected (removed from DOM by Lit).
     /// </summary>
     /// <example>
     ///     Hook.useEffectOnce (fun _ -> { new IDisposable with member _.Dispose() = (* code *))})
@@ -543,14 +552,17 @@ type Hook() =
     static member inline useEffectOnce(effect: unit -> IDisposable) =
         Hook.getContext().useEffectOnce (effect)
 
+    /// Fire a side effect after the component renders if the given value changes.
+    /// The disposable will be run before running a new effect.
     static member inline useEffectOnChange(value: 'T, effect: 'T -> IDisposable) =
         Hook.getContext().useEffectOnChange(value, effect)
 
+    /// Fire a side effect after the component renders if the given value changes.
     static member inline useEffectOnChange(value: 'T, effect: 'T -> unit) =
         Hook.getContext().useEffectOnChange(value, effect)
 
     /// <summary>
-    /// Start an [Elmish](https://elmish.github.io/elmish/) loop. for a function.
+    /// Start an [Elmish](https://elmish.github.io/elmish/) model-view-update loop.
     /// </summary>
     /// <example>
     ///      type State = { counter: int }
@@ -581,16 +593,24 @@ type Hook() =
     static member inline useElmish<'State,'Msg when 'State : equality> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
         Hook.getContext().useElmish(init, update)
 
+    /// <summary>
+    /// Helper to implement CSS transitions in your component.
+    /// </summary>
+    /// <param name="ms">The length of the transition in milliseconds.</param>
+    /// <param name="cssBefore">The style to be applied before the item has entered.</param>
+    /// <param name="cssIdle">The style to be applied after the item has entered (and before leaving).</param>
+    /// <param name="cssAfter">The style to be applied when the item is about to leave (if omitted, `cssBefore` will also be applied when leaving).</param>
+    /// <param name="onComplete">Event fired when the transition has completed. `true` is passed when the transition has entered, and `false` when it has left.</param>
     static member inline useTransition(ms, ?cssBefore, ?cssIdle, ?cssAfter, ?onComplete) =
-        Hook.useTransition(Hook.getContext(), Transition(ms, ?cssBefore=cssBefore, ?cssIdle=cssIdle, ?cssAfter=cssAfter, ?onComplete=onComplete))
+        Hook.useTransition(Hook.getContext(), TransitionConfig(ms, ?cssBefore=cssBefore, ?cssIdle=cssIdle, ?cssAfter=cssAfter, ?onComplete=onComplete))
 
-    static member useTransition(ctx: HookContext, transition: Transition): TransitionManager =
+    static member useTransition(ctx: HookContext, transition: TransitionConfig): Transition =
         let state, setState = ctx.useState(AboutToEnter)
 
         let trigger isIn =
             let middleState, finalState =
-                if isIn then Entering, IsIn
-                else Leaving, IsOut
+                if isIn then Entering, HasEntered
+                else Leaving, HasLeft
             delay transition.ms (fun () ->
                 setState finalState
                 transition.onComplete(isIn)
@@ -601,21 +621,21 @@ type Hook() =
             | AboutToEnter -> trigger true
             | _ -> ())
 
-        { new TransitionManager with
+        { new Transition with
             member _.css =
                 $"transition-duration: {transition.ms}ms; " +
                     match state with
-                    | IsOut | AboutToEnter -> transition.cssBefore
-                    | Entering | IsIn -> transition.cssIdle
+                    | HasLeft | AboutToEnter -> transition.cssBefore
+                    | Entering | HasEntered -> transition.cssIdle
                     | Leaving -> transition.cssAfter
             member _.state = state
-            member _.active =
+            member _.isRunning =
                 match state with
                 | AboutToEnter | Entering | Leaving -> true
-                | IsIn | IsOut -> false
-            member _.out =
+                | HasEntered | HasLeft -> false
+            member _.hasLeft =
                 match state with
-                | IsOut -> true
+                | HasLeft -> true
                 | _ -> false
             member _.trigger(isIn) =
                 if isIn then setState AboutToEnter

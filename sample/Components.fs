@@ -133,12 +133,12 @@ let ClockDisplay model dispatch =
             </div>
         """
 
-    let isButtonEnabled = not transition.active
+    let isButtonEnabled = not transition.isRunning
     html $"""
         <div style="{Styles.verticalContainer}">
             {toggleVisible "Clock" model.ShowClock isButtonEnabled (fun _ ->
                 transition.trigger(not model.ShowClock))}
 
-            {if transition.out then Lit.nothing else clockContainer()}
+            {if transition.hasLeft then Lit.nothing else clockContainer()}
         </div>
     """
