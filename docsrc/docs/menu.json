@@ -1,0 +1,11 @@
+[
+    "docs/getting-started",
+    {
+        "type": "category",
+        "label": "API",
+        "items": [
+            "docs/pipeline",
+            "docs/computation-expression"
+        ]
+    }
+]

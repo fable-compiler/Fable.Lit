@@ -1,0 +1,46 @@
+@import "./../node_modules/bulma/sass/utilities/initial-variables";
+
+
+$fable-blue: dodgerblue;
+$purple: #7a325d;
+$blue: #0055a4;
+$primary: $fable-blue;
+$black: #202020;
+// $scheme-main: whitesmoke;
+$text: #444;
+
+@import "./../node_modules/bulma/sass/utilities/derived-variables";
+
+$navbar-item-color: $white;
+$navbar-background-color: $primary;
+$navbar-item-hover-color: $white;
+$navbar-item-hover-background-color: lighten($primary, 8%);
+$navbar-item-active-background-color: lighten($primary, 8%);
+$navbar-item-active-color: $white;
+
+$content-heading-color: $primary;
+
+$menu-item-active-background-color: $primary;
+$menu-item-active-color: $white;
+$menu-item-hover-color: $primary;
+$menu-item-hover-background-color: transparent;
+$menu-label-font-size: $size-6;
+$menu-item-radius: $radius-large $radius-large;
+
+$toc-item-active-font-weight: $weight-semibold;
+
+$body-size: 14px;
+
+$textual-step-color: lightgrey;
+
+@import "./../node_modules/bulma/sass/utilities/_all.sass";
+@import './../node_modules/bulma/bulma.sass';
+@import './../node_modules/nacara-layout-standard/scss/nacara.scss';
+
+@import './scss/utilities.scss';
+
+.content {
+    pre {
+        @include strong-shadow-box;
+    }
+}

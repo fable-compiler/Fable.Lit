@@ -1,0 +1,6 @@
+@mixin strong-shadow-box {
+    border-radius: 4px;
+    box-shadow: 5px 5px 0px 1px lightgrey;
+    border: 1px solid lightgrey;
+    background-color: white;
+}
