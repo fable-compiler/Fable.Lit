@@ -57,7 +57,7 @@ let AttributeReflects () =
 
 [<LitElement("fel-dispatch-events")>]
 let DispatchEvents () =
-    let el, _ = LitElement.init ()
+    let el = LitElement.init ()
 
     let onClick _ =
         el.dispatchEvent("fires-events")
@@ -69,7 +69,7 @@ let DispatchEvents () =
 
 [<LitElement("fel-dispatch-custom-events")>]
 let DispatchCustomEvents () =
-    let el, _ = LitElement.init()
+    let el = LitElement.init()
 
     let onClick _ =
         el.dispatchCustomEvent("fires-custom-events", 10)

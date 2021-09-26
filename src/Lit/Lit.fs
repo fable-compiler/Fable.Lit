@@ -172,16 +172,16 @@ module LitHelpers =
     /// <summary>
     /// Interprets a template literal as an HTML template that can efficiently render to and update a container.
     /// </summary>
-    let html: Template.Tag<_> = Template.transform LitBindings.html
+    let html: Template.Tag<TemplateResult> = Template.transform LitBindings.html
 
     /// <summary>
     /// Interprets a template literal as an SVG template that can efficiently render to and update a container.
     /// svg is required for nested templates within an svg element
     /// </summary>
-    let svg: Template.Tag<_> = Template.transform LitBindings.svg
+    let svg: Template.Tag<TemplateResult> = Template.transform LitBindings.svg
 
     /// CSS used in the Shadow DOM of LitElements
-    let css: Template.Tag<_> = Template.transform LitBindings.css
+    let css: Template.Tag<Styles> = Template.transform LitBindings.css
 
     /// Just trims the braces {} out of a css block to be used in a `style` attribute
     let inline_css (css: string) =
@@ -196,33 +196,33 @@ type Lit() =
     /// <summary>
     /// Interprets a template literal as an HTML template that can efficiently render to and update a container.
     /// </summary>
-    static member html = html
+    static member html: Template.Tag<TemplateResult> = html
 
     /// <summary>
     /// Interprets a template literal as an SVG template that can efficiently render to and update a container.
     /// svg is required for nested templates within an svg element
     /// </summary>
-    static member svg = svg
+    static member svg: Template.Tag<TemplateResult> = svg
 
     /// CSS used in the Shadow DOM of LitElements
-    static member css = css
+    static member css: Template.Tag<Styles> = css
 
     /// <summary>
     /// A sentinel value that signals a ChildPart to fully clear its content.
     /// </summary>
-    static member nothing = LitBindings.nothing
+    static member nothing: TemplateResult = LitBindings.nothing
 
     /// <summary>
     /// Renders a value, usually a lit-html TemplateResult, to the container.
     /// </summary>
     /// <param name="el">The container to render into.</param>
     /// <param name="t">A <see cref="Lit.TemplateResult">TemplateResult</see> to be rendered.</param>
-    static member render el t = LitBindings.render (t, el)
+    static member render el t: unit = LitBindings.render (t, el)
 
     /// <summary>
     /// Generates a single string that filters out false-y values from a tuple sequence.
     /// </summary>
-    static member classes(classes: (string * bool) seq) =
+    static member classes(classes: (string * bool) seq): string =
         classes
         |> Seq.choose (fun (s, b) -> if b then Some s else None)
         |> String.concat " "
@@ -230,7 +230,7 @@ type Lit() =
     /// <summary>
     /// Generates a string from the string seuence provided
     /// </summary>
-    static member classes(classes: string seq) = classes |> String.concat " "
+    static member classes(classes: string seq): string = classes |> String.concat " "
 
     /// <summary>
     /// Use memoize only when the template argument can change considerable depending on some condition (e.g. a modal or nothing).
@@ -256,7 +256,7 @@ type Lit() =
     /// </summary>
     /// <param name="dependencies">A set of dependencies that will be trigger a re-render when any of them changes.</param>
     /// <param name="view">A render function.</param>
-    static member ofLazy (dependencies: obj list) (view: unit -> TemplateResult) : TemplateResult =
+    static member ofLazy (dependencies: obj list) (view: unit -> TemplateResult): TemplateResult =
         // TODO: Should we try to use F# equality here?
         LitBindings.guard (List.toArray dependencies, view)
 
@@ -265,7 +265,7 @@ type Lit() =
     /// </summary>
     /// <param name="deferred">A promise to be resolved.</param>
     /// <param name="placeholder">A placeholder to be shown while the promise is pending.</param>
-    static member ofPromise (placeholder: TemplateResult) (deferred: JS.Promise<TemplateResult>) =
+    static member ofPromise (placeholder: TemplateResult) (deferred: JS.Promise<TemplateResult>): TemplateResult =
         LitBindings.until (deferred, placeholder)
 
     static member ofStr(v: string) : TemplateResult = unbox v
@@ -284,7 +284,7 @@ type Lit() =
 
     /// When placed on an element in the template, the ref directive will retrieve a reference to that element once rendered.
     /// Example: <input {Lit.refValue inputRef}>
-    static member ref<'El when 'El :> Element>(r: ref<'El option>) =
+    static member ref<'El when 'El :> Element>(r: ref<'El option>): TemplateResult =
         LitBindings.ref
             { new RefValue<'El option> with
                 member _.value with get() = r.Value
@@ -294,7 +294,7 @@ type Lit() =
     /// If a ref callback is rendered to a different element position or is removed in a subsequent render,
     /// it will first be called with undefined, followed by another call with the new element it was rendered to (if any).
     /// Example: <input {Lit.refFn inputFn}>
-    static member ref<'El when 'El :> Element>(fn: 'El option -> unit) = LitBindings.ref fn
+    static member ref<'El when 'El :> Element>(fn: 'El option -> unit): TemplateResult = LitBindings.ref fn
 
     /// Used when building custom directives. [More info](https://lit.dev/docs/templates/custom-directives/).
     static member inline directive<'Class, 'Arg>() : 'Arg -> TemplateResult =
@@ -304,18 +304,18 @@ type Lit() =
 module DomHelpers =
     type EventTarget with
         /// Casts the event target to HTMLInputElement and gets the `value` property.
-        member this.Value = (this :?> HTMLInputElement).value
+        member this.Value: string = (this :?> HTMLInputElement).value
 
         /// Casts the event target to HTMLInputElement and gets the `checked` property.
-        member this.Checked = (this :?> HTMLInputElement).``checked``
+        member this.Checked: bool = (this :?> HTMLInputElement).``checked``
 
     /// Wrapper for event handlers to help type checking.
-    let inline Ev (handler: Event -> unit) = handler
+    let inline Ev (handler: Event -> unit): Event -> unit = handler
 
     /// Wrapper for event handlers to help type checking.
     /// Extracts `event.target.value` and passes it to the handler.
-    let inline EvVal (handler: string -> unit) =
+    let inline EvVal (handler: string -> unit): Event -> unit =
         fun (ev: Event) -> handler ev.target.Value
 
     /// Alias of `Lit.ref`
-    let inline Ref (r: ref<'El option>) = Lit.ref r
+    let inline Ref (r: ref<'El option>): TemplateResult = Lit.ref r

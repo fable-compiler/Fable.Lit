@@ -472,13 +472,13 @@ type Hook() =
     ///
     /// > Currently, only compatible with HookComponent (not LitElement).
     /// > When compiling in non-debug mode, this has no effect.
-    static member inline useHmr(token: IHMRToken) =
+    static member inline useHmr(token: IHMRToken): unit =
 #if !DEBUG
         ()
 #else
         Hook.useHmr(token, jsThis)
 
-    static member useHmr(token: IHMRToken, this: obj) =
+    static member useHmr(token: IHMRToken, this: obj): unit =
         match token with
         | :? HMRToken as token ->
             match this with
@@ -527,8 +527,8 @@ type Hook() =
     ///             &lt;/button>
     ///        """
     /// </example>
-    static member inline useEffect(effect: unit -> unit) =
-        Hook.getContext().useEffect (effect)
+    static member inline useEffect(effect: unit -> unit): unit =
+        Hook.getContext().useEffect(effect)
 
     /// <summary>
     /// Fire a side effect once in the lifetime of the function.
@@ -536,7 +536,7 @@ type Hook() =
     /// <example>
     ///     Hook.useEffectOnce (fun _ -> printfn "Mounted")
     /// </example>
-    static member inline useEffectOnce(effect: unit -> unit) =
+    static member inline useEffectOnce(effect: unit -> unit): unit =
         Hook.getContext().useEffectOnce
             (fun () ->
                 effect ()
@@ -549,16 +549,16 @@ type Hook() =
     /// <example>
     ///     Hook.useEffectOnce (fun _ -> { new IDisposable with member _.Dispose() = (* code *))})
     /// </example>
-    static member inline useEffectOnce(effect: unit -> IDisposable) =
+    static member inline useEffectOnce(effect: unit -> IDisposable): unit =
         Hook.getContext().useEffectOnce (effect)
 
     /// Fire a side effect after the component renders if the given value changes.
     /// The disposable will be run before running a new effect.
-    static member inline useEffectOnChange(value: 'T, effect: 'T -> IDisposable) =
+    static member inline useEffectOnChange(value: 'T, effect: 'T -> IDisposable): unit =
         Hook.getContext().useEffectOnChange(value, effect)
 
     /// Fire a side effect after the component renders if the given value changes.
-    static member inline useEffectOnChange(value: 'T, effect: 'T -> unit) =
+    static member inline useEffectOnChange(value: 'T, effect: 'T -> unit): unit =
         Hook.getContext().useEffectOnChange(value, effect)
 
     /// <summary>
@@ -590,7 +590,7 @@ type Hook() =
     ///                &lt;/button>
     ///              """
     /// </example>
-    static member inline useElmish<'State,'Msg when 'State : equality> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>) =
+    static member inline useElmish<'State,'Msg when 'State : equality> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>): 'State * ('Msg -> unit) =
         Hook.getContext().useElmish(init, update)
 
     /// <summary>
@@ -601,7 +601,7 @@ type Hook() =
     /// <param name="cssIdle">The style to be applied after the item has entered (and before leaving).</param>
     /// <param name="cssAfter">The style to be applied when the item is about to leave (if omitted, `cssBefore` will also be applied when leaving).</param>
     /// <param name="onComplete">Event fired when the transition has completed. `true` is passed when the transition has entered, and `false` when it has left.</param>
-    static member inline useTransition(ms, ?cssBefore, ?cssIdle, ?cssAfter, ?onComplete) =
+    static member inline useTransition(ms, ?cssBefore, ?cssIdle, ?cssAfter, ?onComplete): Transition =
         Hook.useTransition(Hook.getContext(), TransitionConfig(ms, ?cssBefore=cssBefore, ?cssIdle=cssIdle, ?cssAfter=cssAfter, ?onComplete=onComplete))
 
     static member useTransition(ctx: HookContext, transition: TransitionConfig): Transition =

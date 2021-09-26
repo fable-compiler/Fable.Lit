@@ -307,7 +307,7 @@ module LitElementExt =
         /// <param name="bubbles">Allow the event to go through the bubling phase (default true)</param>
         /// <param name="composed">Allow the event to go through the shadow DOM boundary (default true)</param>
         /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`) (default true)</param>
-        member this.dispatchEvent(name: string, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
+        member this.dispatchEvent(name: string, ?bubbles: bool, ?composed: bool, ?cancelable: bool): unit =
             jsOptions<EventInit>(fun o ->
                 o.bubbles <- defaultArg bubbles true
                 o.composed <- defaultArg composed true
@@ -315,6 +315,7 @@ module LitElementExt =
             )
             |> createEvent name
             |> this.el.dispatchEvent
+            |> ignore
 
         /// <summary>
         /// Creates and Dispatches a Browser `CustomEvent`
@@ -324,7 +325,7 @@ module LitElementExt =
         /// <param name="bubbles">Allow the event to go through the bubling phase (default true)</param>
         /// <param name="composed">Allow the event to go through the shadow DOM boundary (default true)</param>
         /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`) (default true)</param>
-        member this.dispatchCustomEvent(name: string, ?detail: 'T, ?bubbles: bool, ?composed: bool, ?cancelable: bool): bool =
+        member this.dispatchCustomEvent(name: string, ?detail: 'T, ?bubbles: bool, ?composed: bool, ?cancelable: bool): unit =
             jsOptions<CustomEventInit<'T>>(fun o ->
                 // Be careful if `detail` is not option, Fable may wrap it with `Some()`
                 // as it's a generic and o.detail expects an option
@@ -335,15 +336,16 @@ module LitElementExt =
             )
             |> createCustomEvent name
             |> this.el.dispatchEvent
+            |> ignore
 
         /// <summary>
         /// Initializes the LitElement instance and registers the element in the custom elements registry
         /// </summary>
-        static member inline init() =
-            jsThis<ILitElementInit<unit>>.init(fun _ -> ())
+        static member inline init(): LitElement =
+            jsThis<ILitElementInit<unit>>.init(fun _ -> ()) |> fst
 
         /// <summary>
         /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
         /// </summary>
-        static member inline init(initFn: LitConfig<'Props> -> unit) =
+        static member inline init(initFn: LitConfig<'Props> -> unit): LitElement * 'Props =
             jsThis<ILitElementInit<'Props>>.init(initFn)
