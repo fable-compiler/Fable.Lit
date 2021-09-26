@@ -473,12 +473,12 @@ type Hook() =
     /// > Currently, only compatible with HookComponent (not LitElement).
     /// > When compiling in non-debug mode, this has no effect.
     static member inline useHmr(token: IHMRToken): unit =
-#if !DEBUG
-        ()
-#else
         Hook.useHmr(token, jsThis)
 
     static member useHmr(token: IHMRToken, this: obj): unit =
+#if !DEBUG
+        ()
+#else
         match token with
         | :? HMRToken as token ->
             match this with
