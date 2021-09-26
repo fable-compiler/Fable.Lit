@@ -1,11 +1,8 @@
 [
     "docs/getting-started",
-    {
-        "type": "category",
-        "label": "API",
-        "items": [
-            "docs/pipeline",
-            "docs/computation-expression"
-        ]
-    }
+    "docs/templates",
+    "docs/hook-components",
+    "docs/web-components",
+    "docs/hmr",
+    "docs/testing"
 ]

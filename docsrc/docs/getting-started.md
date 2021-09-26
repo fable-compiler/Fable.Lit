@@ -3,37 +3,23 @@ title: Getting started
 layout: nacara-standard
 ---
 
-Add `Fable.Promise` package to your project.
+## Requirements
 
-If you are using nuget to manage you dependencies:
+Fable.Lit packages require **fable 3.3** dotnet tool and **Lit 2** from npm.
 
-`dotnet add package Fable.Promise`
-
-If you are using [paket](https://fsprojects.github.io/Paket/):
-
-`dotnet paket add Fable.Promise`
-
-You are ready to go, you can directly access `Promise` module or the `promise` computation.
-
-Example:
-
-```fsharp
-let helloPromise =
-    Promise.create (fun resolve reject ->
-        resolve "Hello, from a promise"
-    )
-
-// Pipeline style
-helloPromise
-|> Promise.iter (fun message ->
-    printfn message
-    // Output: Hello, from a promise
-)
-
-// Using computation expression
-promise {
-    let! message = helloPromise
-    printfn message
-    // Output: Hello, from a promise
-}
 ```
+dotnet tool update fable
+npm install lit
+```
+
+Then, in the directory of your .fsproj, install the packages you need. Note the package ids are prefixed by `Fable.` but not the actual namespaces.
+
+```
+dotnet add package Fable.Lit
+dotnet add package Fable.Lit.Elmish
+dotnet add package Fable.Lit.Test
+```
+
+## Scaffolding
+
+To get up-to-speed faster you can just clone [Lit.TodoMVC](https://github.com/alfonsogarciacaro/Lit.TodoMVC), which already includes HTML templates, hook components, hot reloading and testing, and use it as the base for your app.
