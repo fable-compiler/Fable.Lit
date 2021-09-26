@@ -6,7 +6,9 @@ open Elmish
 open Lit
 open Expect.Dom
 
-type Observable<'T>() =
+/// Observable that keeps a copy of the last triggered value
+/// and reports it immediately upon subscription.
+type Store<'T>() =
     let mutable value: 'T option = None
     let listeners = Dictionary<Guid, IObserver<'T>>()
     member _.Trigger(v) =
@@ -21,6 +23,9 @@ type Observable<'T>() =
             { new IDisposable with
                 member _.Dispose() = listeners.Remove(g) |> ignore }
 
+/// Disposable that waits until the Disposable property is set if necessary/
+/// Useful if we need to dispose when the disposable reference may have not been set yet
+/// (e.g. when subscribing to a store).
 type LazyDisposable() =
     let mutable _disposed = false
     let mutable _disposable: IDisposable option = None
@@ -45,16 +50,18 @@ type IObservable<'T> with
                 resolve v))
 
 module Program =
+    /// Mounts an element to the DOM to render the Elmish app and returns the container
+    /// together with an observable that will notify of model changes.
     let runTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) = promise {
-        let obs = Observable<'model>()
+        let store = Store<'model>()
         let! el = render_html $"<div></div>"
 
         let setState model dispatch =
             Program.view program model dispatch |> Lit.render el.El
-            obs.Trigger model
+            store.Trigger model
 
         Program.withSetState setState program
         |> Program.run
 
-        return el, obs :> IObservable<_>
+        return el, store :> IObservable<_>
     }
