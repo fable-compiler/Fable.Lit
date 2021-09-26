@@ -64,6 +64,8 @@ Given that holes in interpolated strings are not typed, is a good idea to wrap y
 You rarely need to pass a [property instead of an attribute](https://stackoverflow.com/a/6004028) unless you're using a Web Component that asks you to do so.
 :::
 
+If you want to learn more about templates, please check [Lit's website](https://lit.dev/docs/templates/overview/).
+
 ## Directives
 
 Lit includes special functions, called "directives" that can control the way the templates are rendered. The `Lit` class provides the following directives as static members:
@@ -79,5 +81,25 @@ TODO
 
 TODO
 
+## Elmish
 
-If you want to learn more about templates, please check [Lit's website](https://lit.dev/docs/templates/overview/).
+Fable.Lit.Elmish allows you to write a frontend app using the popular [Elmish](https://elmish.github.io/) library by [Eugene Tolmachev](https://github.com/et1975) with a view function returning `Lit.TemplateResult`. The package also includes support for Webpack's [Hot Module Replacement](https://webpack.js.org/concepts/hot-module-replacement/) out-of-the-box thanks to [Maxime Mangel](https://twitter.com/MangelMaxime) original work with Elmish.HMR.
+
+```fsharp
+open Elmish
+open Lit
+
+type Model = ..
+type Msg = ..
+
+let init() = ..
+let update msg model = ..
+let view model dispatch = ..
+
+open Lit.Elmish
+open Lit.Elmish.HMR
+
+Program.mkProgram initialState update view
+|> Program.withLit "app-container"
+|> Program.run
+```
