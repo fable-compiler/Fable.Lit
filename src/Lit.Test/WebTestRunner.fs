@@ -18,11 +18,43 @@ type WebTestRunnerBindings =
     [<Emit("$0.compareSnapshot({ name: $1, content: $2 })")>]
     abstract compareSnapshot: name: string * content: string -> JS.Promise<unit>
 
-[<Global>]
-let describe (msg: string) (suite: unit -> unit): unit = jsNative
+[<AutoOpen>]
+module Mocha =
+    /// Test suite
+    let [<Global>] describe (msg: string) (suite: unit -> unit): unit = jsNative
 
-[<Global>]
-let it (msg: string) (test: unit -> JS.Promise<unit>): unit = jsNative
+    /// Alias of `describe`
+    let [<Global>] context (msg: string) (suite: unit -> unit): unit = jsNative
+
+    /// Test case
+    let [<Global>] it (msg: string) (test: unit -> JS.Promise<unit>): unit = jsNative
+
+    /// Test case
+    let [<Global("it")>] itSync (msg: string) (test: unit -> unit): unit = jsNative
+
+    /// Run once before any test in the current suite
+    let [<Global>] before (test: unit -> JS.Promise<unit>): unit = jsNative
+
+    /// Run once before any test in the current suite
+    let [<Global("before")>] beforeSync (test: unit -> unit): unit = jsNative
+
+    /// Run before each test in the current suite
+    let [<Global>] beforeEach (test: unit -> JS.Promise<unit>): unit = jsNative
+
+    /// Run before each test in the current suite
+    let [<Global("beforeEach")>] beforeEachSync (test: unit -> unit): unit = jsNative
+
+    /// Run once after all tests in the current suite
+    let [<Global>] after (test: unit -> JS.Promise<unit>): unit = jsNative
+
+    /// Run once after all tests in the current suite
+    let [<Global("after")>] afterSync (test: unit -> unit): unit = jsNative
+
+    /// Run after each test in the current suite
+    let [<Global>] afterEach (test: unit -> JS.Promise<unit>): unit = jsNative
+
+    /// Run after each test in the current suite
+    let [<Global("afterEach")>] afterEachSync (test: unit -> unit): unit = jsNative
 
 [<RequireQualifiedAccess>]
 module Expect =
