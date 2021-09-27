@@ -1,6 +1,7 @@
-build/sample/*
 build/test/*
 !build/test/__snapshots__
+build/sample/*
+build/docs/*
 dist/
 
 .idea/

@@ -208,12 +208,12 @@ type Lit() =
     static member css: Template.Tag<Styles> = css
 
     /// <summary>
-    /// A sentinel value that signals a ChildPart to fully clear its content.
+    /// Used when you don't want to render anything with Lit, usually in conditional expressions.
     /// </summary>
     static member nothing: TemplateResult = LitBindings.nothing
 
     /// <summary>
-    /// Renders a value, usually a lit-html TemplateResult, to the container.
+    /// Renders a Lit TemplateResult to the container.
     /// </summary>
     /// <param name="el">The container to render into.</param>
     /// <param name="t">A <see cref="Lit.TemplateResult">TemplateResult</see> to be rendered.</param>
@@ -228,7 +228,7 @@ type Lit() =
         |> String.concat " "
 
     /// <summary>
-    /// Generates a string from the string seuence provided
+    /// Generates a string from the string sequence provided
     /// </summary>
     static member classes(classes: string seq): string = classes |> String.concat " "
 
@@ -252,9 +252,9 @@ type Lit() =
         LitBindings.repeat (items, getId, (fun x _ -> template x))
 
     /// <summary>
-    /// Prevents re-render of a template function until a single value or an array of values changes.
+    /// Prevents re-render of a template function until one of the dependencies changes.
     /// </summary>
-    /// <param name="dependencies">A set of dependencies that will be trigger a re-render when any of them changes.</param>
+    /// <param name="dependencies">A set of dependencies that will trigger a re-render when any of them changes.</param>
     /// <param name="view">A render function.</param>
     static member ofLazy (dependencies: obj list) (view: unit -> TemplateResult): TemplateResult =
         // TODO: Should we try to use F# equality here?

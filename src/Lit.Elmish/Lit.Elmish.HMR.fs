@@ -91,19 +91,6 @@ module Program =
 
         let mapView view =
             // This function will never be executed because we are using a local reference to access `program.view`.
-            // For example,
-            // ```fs
-            // let withReactUnoptimized placeholderId (program: Program<_,_,_,_>) =
-            //     let setState model dispatch =
-            //         Fable.Import.ReactDom.render(
-            //             lazyView2With (fun x y -> obj.ReferenceEquals(x,y)) program.view model dispatch,
-            //                                                                  ^-- Here program is coming from the function parameters and not
-            //                                                                      from the last program composition used to run the applicaiton
-            //             document.getElementById(placeholderId)
-            //         )
-            //
-            //     { program with setState = setState }
-            // ```*)
             fun model dispatch ->
                 match model with
                 | Inactive ->

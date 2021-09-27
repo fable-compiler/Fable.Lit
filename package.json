@@ -5,7 +5,10 @@
         "publish": "dotnet fsi build.fsx publish",
         "test": "dotnet fable test -o build/test --run web-test-runner build/test/*Test.js --node-resolve",
         "test:watch": "dotnet fable watch test -o build/test --run web-test-runner build/test/*Test.js --node-resolve --watch",
-        "start": "dotnet fable watch sample -o build/sample --runFast vite --open"
+        "start": "dotnet fable watch sample -o build/sample --runFast vite --open",
+        "predocs": "shx rm -rf deploy",
+        "docs": "nacara",
+        "docs:deploy": "npm run docs && gh-pages -d build/docs"
     },
     "dependencies": {
         "lit": "^2.0.0",
@@ -15,6 +18,10 @@
     "devDependencies": {
         "@web/test-runner": "^0.13.16",
         "fable-publish-utils": "^2.2.0",
+        "gh-pages": "^3.2.3",
+        "nacara": "^1.0.0-beta-014",
+        "nacara-layout-standard": "^1.0.0-beta-009",
+        "shx": "^0.3.3",
         "vite": "^2.5.4"
     }
 }

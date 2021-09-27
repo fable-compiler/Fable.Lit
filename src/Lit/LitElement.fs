@@ -349,3 +349,15 @@ module LitElementExt =
         /// </summary>
         static member inline init(initFn: LitConfig<'Props> -> unit): LitElement * 'Props =
             jsThis<ILitElementInit<'Props>>.init(initFn)
+
+module MyHooks =
+    // Updating a ref doesn't cause a re-render,
+    // so let's use a ref with the same signature as useState
+    let useSilentState (ctx: HookContext, v: 'Value) =
+        let r = ctx.useRef(v)
+        r.Value, fun v -> r := v
+
+    type Lit.Hook with
+        // IMPORTANT! This function must be inlined to access the context from the render function
+        static member inline useSilentState(v: 'Value): 'Value * ('Value -> unit) =
+            useSilentState(Hook.getContext(), v)
