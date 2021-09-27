@@ -1,0 +1,110 @@
+<html class="has-navbar-fixed-top"><head><title>Fable.Lit · Testing</title><meta http-equiv="content-type"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" type="text/css" href="/Fable.Lit/style.css"/><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous"/></head><body><nav class="navbar is-fixed-top"><div class="container"><div class="navbar-brand"><a class="navbar-item title is-4" href="https://fable.io/Fable.Lit/">Fable.Lit</a><a class="navbar-item is-hidden-desktop" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item is-hidden-desktop" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a><a class="navbar-burger" data-target="nav-menu"><span></span><span></span><span></span></a></div><div class="navbar-menu" id="nav-menu"><div class="navbar-start"><a class="navbar-item is-active" href="/Fable.Lit/docs/getting-started.html">Documentation</a></div><div class="navbar-end"><a class="navbar-item" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a></div></div></div></nav><div class="container"><div class="mobile-menu"><nav class="breadcrumb"><ul><li><a class="menu-trigger"><span></span><span></span><span></span></a></li><li class="is-active"><a>Testing</a></li></ul></nav></div><div class="columns is-gapless is-mobile"><div class="column is-menu-column is-3-desktop is-hidden-touch ml-5"><div class="menu-container"><aside class="menu"><ul class="menu-list"><li><a class=" " href="/Fable.Lit/docs/getting-started.html">Getting started</a></li><li><a class=" " href="/Fable.Lit/docs/templates.html">Templates</a></li><li><a class=" " href="/Fable.Lit/docs/hook-components.html">Hook Components</a></li><li><a class=" " href="/Fable.Lit/docs/web-components.html">Web Components</a></li><li><a class=" " href="/Fable.Lit/docs/hmr.html">Hot Reloading</a></li><li><a class=" is-active has-table-of-content" href="/Fable.Lit/docs/testing.html">Testing</a></li><ul class="table-of-content"><li><a href="#Accessible-queries" data-toc-element="true">Accessible queries </a></li><li><a href="#Web-Test-Runner" data-toc-element="true">Web Test Runner </a><ul class="table-of-content"><li><a href="#Snapshot-testing" data-toc-element="true">Snapshot testing </a></li></ul></li></ul></ul></aside></div></div><div class="column is-8-desktop is-full-touch"><section class="section"><div class="content"><header class="page-header"><a class="button is-hidden-touch is-outlined is-primary is-pulled-right" target="_blank" href="https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc/docs\testing.md">Edit</a><h1 class="title is-1">Testing</h1></header><div><p>The <code>Fable.Lit.Test</code> packages contains helpers for easily tests your Lit components following best practices. It's composed of several parts:</p>
+<ul>
+<li><code>Expect</code>: Assertion helpers that will throw errors compatible with diffing in JS test runners.</li>
+<li><code>Expect.Dom</code>: Utilities to run tests with DOM elements.</li>
+<li><code>Expect.Elmish</code>: Utilities to test Elmish apps.</li>
+<li><code>WebTestRunner</code>: Utilities to write tests for <a href="https://modern-web.dev/docs/test-runner/overview/">Web Test Runner</a>.</li>
+</ul>
+<p>To access each helper open the corresponding module/namespace. Assertion helpers are always qualified with <code>Expect.</code>:</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">module</span><span style="color: #4078F2"> TodoTest</span>
+
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Elmish</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Expect</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Expect.Dom</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Expect.Elmish</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">WebTestRunner</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Lit.TodoMVC.App</span>
+
+<span>describe </span><span style="color: #50A14F">&quot;Todo&quot;</span><span> </span><span style="color: #A626A4">&lt;|</span><span> </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> </span><span style="color: #A626A4">()</span><span> </span><span style="color: #A626A4">-&gt;</span>
+<span>    it </span><span style="color: #50A14F">&quot;New todo&quot;</span><span> </span><span style="color: #A626A4">&lt;|</span><span> </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> </span><span style="color: #A626A4">()</span><span> </span><span style="color: #A626A4">-&gt;</span><span> </span><span style="color: #A626A4">promise {</span>
+<span>        </span><span style="color: #A0A1A7;font-style: italic">// Initialize the Elmish app with Program.runTest, this will return a container</span>
+<span>        </span><span style="color: #A0A1A7;font-style: italic">// that&#039;s also an observable reporting model updates</span>
+<span>        </span><span style="color: #A626A4">use!</span><span> container </span><span style="color: #A626A4">=</span>
+<span>            Program.mkProgram init update view</span>
+<span>            </span><span style="color: #A626A4">|&gt;</span><span> Program.runTest</span>
+
+<span>        </span><span style="color: #A0A1A7;font-style: italic">// Get the element from the container and do snapshot testing</span>
+<span>        </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">el</span><span> </span><span style="color: #A626A4">=</span><span> container.El</span>
+<span>        </span><span style="color: #A626A4">do!</span><span> el </span><span style="color: #A626A4">|&gt;</span><span> Expect.matchHtmlSnapshot </span><span style="color: #50A14F">&quot;before new todo&quot;</span>
+
+<span>        </span><span style="color: #A0A1A7;font-style: italic">// We can get the form elements using the aria labels, same way as screen readers will do</span>
+<span>        el.getTextInput</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;New todo description&quot;</span><span style="color: #A626A4">)</span><span>.value </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #50A14F">&quot;Elmish test&quot;</span>
+<span>        el.getButton</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;Add new todo&quot;</span><span style="color: #A626A4">)</span><span>.click</span><span style="color: #986801">()</span>
+
+<span>        </span><span style="color: #A0A1A7;font-style: italic">// Get the updated model and confirm it contains the new todo uncompleted</span>
+<span>        </span><span style="color: #A626A4">let!</span><span> </span><span style="color: #E45649">model</span><span> </span><span style="color: #A626A4">=</span><span> container.Await</span><span style="color: #986801">()</span>
+<span>        </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">newTodo</span><span> </span><span style="color: #A626A4">=</span><span> model.Todos </span><span style="color: #A626A4">|&gt;</span><span> List.find </span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> t </span><span style="color: #A626A4">-&gt;</span><span> t.Description </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;Elmish test&quot;</span><span style="color: #A626A4">)</span>
+<span>        newTodo </span><span style="color: #A626A4">|&gt;</span><span> Expect.isFalse </span><span style="color: #50A14F">&quot;new todo complete&quot;</span><span> </span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> t </span><span style="color: #A626A4">-&gt;</span><span> t.Completed</span><span style="color: #A626A4">)</span>
+
+<span>        </span><span style="color: #A0A1A7;font-style: italic">// Wait until the element is updated</span>
+<span>        </span><span style="color: #A626A4">do!</span><span> elementUpdated el</span>
+<span>        </span><span style="color: #A626A4">do!</span><span> el </span><span style="color: #A626A4">|&gt;</span><span> Expect.matchHtmlSnapshot </span><span style="color: #50A14F">&quot;after new todo&quot;</span>
+<span>    </span><span style="color: #A626A4">}</span></code></pre>
+<p>You can also render Lit components/functions or directly an HTML template, which is useful when testing custom elements.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;HookComponent&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">Counter</span><span style="color: #383A42"> </span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">value</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">setValue </span><span style="color: #A626A4">=</span><span> Hook.useState </span><span style="color: #986801">0</span>
+
+<span>    html $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">      &lt;div&gt;</span>
+<span style="color: #50A14F">        &lt;p&gt;Value: {value}&lt;/p&gt;</span>
+<span style="color: #50A14F">        &lt;button @click={Ev(fun _ -&gt; value + 1 |&gt; setValue)}&gt;Increment&lt;/button&gt;</span>
+<span style="color: #50A14F">        &lt;button @click={Ev(fun _ -&gt; value - 1 |&gt; setValue)}&gt;Decrement&lt;/button&gt;</span>
+<span style="color: #50A14F">      &lt;/div&gt;</span>
+<span style="color: #50A14F">    &quot;&quot;&quot;</span>
+
+<span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-element&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">DispatchEvents</span><span style="color: #383A42"> </span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">el</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">_ </span><span style="color: #A626A4">=</span><span> LitElement.init </span><span style="color: #986801">()</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">onClick</span><span style="color: #383A42"> _ </span><span style="color: #A626A4">=</span><span> el.dispatchEvent</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-event&quot;</span><span style="color: #A626A4">)</span>
+
+<span>    html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;button @click={onClick}&gt;Click me!&lt;/button&gt;&quot;&quot;&quot;</span>
+
+<span>describe </span><span style="color: #50A14F">&quot;My tests&quot;</span><span> </span><span style="color: #A626A4">&lt;|</span><span> </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> </span><span style="color: #A626A4">()</span><span> </span><span style="color: #A626A4">-&gt;</span>
+<span>    it </span><span style="color: #50A14F">&quot;counter works&quot;</span><span> </span><span style="color: #A626A4">&lt;|</span><span> </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> </span><span style="color: #A626A4">()</span><span> </span><span style="color: #A626A4">-&gt;</span><span> </span><span style="color: #A626A4">promise {</span>
+<span>        </span><span style="color: #A626A4">use!</span><span> container </span><span style="color: #A626A4">=</span><span> Counter</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">|&gt;</span><span> render</span>
+<span>        </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">container</span><span> </span><span style="color: #A626A4">=</span><span> container.El</span>
+<span>        el.getButton</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;increment&quot;</span><span style="color: #A626A4">)</span><span>.click</span><span style="color: #986801">()</span>
+<span>        el.getByText</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;value&quot;</span><span style="color: #A626A4">)</span><span> </span><span style="color: #A626A4">|&gt;</span><span> Expect.innerText </span><span style="color: #50A14F">&quot;Value: 1&quot;</span>
+<span>        el.getButton</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;decrement&quot;</span><span style="color: #A626A4">)</span><span>.click</span><span style="color: #986801">()</span>
+<span>        el.getButton</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;decrement&quot;</span><span style="color: #A626A4">)</span><span>.click</span><span style="color: #986801">()</span>
+<span>        el.getByText</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;value&quot;</span><span style="color: #A626A4">)</span><span> </span><span style="color: #A626A4">|&gt;</span><span> Expect.innerText </span><span style="color: #50A14F">&quot;Value: -1&quot;</span>
+<span>    </span><span style="color: #A626A4">}</span>
+
+<span>    it </span><span style="color: #50A14F">&quot;my-element works&quot;</span><span> </span><span style="color: #A626A4">&lt;|</span><span> </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> </span><span style="color: #A626A4">()</span><span> </span><span style="color: #A626A4">-&gt;</span><span> </span><span style="color: #A626A4">promise {</span>
+<span>        </span><span style="color: #A626A4">use!</span><span> container </span><span style="color: #A626A4">=</span><span> render</span><span style="color: #A626A4">_</span><span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;my-element&gt;&lt;/my-element&gt;&quot;&quot;&quot;</span>
+<span>        </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">container</span><span> </span><span style="color: #A626A4">=</span><span> container.El</span>
+<span>        </span><span style="color: #A626A4">do!</span><span> el </span><span style="color: #A626A4">|&gt;</span><span> Expect.dispatch </span><span style="color: #50A14F">&quot;my-event&quot;</span><span> </span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> _ </span><span style="color: #A626A4">-&gt;</span>
+<span>            el.shadowRoot.getButton</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;click&quot;</span><span style="color: #A626A4">)</span><span>.click</span><span style="color: #A626A4">())</span>
+<span>    </span><span style="color: #A626A4">}</span></code></pre>
+<h2>Accessible queries <a href="#Accessible-queries" aria-hidden="true"><span class="anchor" id="Accessible-queries"></span>#</a></h2>
+<p>Writing tests that find elements in your UI is a great opportunity to put you in the shoes of a screen-reader user. Popularized by the <a href="https://testing-library.com/">Testing Library</a>, <a href="https://testing-library.com/docs/queries/about#priority">accessible queries</a> are a way to make sure your tests find elements in your UI the same way screen-readers do.</p>
+<ul>
+<li><code>getByText(pattern): HTMLElement</code>: The given pattern becomes an ignore-case regular expression.</li>
+<li><code>getByRole(role, accessibleName): Element</code>: Query every element exposed in the accessibility tree. The given accessibleName becomes an ignore-case regular expression.</li>
+</ul>
+<p>The following shortcuts for common roles are provided:</p>
+<ul>
+<li><code>getButton(accessibleName): HTMLButtonElement</code></li>
+<li><code>getCheckbox(accessibleName): HTMLInputElement</code></li>
+<li><code>getTextInput(accessibleName): HTMLInputElement</code></li>
+</ul>
+<h2>Web Test Runner <a href="#Web-Test-Runner" aria-hidden="true"><span class="anchor" id="Web-Test-Runner"></span>#</a></h2>
+<p>Except for <code>WebTestRunner</code> module, the other helpers can be run with any test runner that provides a DOM. We recommend <a href="https://modern-web.dev/docs/test-runner/overview/">Web Test Runner</a> because it's compatible with ES modules and runs your tests in a headless browser by default instead of node. Web Test Runner provides the same <a href="https://mochajs.org/#interfaces">BDD interface as Mocha</a> and allows you to <a href="https://modern-web.dev/docs/test-runner/commands/">execute commands</a> to interact with the browser instance or the file system. At the time of writing Fable.Lit.Tests includes helpers for snapshot testing.</p>
+<h3>Snapshot testing <a href="#Snapshot-testing" aria-hidden="true"><span class="anchor" id="Snapshot-testing"></span>#</a></h3>
+<p>Snapshot testing is helpful to make sure your UI doesn't change unintentionally. If no snapshot has been created for the specific file/name pair a new one will just be saved. Next time the given content will be compared with the stored snapshot and assertion will fail if they don't match.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>it </span><span style="color: #50A14F">&quot;snapshots&quot;</span><span> </span><span style="color: #A626A4">&lt;|</span><span> </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> </span><span style="color: #A626A4">()</span><span> </span><span style="color: #A626A4">-&gt;</span><span> </span><span style="color: #A626A4">promise {</span>
+<span>    </span><span style="color: #A626A4">use!</span><span> el </span><span style="color: #A626A4">=</span><span> render</span><span style="color: #A626A4">_</span><span>html $</span><span style="color: #50A14F">&quot;&lt;my-element&gt;&lt;/my-element&gt;&quot;</span>
+<span>    </span><span style="color: #A626A4">return!</span><span> el.El </span><span style="color: #A626A4">|&gt;</span><span> Expect.matchHtmlSnapshot </span><span style="color: #50A14F">&quot;my-element&quot;</span>
+<span style="color: #A626A4">}</span></code></pre>
+<p>If you have changed the UI intentionally you can update the snapshots with the self-telling <code>--update-snapshots</code> argument.</p>
+<pre><code>npm test -- --update-snapshots
+</code></pre>
+<p>The main caveat is at the time of writing Web Test Runner doesn't support configuring the directory for snapshots and they will be placed next to the test files. This can be problematic if you're outputting the compiled JS files to a gitignored folder. In this case, you need to add an exception to make sure git checks the snapshots:</p>
+<pre><code># .gitignore
+
+build/client/*
+build/test/*
+!build/test/__snapshots__
+</code></pre>
+</div></div></section><div class="navigation-container"><a class="button navigate-to-previous is-primary is-outlined" href="/Fable.Lit/docs/hmr.html"><span class="icon"><i class=" fas fa-arrow-left"></i></span><span class=" is-uppercase">Hot Reloading</span></a><br class="is-hidden-tablet"/><button class="button navigate-to-next is-invisible"></button></div></div></div></div><script async="" src="/Fable.Lit/resources/nacara-standard-layouts/scripts/menu.js"></script></body></html>

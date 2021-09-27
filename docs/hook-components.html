@@ -1,0 +1,64 @@
+<html class="has-navbar-fixed-top"><head><title>Fable.Lit · Hook Components</title><meta http-equiv="content-type"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" type="text/css" href="/Fable.Lit/style.css"/><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous"/></head><body><nav class="navbar is-fixed-top"><div class="container"><div class="navbar-brand"><a class="navbar-item title is-4" href="https://fable.io/Fable.Lit/">Fable.Lit</a><a class="navbar-item is-hidden-desktop" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item is-hidden-desktop" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a><a class="navbar-burger" data-target="nav-menu"><span></span><span></span><span></span></a></div><div class="navbar-menu" id="nav-menu"><div class="navbar-start"><a class="navbar-item is-active" href="/Fable.Lit/docs/getting-started.html">Documentation</a></div><div class="navbar-end"><a class="navbar-item" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a></div></div></div></nav><div class="container"><div class="mobile-menu"><nav class="breadcrumb"><ul><li><a class="menu-trigger"><span></span><span></span><span></span></a></li><li class="is-active"><a>Hook Components</a></li></ul></nav></div><div class="columns is-gapless is-mobile"><div class="column is-menu-column is-3-desktop is-hidden-touch ml-5"><div class="menu-container"><aside class="menu"><ul class="menu-list"><li><a class=" " href="/Fable.Lit/docs/getting-started.html">Getting started</a></li><li><a class=" " href="/Fable.Lit/docs/templates.html">Templates</a></li><li><a class=" is-active has-table-of-content" href="/Fable.Lit/docs/hook-components.html">Hook Components</a></li><ul class="table-of-content"><li><a href="#UseElmish" data-toc-element="true">UseElmish </a></li><li><a href="#Writing-your-own-hook" data-toc-element="true">Writing your own hook </a></li></ul><li><a class=" " href="/Fable.Lit/docs/web-components.html">Web Components</a></li><li><a class=" " href="/Fable.Lit/docs/hmr.html">Hot Reloading</a></li><li><a class=" " href="/Fable.Lit/docs/testing.html">Testing</a></li></ul></aside></div></div><div class="column is-8-desktop is-full-touch"><section class="section"><div class="content"><header class="page-header"><a class="button is-hidden-touch is-outlined is-primary is-pulled-right" target="_blank" href="https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc/docs\hook-components.md">Edit</a><h1 class="title is-1">Hook Components</h1></header><div><p>Fable.Lit includes the <code>HookComponent</code> attribute. When you decorate a view function with it, this lets you use <a href="https://reactjs.org/docs/hooks-overview.html">hooks</a> in a similar way as <a href="https://zaid-ajaj.github.io/Feliz/#/Feliz/React/NotJustFunctions">ReactComponent</a> attribute does. Hook support is included in Fable.Lit's F# code and doesn't require any extra JS dependency besides Lit.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Lit</span>
+
+<span style="color: #0184BC">[&lt;HookComponent&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">NameInput</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">value</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">setValue </span><span style="color: #A626A4">=</span><span> Hook.useState </span><span style="color: #50A14F">&quot;World&quot;</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">inputRef</span><span> </span><span style="color: #A626A4">=</span><span> Hook.useRef</span><span style="color: #A626A4">&lt;</span><span>HTMLInputElement</span><span style="color: #A626A4">&gt;</span><span style="color: #986801">()</span>
+
+<span>    html $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">      &lt;div class=&quot;content&quot;&gt;</span>
+<span style="color: #50A14F">        &lt;p&gt;Hello {value}!&lt;/p&gt;</span>
+<span style="color: #50A14F">        &lt;input {Ref inputRef}</span>
+<span style="color: #50A14F">          value={value}</span>
+<span style="color: #50A14F">          @keyup={EvVal setValue}</span>
+<span style="color: #50A14F">          @focus={Ev(fun _ -&gt; inputRef.Value |&gt; Option.iter (fun el -&gt; el.select()))}&gt;</span>
+<span style="color: #50A14F">      &lt;/div&gt;</span>
+<span style="color: #50A14F">    &quot;&quot;&quot;</span></code></pre>
+<article class="message is-info">
+                    <div class="message-body"><p>Note that HookComponents are just a way to keep state between renders and doesn't create a custom HTML element. Check <a href="./web-components.html">Web Components</a> if you want to declare a component that can be instantiated from HTML.</p>
+</div>
+</article>
+<p>Fable.Lit hooks in general have the same API as their React counterparts but may differ in some occasions:</p>
+<ul>
+<li><code>useState</code></li>
+<li><code>useMemo</code></li>
+<li><code>useRef</code>: Can use &quot;native&quot; F# refs.</li>
+<li><code>useEffect</code>: Doesn't accept a dependency array, instead it provides semantic alternatives for each use case.
+<ul>
+<li><code>useEffect</code>: Trigger an effect after each render.</li>
+<li><code>useEffectOnce</code>: Trigger an effect only once after the first render.</li>
+<li><code>useEffectOnChange</code>: Trigger an effect after each render <strong>if</strong> the given value has changed.</li>
+</ul>
+</li>
+</ul>
+<h2>UseElmish <a href="#UseElmish" aria-hidden="true"><span class="anchor" id="UseElmish"></span>#</a></h2>
+<p>Thanks to the great work by <a href="https://twitter.com/Cody_S_Johnson">Cody Johnson</a> with <a href="https://zaid-ajaj.github.io/Feliz/#/Hooks/UseElmish">Feliz.UseElmish</a>, Fable.Lit HookComponents also include <code>useElmish</code> hook to manage the internal state of your components using the model-view-update architecture.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Elmish</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Lit</span>
+
+<span style="color: #A626A4">type</span><span> </span><span style="color: #C18401">Model</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+<span style="color: #A626A4">type</span><span> </span><span style="color: #C18401">Msg</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">init</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">update</span><span style="color: #383A42"> msg model </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">view</span><span style="color: #383A42"> model dispatch </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+
+<span style="color: #0184BC">[&lt;HookComponent&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">Clock</span><span style="color: #986801">()</span><span style="color: #A626A4">:</span><span> </span><span style="color: #C18401">TemplateResult </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">model</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">dispatch </span><span style="color: #A626A4">=</span><span> Hook.useElmish</span><span style="color: #A626A4">(</span><span>init</span><span style="color: #A626A4">,</span><span> update</span><span style="color: #A626A4">)</span>
+<span>    view model dispatch</span></code></pre>
+<h2>Writing your own hook <a href="#Writing-your-own-hook" aria-hidden="true"><span class="anchor" id="Writing-your-own-hook"></span>#</a></h2>
+<p>The magic behind Fable.Lit's hooks is the context is provided by the JS <code>this</code> keyword. To access the context from the render function you must use an <code>inline</code> helper and then pass the context to your custom hook. Example:</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">module</span><span style="color: #4078F2"> MyHooks </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A0A1A7;font-style: italic">// Updating a ref doesn&#039;t cause a re-render,</span>
+<span>    </span><span style="color: #A0A1A7;font-style: italic">// so let&#039;s use a ref with the same signature as useState</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">useSilentState</span><span style="color: #383A42"> </span><span style="color: #A626A4">(</span><span style="color: #383A42">ctx</span><span style="color: #A626A4">:</span><span> </span><span style="color: #C18401">HookContext</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">v</span><span style="color: #A626A4">:</span><span> </span><span style="color: #C18401">&#039;Value</span><span style="color: #A626A4">)</span><span> </span><span style="color: #A626A4">=</span>
+<span>        </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">r</span><span> </span><span style="color: #A626A4">=</span><span> ctx.useRef</span><span style="color: #A626A4">(</span><span>v</span><span style="color: #A626A4">)</span>
+<span>        r.Value</span><span style="color: #A626A4">,</span><span> </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> v </span><span style="color: #A626A4">-&gt;</span><span> r </span><span style="color: #A626A4">:=</span><span> v</span>
+
+<span>    </span><span style="color: #A626A4">type</span><span> </span><span style="color: #C18401">Lit.Hook</span><span> </span><span style="color: #A626A4">with</span>
+<span>        </span><span style="color: #A0A1A7;font-style: italic">// IMPORTANT! This function must be inlined to access the context from the render function</span>
+<span>        </span><span style="color: #A626A4">static member inline</span><span> </span><span style="color: #E45649">useSilentState</span><span style="color: #A626A4">(</span><span style="color: #383A42">v</span><span style="color: #A626A4">:</span><span> </span><span style="color: #C18401">&#039;Value</span><span style="color: #A626A4">):</span><span> </span><span style="color: #C18401">&#039;Value </span><span style="color: #A626A4">*</span><span> </span><span style="color: #A626A4">(</span><span style="color: #C18401">&#039;Value </span><span style="color: #A626A4">-&gt;</span><span style="color: #C18401"> unit</span><span style="color: #A626A4">)</span><span style="color: #C18401"> </span><span style="color: #A626A4">=</span>
+<span>            useSilentState</span><span style="color: #A626A4">(</span><span>Hook.getContext</span><span style="color: #A626A4">(),</span><span> v</span><span style="color: #A626A4">)</span></code></pre>
+</div></div></section><div class="navigation-container"><a class="button navigate-to-previous is-primary is-outlined" href="/Fable.Lit/docs/templates.html"><span class="icon"><i class=" fas fa-arrow-left"></i></span><span class=" is-uppercase">Templates</span></a><br class="is-hidden-tablet"/><a class="button navigate-to-next is-primary is-outlined" href="/Fable.Lit/docs/web-components.html"><span class=" is-uppercase">Web Components</span><span class="icon"><i class=" fas fa-arrow-right"></i></span></a></div></div></div></div><script async="" src="/Fable.Lit/resources/nacara-standard-layouts/scripts/menu.js"></script></body></html>

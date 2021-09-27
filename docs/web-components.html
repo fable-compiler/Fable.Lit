@@ -1,0 +1,284 @@
+<html class="has-navbar-fixed-top"><head><title>Fable.Lit · Web Components</title><meta http-equiv="content-type"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" type="text/css" href="/Fable.Lit/style.css"/><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous"/></head><body><nav class="navbar is-fixed-top"><div class="container"><div class="navbar-brand"><a class="navbar-item title is-4" href="https://fable.io/Fable.Lit/">Fable.Lit</a><a class="navbar-item is-hidden-desktop" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item is-hidden-desktop" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a><a class="navbar-burger" data-target="nav-menu"><span></span><span></span><span></span></a></div><div class="navbar-menu" id="nav-menu"><div class="navbar-start"><a class="navbar-item is-active" href="/Fable.Lit/docs/getting-started.html">Documentation</a></div><div class="navbar-end"><a class="navbar-item" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a></div></div></div></nav><div class="container"><div class="mobile-menu"><nav class="breadcrumb"><ul><li><a class="menu-trigger"><span></span><span></span><span></span></a></li><li class="is-active"><a>Web Components</a></li></ul></nav></div><div class="columns is-gapless is-mobile"><div class="column is-menu-column is-3-desktop is-hidden-touch ml-5"><div class="menu-container"><aside class="menu"><ul class="menu-list"><li><a class=" " href="/Fable.Lit/docs/getting-started.html">Getting started</a></li><li><a class=" " href="/Fable.Lit/docs/templates.html">Templates</a></li><li><a class=" " href="/Fable.Lit/docs/hook-components.html">Hook Components</a></li><li><a class=" is-active has-table-of-content" href="/Fable.Lit/docs/web-components.html">Web Components</a></li><ul class="table-of-content"><li><a href="#Properties" data-toc-element="true">Properties </a></li><li><a href="#Events" data-toc-element="true">Events </a></li><li><a href="#Styles" data-toc-element="true">Styles </a></li><li><a href="#Use-cases" data-toc-element="true">Use cases </a></li></ul><li><a class=" " href="/Fable.Lit/docs/hmr.html">Hot Reloading</a></li><li><a class=" " href="/Fable.Lit/docs/testing.html">Testing</a></li></ul></aside></div></div><div class="column is-8-desktop is-full-touch"><section class="section"><div class="content"><header class="page-header"><a class="button is-hidden-touch is-outlined is-primary is-pulled-right" target="_blank" href="https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc/docs\web-components.md">Edit</a><h1 class="title is-1">Web Components</h1></header><div><p><a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components">Web Components</a> are a way to create custom reusable HTML Elements and are part of the browser standards. These elements work as any other HTML tag like a <code>div</code>, <code>span</code>, or <code>article</code> meaning that you can produce web components that are able to be used by any framework without having to write any kind of wrapper on top of it.</p>
+<blockquote>
+<p>These web components use <a href="https://lit.dev">Lit</a> under the hood, visit <a href="https://lit.dev">lit.dev</a> for more detailed information on how <code>LitElement</code> Web Components work.</p>
+</blockquote>
+<p>Let's see a quick simple example of a web component</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-counter&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">Counter</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A0A1A7;font-style: italic">// This call is obligatory to initialize the web component</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">props </span><span style="color: #A626A4">=</span>
+<span>        LitElement.init</span><span style="color: #A626A4">(</span>
+<span>            </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
+<span>                </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">props</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">{|</span><span> initial </span><span style="color: #A626A4">=</span><span> Prop.</span><span style="color: #A626A4">of(</span><span style="color: #986801">0</span><span style="color: #A626A4">,</span><span> attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;initial&quot;</span><span style="color: #A626A4">)</span><span> </span><span style="color: #A626A4">|}</span>
+<span>                init.props </span><span style="color: #A626A4">&lt;-</span><span> props</span><span style="color: #A626A4">)</span>
+
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">counter</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">setCounter </span><span style="color: #A626A4">=</span><span> Hook.useState props.initial.Value</span>
+
+<span>    html</span>
+<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">        &lt;article&gt;</span>
+<span style="color: #50A14F">            &lt;p&gt;{counter}&lt;/p&gt;</span>
+<span style="color: #50A14F">            &lt;button @click={fun _ -&gt; setCounter(counter + 1)}&gt;+&lt;/button&gt;</span>
+<span style="color: #50A14F">            &lt;button @click={fun _ -&gt; setCounter(counter - 1)}&gt;-&lt;/button&gt;</span>
+<span style="color: #50A14F">        &lt;/article&gt;</span>
+<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
+<article class="message is-info">
+                    <div class="message-body"><p>Check <a href="./hook-components.html">hooks</a> for a more detailed explanation of how to use them.</p>
+</div>
+</article>
+<p>And then in HTML you can use it as</p>
+<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;my-counter&gt;&lt;/my-counter&gt;
+</code></pre>
+<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;my-counter initial=&quot;10&quot;&gt;&lt;/my-counter&gt;
+</code></pre>
+<p>This will produce two different instances of <code>my-counter</code> the first one will start at 0 the second one will start at 10</p>
+<blockquote>
+<p>When we say you can use it in HTML we mean it, wherever you are used to put an HTML tag you are able to use it, vue, angular, server side pages... You name it.</p>
+</blockquote>
+<p>To be able to define web components with Lit (and Fable.Lit) you need to pay attention to the following things since we have abstracted some of the <a href="https://lit.dev/docs/components/properties/">Lit mechanisms to declare reactive properties</a> to have a nicer API from F#'s perspective</p>
+<table>
+    <thead>
+        <th>Name</th>
+        <th>Js Counterpart</th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;element-name&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">ConstructorFunction</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span></code></pre>
+</td>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #E45649">customElements</span><span style="color: #383A42">.</span><span style="color: #4078F2">define</span><span style="color: #383A42">(</span><span style="color: #50A14F">&quot;element-name&quot;</span><span style="color: #383A42">,</span><span> </span><span style="color: #383A42">ConstructorFunction);</span></code></pre>
+</td>
+        </tr>
+        <tr>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">host</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">properties </span><span style="color: #A626A4">=</span><span> LitElement.init</span><span style="color: #A626A4">(</span><span>initFn</span><span style="color: #A626A4">)</span></code></pre>
+</td>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #E45649">Component</span><span style="color: #383A42">.</span><span style="color: #4078F2">properties</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #A626A4">function</span><span> </span><span style="color: #383A42">()</span><span> </span><span style="color: #383A42">{</span>
+<span>  </span><span style="color: #A626A4">return</span><span> </span><span style="color: #383A42">properties;</span>
+<span style="color: #383A42">};</span>
+<span style="color: #E45649">Component</span><span style="color: #383A42">.</span><span style="color: #4078F2">styles</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #A626A4">function</span><span> </span><span style="color: #383A42">()</span><span> </span><span style="color: #383A42">{</span>
+<span>  </span><span style="color: #A626A4">return</span><span> </span><span style="color: #383A42">styles;</span>
+<span style="color: #383A42">};</span></code></pre>
+</td>
+        </tr>
+        <tr>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">{|</span><span> </span><span style="color: #A626A4">property</span><span> </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;defaultValue&quot;</span><span style="color: #A626A4">)</span><span> </span><span style="color: #A626A4">|}</span></code></pre>
+</td>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #4078F2">constructor</span><span style="color: #383A42">()</span><span> </span><span style="color: #383A42">{</span>
+<span>    </span><span style="color: #E45649">this</span><span style="color: #383A42">.</span><span style="color: #E45649">property</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #50A14F">&quot;defaultValue&quot;</span>
+<span style="color: #383A42">}</span></code></pre>
+</td>
+        </tr>
+    </tbody>
+</table>
+<h2>Properties <a href="#Properties" aria-hidden="true"><span class="anchor" id="Properties"></span>#</a></h2>
+<p>When you call <code>let host, properties = LitElement.init initFunction</code> you are initializing a web component instance since web components are not &quot;constructible&quot; (i.e. you can't do <code>new MyElement()</code>, you have to do <code>document.createElement('my-element')</code>) there's not a direct way to pass external information for that you have two ways to do it</p>
+<ul>
+<li>properties<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">const</span><span> </span><span style="color: #986801">el</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #E45649">document</span><span style="color: #383A42">.</span><span style="color: #4078F2">querySelector</span><span style="color: #383A42">(</span><span style="color: #50A14F">&quot;my-element&quot;</span><span style="color: #383A42">);</span>
+<span style="color: #E45649">el</span><span style="color: #383A42">.</span><span style="color: #E45649">property</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #50A14F">&quot;new value&quot;</span><span style="color: #383A42">;</span></code></pre>
+</li>
+<li>attributes<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;my-element my-attribute=&quot;attribute-value&quot;&gt;&lt;/my-element&gt;
+</code></pre>
+</li>
+</ul>
+<p>Properties are existing members of an instance while attributes are strings defined in HTML in Fable.Lit you can use the <code>Prop.Of</code> API to get your properties in place</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">initFn</span><span style="color: #383A42"> init </span><span style="color: #A626A4">=</span>
+<span>    init.props </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">{|</span><span> name </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;&quot;</span><span style="color: #A626A4">,</span><span> attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;name&quot;</span><span style="color: #A626A4">);</span><span> age </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">(</span><span style="color: #986801">10</span><span style="color: #A626A4">,</span><span> attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;age&quot;</span><span style="color: #A626A4">)</span><span>  </span><span style="color: #A626A4">|}</span>
+<span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-component&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">MyComponent</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">props </span><span style="color: #A626A4">=</span><span> LitElement.init initFn</span>
+<span>    </span><span style="color: #A0A1A7;font-style: italic">(* ...  the rest of the function ... *)</span></code></pre>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>Prop.Of</span><span style="color: #A626A4">(</span>
+<span>    </span><span style="color: #50A14F">&quot;defaultValue&quot;</span><span style="color: #A626A4">,</span>
+<span>    attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;name-of-the-attribute&quot;</span><span style="color: #A626A4">,</span>
+<span>    hasChanged </span><span style="color: #A626A4">=</span><span> boolPredicateFn</span><span style="color: #A626A4">,</span>
+<span>    fromAttribute </span><span style="color: #A626A4">=</span><span> stringToTypeFunctionFn</span><span style="color: #A626A4">,</span>
+<span>    toAttribute </span><span style="color: #A626A4">=</span><span> typeToStringFunctionFn</span><span style="color: #A626A4">,</span>
+<span>    reflect </span><span style="color: #A626A4">=</span><span> </span><span style="color: #986801">false</span>
+<span style="color: #A626A4">)</span></code></pre>
+<article class="message is-info">
+                    <div class="message-body"><p>When you use this API each of the properties declared wil be accessible via the element's instance, except from the first parameter all of the other are optional</p>
+</div>
+</article>
+<article class="message is-warning">
+                    <div class="message-body"><p>Use attribute for primitive values only, otherwise Json objects and Arrays will be serialized using <code>JSON.(parse|stringify)</code>, for complex objects use properties only to prevent attribute strings converting your object in a string</p>
+</div>
+</article>
+<h2>Events <a href="#Events" aria-hidden="true"><span class="anchor" id="Events"></span>#</a></h2>
+<p>With properties we can obtain information from the outside world, but to let the outside world something happened we use events. Events while not strictly required, they should be triggered by a user interaction a click, a selection a scroll rather than emitted when a property changes.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;product-settings&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">CloseMe</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">host</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">props </span><span style="color: #A626A4">=</span>
+<span>        LitElement.init</span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
+<span>            init.props </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">{|</span><span> product </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">({</span><span> </span><span style="color: #A0A1A7;font-style: italic">(* ... product definition ...*)</span><span> </span><span style="color: #A626A4">})</span><span> </span><span style="color: #A626A4">|})</span>
+
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">product</span><span> </span><span style="color: #A626A4">=</span><span> props.product.Value</span>
+
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">onDeleteFromInventory</span><span style="color: #383A42"> _ </span><span style="color: #A626A4">=</span>
+<span>        host.dispatchEvent</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;on-delete-from-inventory&quot;</span><span style="color: #A626A4">)</span>
+
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">onHideFromCustomers</span><span style="color: #383A42"> _ </span><span style="color: #A626A4">=</span>
+<span>        host.dispatchCustomEvent</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;on-hide-from-customers&quot;</span><span style="color: #A626A4">,</span><span> </span><span style="color: #A626A4">{</span><span> product </span><span style="color: #A626A4">with</span><span> hidden </span><span style="color: #A626A4">=</span><span> </span><span style="color: #986801">true</span><span> </span><span style="color: #A626A4">})</span>
+
+<span>    html</span>
+<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">        &lt;article&gt;</span>
+<span style="color: #50A14F">            &lt;header&gt;</span>
+<span style="color: #50A14F">                &lt;h3&gt;{product.name}&lt;/h3&gt;</span>
+<span style="color: #50A14F">            &lt;/header&gt;</span>
+<span style="color: #50A14F">            &lt;aside&gt;</span>
+<span style="color: #50A14F">                &lt;button @click={onHideFromCustomers}&gt;Delete&lt;/button&gt;</span>
+<span style="color: #50A14F">                &lt;button @click={onDeleteFromInventory}&gt;Hide&lt;/button&gt;</span>
+<span style="color: #50A14F">            &lt;/aside&gt;</span>
+<span style="color: #50A14F">            &lt;section&gt;</span>
+<span style="color: #50A14F">                &lt;!-- the rest of the component --&gt;</span>
+<span style="color: #50A14F">            &lt;/section&gt;</span>
+<span style="color: #50A14F">        &lt;/article&gt;</span>
+<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
+<p><code>host.dispatchEvent</code> and <code>host.dispatchCustomEvent</code> have the following optional arguments</p>
+<ul>
+<li>detail -&gt; (CustomEvent only) A value or object that you want to send to the listeners of this event</li>
+<li>bubbles -&gt; Allow the event to enter the bubblibg phase</li>
+<li>composed -&gt; Let the event cross the shadow DOM boundary</li>
+<li>cancelable -&gt; Allow this event to be default prevented</li>
+</ul>
+<article class="message is-info">
+                    <div class="message-body"><p>These parameters are set to true by default (except from detail which is None by default) for convenience since most of the time this is what you want when you dispatch events</p>
+</div>
+</article>
+<h2>Styles <a href="#Styles" aria-hidden="true"><span class="anchor" id="Styles"></span>#</a></h2>
+<p>Web components internals live in what is called <a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM">Shadow DOM</a> this means the normal document styles don't affect them as an example doing the following in the head of the document</p>
+<pre class="skip-code-lightner-grammar-not-found" ><code class="language-css">p {
+  color: red;
+}
+</code></pre>
+<p>would paint every <code>p</code> element in the document except those inside the shadow DOM.</p>
+<p>To define styles for your web components you have to provide them in the init function of the component.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-element&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">MyElement</span><span style="color: #986801">()</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span> </span><span style="color: #A626A4">=</span><span> LitElement.init</span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
+<span>        init.styles </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">[</span>
+<span>            css $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">                :host {{</span>
+<span style="color: #50A14F">                    display: flex;</span>
+<span style="color: #50A14F">                    flex-direction: column;</span>
+<span style="color: #50A14F">                }}</span>
+
+<span style="color: #50A14F">                p {{</span>
+<span style="color: #50A14F">                    color: red;</span>
+<span style="color: #50A14F">                }}</span>
+<span style="color: #50A14F">                &quot;&quot;&quot;</span>
+<span>            </span><span style="color: #A626A4">yield!</span><span> Shared.styles</span>
+<span>        </span><span style="color: #A626A4">])</span>
+<span>    html</span>
+<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">        &lt;p&gt;This text is red!&lt;/p&gt;</span>
+<span style="color: #50A14F">        &lt;my-other-element header=&quot;This element&#039;s p&#039;s won&#039;t be red&quot;&gt;&lt;/my-other-element&gt;</span>
+<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
+<p>Assuming <code>&lt;my-other-element header=&quot;This element's p's won't be red&quot;&gt;&lt;/my-other-element&gt;</code> is another web component (meaning it has it's own Shadow DOM) the <code>p</code> tags inside that element won't be affected by our own CSS styles.</p>
+<p>We have CSS Encapsulation but customization is possible via</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties">Custom CSS Properties</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/::part">Css Parts</a></li>
+</ul>
+<p>A brief example of this would be defining the font color for a component</p>
+<p>Having a web component defined like this</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-element&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">MyElement</span><span style="color: #986801">()</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span> </span><span style="color: #A626A4">=</span><span> LitElement.init</span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
+<span>        init.styles </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">[</span>
+<span>            css $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">                p {{</span>
+<span style="color: #50A14F">                    color: var(--primary-color);</span>
+<span style="color: #50A14F">                }}</span>
+<span style="color: #50A14F">                button {{</span>
+<span style="color: #50A14F">                    color: pink;</span>
+<span style="color: #50A14F">                }}</span>
+<span style="color: #50A14F">                &quot;&quot;&quot;</span>
+<span>        </span><span style="color: #A626A4">])</span>
+<span>    html</span>
+<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">        &lt;p&gt;This text is red!&lt;/p&gt;</span>
+<span style="color: #50A14F">        &lt;button part=&quot;hi-btn&quot;&gt;Say Hi&lt;/button&gt;</span>
+<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
+<p>we can define a CSS stylesheet in the normal document, either a <code>link</code> tag or a <code>style</code> tag in the head of the document works.</p>
+<pre class="skip-code-lightner-grammar-not-found" ><code class="language-css">:root {
+  --primary-color: rebeccapurple;
+}
+
+.primary-red {
+  --primary-color: red;
+}
+
+.primary-blue {
+  --primary-blue: blue;
+}
+
+.primary-blue my-element::part(hi-btn) {
+  color: blue;
+  border: 2px solid pink;
+}
+</code></pre>
+<p>Here we are going to leverage the cascading aspect of the CSS the <code>--primary-color</code> variable has a rule to match from the <code>:root</code> of the document, then each time we're inside a particular class we're going to override that variable to give it a new value, our web component will consume the final value of that variable <code>var(--primary-color)</code>, in the case of the part, we defined the rule when the element is a child of <code>.primary-blue</code> we will style the <code>part</code> completely at our own taste</p>
+<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;section&gt;
+  &lt;!-- color: rebeccapurple --&gt;
+  &lt;my-element&gt;&lt;/my-element&gt;
+&lt;/section&gt;
+&lt;section class=&quot;primary-red&quot;&gt;
+  &lt;!-- color: red --&gt;
+  &lt;my-element&gt;&lt;/my-element&gt;
+&lt;/section&gt;
+&lt;section class=&quot;primary-blue&quot;&gt;
+  &lt;!-- color: blue --&gt;
+  &lt;!-- button border: pink --&gt;
+  &lt;my-element&gt;&lt;/my-element&gt;
+&lt;/section&gt;
+</code></pre>
+<p>between parts and variables you can expose only those particular areas of your components that you as an author are allowing to modify</p>
+<article class="message is-info">
+                    <div class="message-body"><p>To know more about applying styles to LitElement check the <a href="https://lit.dev/docs/components/styles/#theming">theming</a> docs in their site.</p>
+</div>
+</article>
+<h2>Use cases <a href="#Use-cases" aria-hidden="true"><span class="anchor" id="Use-cases"></span>#</a></h2>
+<p>Popular libraries made with Web components are</p>
+<ul>
+<li><a href="https://fast.design">FAST</a> - Microsoft
+<ul>
+<li><a href="https://github.com/microsoft/fluentui/tree/master/packages/web-components">Fluent UI</a> - The design langauge that powers Windows</li>
+</ul>
+</li>
+<li><a href="https://github.com/adobe/spectrum-web-components">Spectrum Web Components</a> - Adobe Spectrum design language</li>
+<li><a href="https://vaadin.com/components">Vaadin</a></li>
+<li><a href="https://ionicframework.com/docs/components">Ionic Framework</a></li>
+</ul>
+<blockquote>
+<p>Most of those are actually build with Lit as well!</p>
+</blockquote>
+<p>If these libraries already provide UI libraries why would you want to author web components?</p>
+<ul>
+<li>Testability</li>
+<li>Design Systems/Branding</li>
+<li>Portability</li>
+</ul>
+<h4>Testability <a href="#Testability" aria-hidden="true"><span class="anchor" id="Testability"></span>#</a></h4>
+<p>Components are a single unit of the UI they have behavior and state it's easier to test them in isolation.
+They are similar to functions</p>
+<ul>
+<li><code>inputs -&gt; processing -&gt; outputs</code></li>
+<li><code>attr/props -&gt; processing | User Interaction -&gt; UIChanges | Events</code></li>
+</ul>
+<p>That means that it should be easy to determine which things changed inside a component when their properties or attributes have changed, if the user changed something or if the element is trying to communicate with the parent elements</p>
+<article class="message is-info">
+                    <div class="message-body"><p>Check <a href="./testing.html">Testing</a> to know more about how can you test Lit components</p>
+</div>
+</article>
+<h4>Design Systems <a href="#Design-Systems" aria-hidden="true"><span class="anchor" id="Design-Systems"></span>#</a></h4>
+<p>If you're part of a company with multiple teams, chances are that those teams might have chosen different tools to work with if your company wants to implement a branding or a uniform way to distinguish itself from others it would be hard to create components in each library, web components are a perfect fit for that, Adobe Spectrum and Ionic Framework are excelent examples of that they define dozens of web components with a particular design language that makes the brand easily recognizable.</p>
+<h4>Portability <a href="#Portability" aria-hidden="true"><span class="anchor" id="Portability"></span>#</a></h4>
+<p>Web components are designed to work in the browser, once you include the script tag and register them you can use them in any UI library Angular, Vue, Server, etc. write once use everywhere.</p>
+</div></div></section><div class="navigation-container"><a class="button navigate-to-previous is-primary is-outlined" href="/Fable.Lit/docs/hook-components.html"><span class="icon"><i class=" fas fa-arrow-left"></i></span><span class=" is-uppercase">Hook Components</span></a><br class="is-hidden-tablet"/><a class="button navigate-to-next is-primary is-outlined" href="/Fable.Lit/docs/hmr.html"><span class=" is-uppercase">Hot Reloading</span><span class="icon"><i class=" fas fa-arrow-right"></i></span></a></div></div></div></div><script async="" src="/Fable.Lit/resources/nacara-standard-layouts/scripts/menu.js"></script></body></html>

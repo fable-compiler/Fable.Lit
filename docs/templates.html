@@ -1,0 +1,181 @@
+<html class="has-navbar-fixed-top"><head><title>Fable.Lit · Templates</title><meta http-equiv="content-type"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" type="text/css" href="/Fable.Lit/style.css"/><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous"/></head><body><nav class="navbar is-fixed-top"><div class="container"><div class="navbar-brand"><a class="navbar-item title is-4" href="https://fable.io/Fable.Lit/">Fable.Lit</a><a class="navbar-item is-hidden-desktop" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item is-hidden-desktop" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a><a class="navbar-burger" data-target="nav-menu"><span></span><span></span><span></span></a></div><div class="navbar-menu" id="nav-menu"><div class="navbar-start"><a class="navbar-item is-active" href="/Fable.Lit/docs/getting-started.html">Documentation</a></div><div class="navbar-end"><a class="navbar-item" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a></div></div></div></nav><div class="container"><div class="mobile-menu"><nav class="breadcrumb"><ul><li><a class="menu-trigger"><span></span><span></span><span></span></a></li><li class="is-active"><a>Templates</a></li></ul></nav></div><div class="columns is-gapless is-mobile"><div class="column is-menu-column is-3-desktop is-hidden-touch ml-5"><div class="menu-container"><aside class="menu"><ul class="menu-list"><li><a class=" " href="/Fable.Lit/docs/getting-started.html">Getting started</a></li><li><a class=" is-active has-table-of-content" href="/Fable.Lit/docs/templates.html">Templates</a></li><ul class="table-of-content"><li><a href="#Directives" data-toc-element="true">Directives </a><ul class="table-of-content"><li><a href="#nothing" data-toc-element="true">nothing </a></li><li><a href="#classes" data-toc-element="true">classes </a></li><li><a href="#memoize" data-toc-element="true">memoize </a></li><li><a href="#mapUnique" data-toc-element="true">mapUnique </a></li><li><a href="#ofLazy" data-toc-element="true">ofLazy </a></li><li><a href="#ofPromise" data-toc-element="true">ofPromise </a></li><li><a href="#attrOfOption" data-toc-element="true">attrOfOption </a></li></ul></li><li><a href="#Styling" data-toc-element="true">Styling </a></li><li><a href="#Elmish" data-toc-element="true">Elmish </a></li></ul><li><a class=" " href="/Fable.Lit/docs/hook-components.html">Hook Components</a></li><li><a class=" " href="/Fable.Lit/docs/web-components.html">Web Components</a></li><li><a class=" " href="/Fable.Lit/docs/hmr.html">Hot Reloading</a></li><li><a class=" " href="/Fable.Lit/docs/testing.html">Testing</a></li></ul></aside></div></div><div class="column is-8-desktop is-full-touch"><section class="section"><div class="content"><header class="page-header"><a class="button is-hidden-touch is-outlined is-primary is-pulled-right" target="_blank" href="https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc/docs\templates.md">Edit</a><h1 class="title is-1">Templates</h1></header><div><p>Lit allows you to render web UIs in a declarative way as <a href="https://reactjs.org/">React</a> does by using HTML templates. With Fable.Lit you can use <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/interpolated-strings">F# interpolated strings</a> to build the HTML templates. Also, if you're using Visual Studio Code, we recommend the <a href="https://marketplace.visualstudio.com/items?itemName=alfonsogarciacaro.vscode-template-fsharp-highlight">Highlight F# Templates</a> extension for IDE support of HTML and CSS as embedded languages in F#.</p>
+<p>If you check <a href="https://lit.dev">Lit's website</a> you will likely think it focus on <a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components">Web Components</a> (which <a href="./web-components.html">are also part of</a> Fable.Lit), but HTML templates by themselves are already a very powerful feature and it's entirely possible to build your web app with them, or even use &quot;virtual&quot; <a href="./hook-components.html">React-like components</a>.</p>
+<p>You can use the holes in the interpolated string to add dynamic data to the HTML templates. Normally the holes are only allowed in the attribute value or child node position. When you open the <code>Lit</code> namespace, the <code>html</code> and <code>svg</code> function will be available to declare the templates:</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Lit</span>
+
+<span style="color: #0184BC">[&lt;HookComponent&gt;]</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">MyComponent</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
+<span>    Hook.useHmr</span><span style="color: #A626A4">(</span><span>hmr</span><span style="color: #A626A4">)</span>
+<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">value</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">setValue </span><span style="color: #A626A4">=</span><span> Hook.useState </span><span style="color: #50A14F">&quot;World&quot;</span>
+
+<span>    html $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">      &lt;div class=&quot;content&quot;&gt;</span>
+<span style="color: #50A14F">        &lt;p&gt;Local state: &lt;i&gt;Hello {value}!&lt;/i&gt;&lt;/p&gt;</span>
+<span style="color: #50A14F">        &lt;input</span>
+<span style="color: #50A14F">          value={value}</span>
+<span style="color: #50A14F">          @keyup={EvVal setValue}&gt;</span>
+<span style="color: #50A14F">      &lt;/div&gt;</span>
+<span style="color: #50A14F">    &quot;&quot;&quot;</span></code></pre>
+<article class="message is-info">
+                    <div class="message-body"><p>Given that holes in interpolated strings are not typed, is a good idea to wrap your event handler with <code>Ev</code> to make sure you're using the correct type. <code>EvVal</code> is also available to access <code>ev.target.value</code> string in common input's <code>change</code> events.</p>
+</div>
+</article>
+<p>Use <code>Lit.render</code> to mount the template in a DOM element. If the template was already mounted, it will be updated.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Browser</span>
+
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">el</span><span> </span><span style="color: #A626A4">=</span><span> document.getElementById</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-container&quot;</span><span style="color: #A626A4">)</span>
+<span>MyComponent</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">|&gt;</span><span> Lit.render el</span></code></pre>
+<br />
+<p>Lit uses standard HTML for the templates, with only three special characters <code>@</code>/<code>?</code>/<code>.</code> in some situations:</p>
+<table>
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Example</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Event listeners</td>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;button @click={Ev(fun ev -&gt; doSomething())}&gt;Click me!&lt;/button&gt;&quot;&quot;&quot;</span></code></pre>
+</td>
+        </tr>
+        <tr>
+            <td>Boolean attributes</td>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;button ?disabled={not enabled}&gt;Click me!&lt;/button&gt;&quot;&quot;&quot;</span></code></pre>
+</td>
+        </tr>
+        <tr>
+            <td>Properties</td>
+            <td>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;my-component .someData={nonStringData}&gt;&lt;/my-component&gt;&quot;&quot;&quot;</span></code></pre>
+</td>
+        </tr>
+    </tbody>
+</table>
+<article class="message is-info">
+                    <div class="message-body"><p>You rarely need to pass a <a href="https://stackoverflow.com/a/6004028">property instead of an attribute</a> unless you're using a Web Component that asks you to do so.</p>
+</div>
+</article>
+<p>If you want to learn more about templates, please check <a href="https://lit.dev/docs/templates/overview/">Lit's website</a>.</p>
+<h2>Directives <a href="#Directives" aria-hidden="true"><span class="anchor" id="Directives"></span>#</a></h2>
+<p>Lit includes special functions, called &quot;directives&quot; that can control the way the templates are rendered. The <code>Lit</code> class provides the following directives and helpers as static members:</p>
+<article class="message is-info">
+                    <div class="message-body"><p>The name and signature of some directives have been adapted from Lit to be more idiomatic in F#.</p>
+</div>
+</article>
+<h3>nothing <a href="#nothing" aria-hidden="true"><span class="anchor" id="nothing"></span>#</a></h3>
+<p>Used when you don't want to render anything with Lit, usually in conditional expressions.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;Value: { if value &gt; 0 then value else Lit.nothing } &quot;&quot;&quot;</span></code></pre>
+<h3>classes <a href="#classes" aria-hidden="true"><span class="anchor" id="classes"></span>#</a></h3>
+<p>Generates a single string from a sequence of classes, or <code>string * bool</code> tuples (false values will be filtered out).</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">classes</span><span> </span><span style="color: #A626A4">=</span><span> Lit.classes </span><span style="color: #A626A4">[</span>
+<span>    </span><span style="color: #50A14F">&quot;button&quot;</span><span style="color: #A626A4">,</span><span> </span><span style="color: #986801">true</span>
+<span>    </span><span style="color: #50A14F">&quot;is-active&quot;</span><span style="color: #A626A4">,</span><span> isActive</span>
+<span style="color: #A626A4">]</span>
+
+<span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;button class={classes}&gt;Click me&lt;/button&gt;&quot;&quot;&quot;</span></code></pre>
+<h3>memoize <a href="#memoize" aria-hidden="true"><span class="anchor" id="memoize"></span>#</a></h3>
+<p>If your templates are expensive to calculate you can use memoize (cache).</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">recalculate</span><span style="color: #383A42"> _ </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A0A1A7;font-style: italic">//... do the thing!</span>
+<span>    setState result</span>
+
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">getExpensiveTemplate</span><span style="color: #383A42"> value </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A0A1A7;font-style: italic">// Render the template!</span>
+
+<span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">    &lt;div&gt;</span>
+<span style="color: #50A14F">        &lt;button @click={recalculate}&gt;Re-calculate&lt;/button&gt;</span>
+<span style="color: #50A14F">        {Lit.memoize(getExpensiveTemplate state)}</span>
+<span style="color: #50A14F">    &lt;/div&gt;</span>
+<span style="color: #50A14F">    &quot;&quot;&quot;</span></code></pre>
+<h3>mapUnique <a href="#mapUnique" aria-hidden="true"><span class="anchor" id="mapUnique"></span>#</a></h3>
+<p>You can pass any iterable (including F# lists) to Lit, but when it's important to identify items in a list (e.g. when the list can be sorted, filtered or included item transitions), use <code>Lit.mapUnique</code> to five each item a unique id.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">getItemTemplate</span><span style="color: #383A42"> item </span><span style="color: #A626A4">=</span>
+<span>    html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;li&gt;{item.name} - {item.price}&lt;/li&gt;&quot;&quot;&quot;</span>
+
+<span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">    &lt;ul&gt;</span>
+<span style="color: #50A14F">        {items |&gt; Lit.mapUnique</span>
+<span style="color: #50A14F">            (fun item -&gt; item.id)</span>
+<span style="color: #50A14F">            getItemTemplate}</span>
+<span style="color: #50A14F">    &lt;/ul&gt;</span>
+<span style="color: #50A14F">    &quot;&quot;&quot;</span></code></pre>
+<h3>ofLazy <a href="#ofLazy" aria-hidden="true"><span class="anchor" id="ofLazy"></span>#</a></h3>
+<p>Prevents re-render of a template function until one of the dependencies changes.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">name</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">setState </span><span style="color: #A626A4">=</span><span> Hook.useState </span><span style="color: #50A14F">&quot;Peter&quot;</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">age</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">setAge </span><span style="color: #A626A4">=</span><span> Hook.useState </span><span style="color: #986801">10</span>
+
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">nameTemplate</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span><span> html $</span><span style="color: #50A14F">&quot;Hey {name}! &quot;</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">ageTemplate</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span><span> html $</span><span style="color: #50A14F">&quot;you are {age} years old!&quot;</span>
+
+<span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">    &lt;input type=&quot;text&quot; @input={EvVal setName} /&gt;</span>
+<span style="color: #50A14F">    &lt;input type=&quot;number&quot; @input={EvVal setAge} /&gt;</span>
+<span style="color: #50A14F">    {Lit.ofLazy [name] nameTemplate}</span>
+<span style="color: #50A14F">    {Lit.ofLazy [age] ageTemplate}</span>
+<span style="color: #50A14F">    &quot;&quot;&quot;</span></code></pre>
+<h3>ofPromise <a href="#ofPromise" aria-hidden="true"><span class="anchor" id="ofPromise"></span>#</a></h3>
+<p>Shows the placeholder until the promise is resolved.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">loadingTpl</span><span> </span><span style="color: #A626A4">=</span>
+<span>    html $</span><span style="color: #50A14F">&quot;&lt;div&gt;Loading...&lt;/div&gt;&quot;</span>
+
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">startLoading</span><span> </span><span style="color: #A626A4">=</span>
+<span>    </span><span style="color: #A626A4">promise {</span>
+<span>        </span><span style="color: #A626A4">do!</span><span> Promise.sleep</span><span style="color: #A626A4">(</span><span style="color: #986801">2000</span><span style="color: #A626A4">)</span>
+<span>        </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">template</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A0A1A7;font-style: italic">// ... build a template from an async resource</span>
+<span>        </span><span style="color: #A626A4">return</span><span> template</span>
+<span>    </span><span style="color: #A626A4">}</span>
+
+<span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
+<span style="color: #50A14F">    &lt;div&gt;</span>
+<span style="color: #50A14F">        {Lit.ofPromise loadingTpl startLoading}</span>
+<span style="color: #50A14F">    &lt;/div&gt;</span>
+<span style="color: #50A14F">    &quot;&quot;&quot;</span></code></pre>
+<h3>attrOfOption <a href="#attrOfOption" aria-hidden="true"><span class="anchor" id="attrOfOption"></span>#</a></h3>
+<p>Sets the attribute if the value is defined and removes the attribute if the value is undefined.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>html $</span><span style="color: #50A14F">&quot;&quot;&quot;&lt;img src=&quot;/images/${attrOfOption size}/${attrOfOption filename}&quot;&gt;&quot;&quot;&quot;</span></code></pre>
+<article class="message is-info">
+                    <div class="message-body"><p>You can access to the raw bindings via the <code>LitBindings</code> static class.
+Check the full list in the <a href="https://lit.dev/docs/api/directives/">lit docs</a></p>
+</div>
+</article>
+<h2>Styling <a href="#Styling" aria-hidden="true"><span class="anchor" id="Styling"></span>#</a></h2>
+<p>For styling, just use global CSS rules or scoped CSS in <a href="./web-components.html">web components</a>. When not using web components, <a href="https://css-tricks.com/css-modules-part-1-need/">CSS modules</a> are a great option, which are even compatible with the <a href="https://github.com/zanaptak/TypedCssClasses/blob/main/doc/configuration.md#fablecssmodule">TypedCssClasses</a> provider.</p>
+<p>If you want to use inline styling, just pass a string to the <code>style</code> attribute. In the example below, note that we're wrapping the styles with <code>.{}</code>, this is just a trick to trigger autocompletion with the Highlight F# Templates extension (the braces will be removed by <code>inline_css</code>)</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">style</span><span> </span><span style="color: #A626A4">=</span><span> transition.css </span><span style="color: #A626A4">+</span><span> inline</span><span style="color: #A626A4">_</span><span>css </span><span style="color: #50A14F">&quot;&quot;&quot;.{</span>
+<span style="color: #50A14F">    border: 2px solid lightgray;</span>
+<span style="color: #50A14F">    border-radius: 10px;</span>
+<span style="color: #50A14F">    margin: 5px 0;</span>
+<span style="color: #50A14F">}&quot;&quot;&quot;</span></code></pre>
+<article class="message is-warning">
+                    <div class="message-body"><p>Don't use <code>css</code> function as this one is reserved for LitElements.</p>
+</div>
+</article>
+<p>If you want to use an F# interpolated string, you'll need to escape CSS braces by &quot;doubling&quot; them:</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>inline</span><span style="color: #A626A4">_</span><span>css $</span><span style="color: #50A14F">&quot;&quot;&quot;.{{</span>
+<span style="color: #50A14F">    opacity: 0;</span>
+<span style="color: #50A14F">    transform: scale({scale}) rotate({rotation}turn)</span>
+<span style="color: #50A14F">}}&quot;&quot;&quot;</span></code></pre>
+<h2>Elmish <a href="#Elmish" aria-hidden="true"><span class="anchor" id="Elmish"></span>#</a></h2>
+<p>Fable.Lit.Elmish allows you to write a frontend app using the popular <a href="https://elmish.github.io/">Elmish</a> library by <a href="https://github.com/et1975">Eugene Tolmachev</a> with a view function returning <code>Lit.TemplateResult</code>. The package also includes support for Webpack's <a href="https://webpack.js.org/concepts/hot-module-replacement/">Hot Module Replacement</a> out-of-the-box thanks to <a href="https://twitter.com/MangelMaxime">Maxime Mangel</a> original work with Elmish.HMR.</p>
+<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Elmish</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Lit</span>
+
+<span style="color: #A626A4">type</span><span> </span><span style="color: #C18401">Model</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+<span style="color: #A626A4">type</span><span> </span><span style="color: #C18401">Msg</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">init</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">update</span><span style="color: #383A42"> msg model </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">view</span><span style="color: #383A42"> model dispatch </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">..</span>
+
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Lit.Elmish</span>
+<span style="color: #A626A4">open</span><span> </span><span style="color: #4078F2">Lit.Elmish.HMR</span>
+
+<span>Program.mkProgram initialState update view</span>
+<span style="color: #A626A4">|&gt;</span><span> Program.withLit </span><span style="color: #50A14F">&quot;app-container&quot;</span>
+<span style="color: #A626A4">|&gt;</span><span> Program.run</span></code></pre>
+</div></div></section><div class="navigation-container"><a class="button navigate-to-previous is-primary is-outlined" href="/Fable.Lit/docs/getting-started.html"><span class="icon"><i class=" fas fa-arrow-left"></i></span><span class=" is-uppercase">Getting started</span></a><br class="is-hidden-tablet"/><a class="button navigate-to-next is-primary is-outlined" href="/Fable.Lit/docs/hook-components.html"><span class=" is-uppercase">Hook Components</span><span class="icon"><i class=" fas fa-arrow-right"></i></span></a></div></div></div></div><script async="" src="/Fable.Lit/resources/nacara-standard-layouts/scripts/menu.js"></script></body></html>
