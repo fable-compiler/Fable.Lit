@@ -49,19 +49,32 @@ type IObservable<'T> with
                 disp.Dispose()
                 resolve v))
 
+type ObservableContainer<'T> =
+    inherit Container
+    inherit IObservable<'T>
+
 module Program =
     /// Mounts an element to the DOM to render the Elmish app and returns the container
-    /// together with an observable that will notify of model changes.
-    let runTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) = promise {
+    /// as an observable that will notify of model changes.
+    let runTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, Lit.TemplateResult>) = promise {
         let store = Store<'model>()
-        let! el = render_html $"<div></div>"
+        let! container = render_html $"<div></div>"
 
         let setState model dispatch =
-            Program.view program model dispatch |> Lit.render el.El
+            Program.view program model dispatch |> Lit.render container.El
             store.Trigger model
 
         Program.withSetState setState program
-        |> Program.run
+        |> Program.runWith arg
 
-        return el, store :> IObservable<_>
+        return
+            { new ObservableContainer<'model> with
+                member _.El = container.El
+                member _.Dispose() = container.Dispose()
+                member _.Subscribe(w) = (store :> IObservable<_>).Subscribe(w) }
     }
+
+    /// Mounts an element to the DOM to render the Elmish app and returns the container
+    /// as an observable that will notify of model changes.
+    let runTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) =
+        runTestWith () program

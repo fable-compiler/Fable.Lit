@@ -95,7 +95,7 @@ module Expect =
             AssertionError(msg, actual=actual) |> throw
         with e -> e
 
-    let beforeTimeout (ms: int) (msg: string) (pr: JS.Promise<'T>): JS.Promise<'T> =
+    let beforeTimeout (msg: string) (ms: int) (pr: JS.Promise<'T>): JS.Promise<'T> =
         JS.Constructors.Promise.race [|
             pr |> Promise.map box
             Promise.sleep ms |> Promise.map (fun _ -> box "timeout")
@@ -104,3 +104,29 @@ module Expect =
             | :? string as s when s = "timeout" ->
                 AssertionError.Throw($"happen before {ms}ms timeout", description=msg)
             | v -> v :?> 'T)
+
+    /// Retry an action every X milliseconds until timeout
+    let retryUntilWith (msg: string) (intervalMs: int) (timeoutMs: int) (action: unit -> 'T) =
+        promise {
+            let mutable totalMs = 0
+            let mutable success = false
+            let mutable res = Unchecked.defaultof<'T>
+            while not success do
+                try
+                    res <- action()
+                    success <- true
+                    // printfn $"Success in {totalMs}ms"
+                with _ ->
+                    // printfn $"Error in {totalMs}ms"
+                    ()
+                if not success then
+                    if totalMs >= timeoutMs then
+                        AssertionError.Throw($"happen before {timeoutMs}ms timeout", description=msg)
+                    do! Promise.sleep intervalMs
+                    totalMs <- totalMs + intervalMs
+            return res
+        }
+
+    /// Retry an action every 200ms with a timeout of 2000ms
+    let retryUntil (msg: string) (action: unit -> 'T) =
+        retryUntilWith msg 200 2000 action

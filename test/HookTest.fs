@@ -201,7 +201,9 @@ describe "Hook" <| fun () ->
 
         delayedReset.click()
         el.querySelector("#count") |> Expect.innerText "-2"
-        let! _reset = el.waitUntil(fun () -> el.getSelector("#reset"))
+        let! _reset =
+            Expect.retryUntil "reset text appears" (fun () ->
+                el.getSelector("#reset"))
         // dispatch with async cmd works
         el.querySelector("#count") |> Expect.innerText "0"
     }

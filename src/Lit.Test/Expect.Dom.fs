@@ -61,31 +61,6 @@ type Element with
     member this.getByText(pattern: string) =
         queries.getByText(this, pattern) :?> HTMLElement
 
-    /// Retries an action every X milliseconds until timeout.
-    /// Retries every 200ms with a timeout of 2000ms by default.
-    member _.waitUntil(action: unit -> 'T, ?intervalMs: int, ?timeoutMs: int, ?message: string) =
-        promise {
-            let intervalMs = defaultArg intervalMs 100
-            let timeoutMs = defaultArg timeoutMs 2000
-            let mutable totalMs = 0
-            let mutable success = false
-            let mutable res = Unchecked.defaultof<'T>
-            while not success do
-                try
-                    res <- action()
-                    success <- true
-                    // printfn $"Success in {totalMs}ms"
-                with _ ->
-                    // printfn $"Error in {totalMs}ms"
-                    ()
-                if not success then
-                    if totalMs >= timeoutMs then
-                        failwith (defaultArg message "Timeout!")
-                    do! Promise.sleep intervalMs
-                    totalMs <- totalMs + intervalMs
-            return res
-        }
-
 type Container =
     inherit IDisposable
     abstract El: HTMLElement
@@ -165,7 +140,7 @@ module Expect =
 
                 action())
         // The event should be fired immediately so we set a small timeout
-        |> Expect.beforeTimeout 100 $"dispatch {eventName}"
+        |> Expect.beforeTimeout $"dispatch {eventName}" 100
 
     /// <summary>
     /// Registers an event listener for a particular event name, use the action callback to make your component fire up the event.
@@ -187,4 +162,4 @@ module Expect =
 
                 action())
         // The event should be fired immediately so we set a small timeout
-        |> Expect.beforeTimeout 100 $"dispatch {eventName}"
+        |> Expect.beforeTimeout $"dispatch {eventName}" 100
