@@ -2,6 +2,6 @@
 export const snapshots = {};
 
 snapshots["fable-element"] = 
-`%3Cp%3EElement%3C%2Fp%3E`;
+`<p>Element</p>`;
 /* end snapshot fable-element */
 

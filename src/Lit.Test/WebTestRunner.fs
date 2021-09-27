@@ -58,7 +58,8 @@ module Mocha =
 
 [<RequireQualifiedAccess>]
 module Expect =
-    [<ImportAll("@web/test-runner-commands")>]
+    // [<ImportAll("@web/test-runner-commands")>]
+    [<ImportAll("./commands.js")>]
     let private wtr: WebTestRunnerBindings = jsNative
 
     let private cleanHtml (html: string) =
@@ -72,29 +73,23 @@ module Expect =
     /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
     let matchSnapshot (description: string) (name: string) (content: string) = promise {
         let! config = wtr.getSnapshotConfig()
-        let! snapshot =
-            if config.updateSnapshots then Promise.lift null
-            else wtr.getSnapshot(name)
-        if isNull snapshot then
-            // Web test runner transforms the snapshot into a data URL to send it to the browser,
-            // and this can fail if we don't encode the content
-            return! wtr.saveSnapshot(name, JS.encodeURIComponent content)
+        if config.updateSnapshots then
+            return! wtr.saveSnapshot(name, content)
         else
-            // Don't use wtr.compareSnapshot because that will update the snapshot
-            // without encoding the content even with a successful match
-            return
-                if not(snapshot = content) then
-                    // Snapshots can be large, so use `brief` argument to hide them in the error message
-                    // (Diffing should be displayed correctly)
-                    Expect.AssertionError.Throw("match snapshot", description=description, actual=content, expected=snapshot, brief=true)
+            try
+                do! wtr.compareSnapshot(name, content)
+            with _ ->
+                let! snapshot = wtr.getSnapshot(name)
+                // Snapshots can be large, so use `brief` argument to hide them in the error message (diffing should be displayed correctly)
+                return Expect.AssertionError.Throw("match snapshot", description=description, actual=content, expected=snapshot, brief=true)
     }
 
-    /// Compares `outerHML` of the element with the snapshot of the given name within the current file.
+    /// Compares `outerHML` (or `shadowRoot.innerHTML` for web components) of the element with the snapshot of the given name within the current file.
     /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
     let matchHtmlSnapshot (name: string) (el: HTMLElement) =
-        el.outerHTML |> cleanHtml |> matchSnapshot "outerHTML" name
+        let html, description =
+            match el.shadowRoot with
+            | null -> el.outerHTML, "outerHTML"
+            | shadowRoot -> shadowRoot.innerHTML, "shadowRoot.innerHTML"
 
-    /// Compares `shadowRoot.innerHTML` of the element with the snapshot of the given name within the current file.
-    /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
-    let matchShadowRootSnapshot (name: string) (el: Element) =
-        el.shadowRoot.innerHTML |> cleanHtml |> matchSnapshot "shadowRoor" name
+        html |> cleanHtml |> matchSnapshot description name

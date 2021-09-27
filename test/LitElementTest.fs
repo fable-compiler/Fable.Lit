@@ -82,13 +82,8 @@ let DispatchCustomEvents () =
 describe "LitElement" <| fun () ->
     it "fable-element renders" <| fun () -> promise {
         use! el = render_html $"<fable-element></fable-element>"
-        return! el.El |> Expect.matchShadowRootSnapshot "fable-element"
+        return! el.El |> Expect.matchHtmlSnapshot "fable-element"
     }
-
-    // it "Can render LitElement as function" <| fun () -> promise {
-    //     let! el = fixture_html $"{AttributeChanges()}"
-    //     return! el |> Expect.matchShadowRootSnapshot "fel-attribute-changes"
-    // }
 
     it "Reacts to attribute/property changes" <| fun () -> promise {
         use! el = render_html $"<fel-attribute-changes></fel-attribute-changes>"
