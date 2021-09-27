@@ -24,8 +24,19 @@ let NameInput() =
     """
 ```
 
-> Note that hook components are just a way to keep state between renders and are not [web components](https://www.webcomponents.org/introduction). We plan to add bindings to define web components with [lit](https://lit.dev) in the near future. Also check [Fable.Haunted](https://github.com/AngelMunoz/Fable.Haunted) by Angel Munoz to define actual web components with React-style hooks.
+:::info
+Note that HookComponents are just a way to keep state between renders and doesn't create a custom HTML element. Check [Web Components](./web-components.html) if you want to declare a component that can be instantiated from HTML.
+:::
 
+Fable.Lit hooks in general have the same API as their React counterparts but may differ in some occasions:
+
+- `useState`
+- `useMemo`
+- `useRef`: Can use "native" F# refs.
+- `useEffect`: Doesn't accept a dependency array, instead it provides semantic alternatives for each use case.
+    - `useEffect`: Trigger an effect after each render.
+    - `useEffectOnce`: Trigger an effect only once after the first render.
+    - `useEffectOnChange`: Trigger an effect after each render **if** the given value has changed.
 
 ## UseElmish
 
@@ -49,3 +60,19 @@ let Clock(): TemplateResult =
 ```
 
 ## Writing your own hook
+
+The magic behind Fable.Lit's hooks is the context is provided by the JS `this` keyword. To access the context from the render function you must use an `inline` helper and then pass the context to your custom hook. Example:
+
+```fsharp
+module MyHooks =
+    // Updating a ref doesn't cause a re-render,
+    // so let's use a ref with the same signature as useState
+    let useSilentState (ctx: HookContext, v: 'Value) =
+        let r = ctx.useRef(v)
+        r.Value, fun v -> r := v
+
+    type Lit.Hook with
+        // IMPORTANT! This function must be inlined to access the context from the render function
+        static member inline useSilentState(v: 'Value): 'Value * ('Value -> unit) =
+            useSilentState(Hook.getContext(), v)
+```

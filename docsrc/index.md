@@ -18,7 +18,7 @@ layout: nacara-navbar-only
             Fable.Lit is a comprehensive suite of tools to write <a href="https://fable.io">Fable</a> apps by embedding HTML into your F# code with the power of Google's <a href="https://lit.dev">Lit</a>.
         </p>
         <p class="content is-size-5 has-text-centered">
-            Fable.Lit lets you take full advantage of modern web development, including blazing-fast hot reloading, best-practice component testing and a VS Code extension.
+            Fable.Lit lets you take full advantage of modern web development, including blazing-fast hot reloading, best-practice component testing and a <a href="https://marketplace.visualstudio.com/items?itemName=alfonsogarciacaro.vscode-template-fsharp-highlight">VS Code extension</a>.
         </p>
         <p class="has-text-centered">
             <img src="screencast.gif" style="max-width: 600px; border-radius: 10px">

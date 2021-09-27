@@ -49,7 +49,59 @@ describe "Todo" <| fun () ->
     }
 ```
 
+You can also render Lit components/functions or directly an HTML template, which is useful when testing custom elements.
+
+```fsharp
+[<HookComponent>]
+let Counter () =
+    let value, setValue = Hook.useState 0
+
+    html $"""
+      <div>
+        <p>Value: {value}</p>
+        <button @click={Ev(fun _ -> value + 1 |> setValue)}>Increment</button>
+        <button @click={Ev(fun _ -> value - 1 |> setValue)}>Decrement</button>
+      </div>
+    """
+
+[<LitElement("my-element")>]
+let DispatchEvents () =
+    let el, _ = LitElement.init ()
+    let onClick _ = el.dispatchEvent("my-event")
+
+    html $"""<button @click={onClick}>Click me!</button>"""
+
+describe "My tests" <| fun () ->
+    it "counter works" <| fun () -> promise {
+        use! container = Counter() |> render
+        let container = container.El
+        el.getButton("increment").click()
+        el.getByText("value") |> Expect.innerText "Value: 1"
+        el.getButton("decrement").click()
+        el.getButton("decrement").click()
+        el.getByText("value") |> Expect.innerText "Value: -1"
+    }
+
+    it "my-element works" <| fun () -> promise {
+        use! container = render_html $"""<my-element></my-element>"""
+        let container = container.El
+        do! el |> Expect.dispatch "my-event" (fun _ ->
+            el.shadowRoot.getButton("click").click())
+    }
+```
+
 ## Accessible queries
+
+Writing tests that find elements in your UI is a great opportunity to put you in the shoes of a screen-reader user. Popularized by the [Testing Library](https://testing-library.com/), [accessible queries](https://testing-library.com/docs/queries/about#priority) are a way to make sure your tests find elements in your UI the same way screen-readers do.
+
+- `getByText(pattern): HTMLElement`: The given pattern becomes an ignore-case regular expression.
+- `getByRole(role, accessibleName): Element`: Query every element exposed in the accessibility tree. The given accessibleName becomes an ignore-case regular expression.
+
+The following shortcuts for common roles are provided:
+
+- `getButton(accessibleName): HTMLButtonElement`
+- `getCheckbox(accessibleName): HTMLInputElement`
+- `getTextInput(accessibleName): HTMLInputElement`
 
 ## Web Test Runner
 
@@ -61,12 +113,8 @@ Snapshot testing is helpful to make sure your UI doesn't change unintentionally.
 
 ```fsharp
 it "snapshots" <| fun () -> promise {
-    use! el = render_html $"""<div></div>"""
-    return! el.El |> Expect.matchHtmlSnapshot "outerHTML"
-
-    // For web components, use matchShadowRootSnapshot
     use! el = render_html $"<my-element></my-element>"
-    return! el.El |> Expect.matchShadowRootSnapshot "shadowRoot.innerHTML"
+    return! el.El |> Expect.matchHtmlSnapshot "my-element"
 }
 ```
 

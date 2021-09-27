@@ -5,18 +5,22 @@ layout: nacara-standard
 
 ## Webpack
 
-Webpack has been the standard to build frontend apps for a while, and it's also widely used in Fable apps. Webpack is extremely reliable and extensible and it
+Webpack has been the standard to build frontend apps for a while, and it's also widely used in Fable apps. Webpack is extremely reliable and extensible, and it's still a great choice for your web app.
+
+It has a couple of disadvantages however: usually requires a configuration file that can get complicated very quickly and its development server bundles your whole app for every change, which can take a few seconds in large projects.
 
 ## Vite
 
-Vite is a bit opinionated and thanks to this you can get a development server and build tool with zero-config by conforming to a few defaults:
+A new generation of JS tooling is appearing which follow best practices by default so they require little to no configuration. Moreover, these tools include a development server that doesn't bundle your application, which makes updated much faster as the browser only need to load the modules that have changed. The most prominent examples are [Vite](https://vitejs.dev) and [Snowpack](https://www.snowpack.dev/).
+
+We've personally got great results with Vite. It is somewhat opinionated and thanks to this you can get a development server and build tool with zero-config by conforming to a few defaults:
 
 - Put your static files in the `public` folder
 - Put your `index.html` in the app root (usually next to `package.json`)
 - Add a reference to the entry JS file (relative path is important):
 
 ```html
-    <script type="module" src="./build/client/App.js"></script>
+<script type="module" src="./build/client/App.js"></script>
 ```
 
 With this you only need to install Vite and run the commands for starting the development server or bundling for production as needed.
