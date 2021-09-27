@@ -228,7 +228,7 @@ type Lit() =
         |> String.concat " "
 
     /// <summary>
-    /// Generates a string from the string seuence provided
+    /// Generates a string from the string sequence provided
     /// </summary>
     static member classes(classes: string seq) = classes |> String.concat " "
 
