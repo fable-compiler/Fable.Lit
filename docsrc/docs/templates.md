@@ -74,8 +74,222 @@ Lit includes special functions, called "directives" that can control the way the
 The name and signature of some directives have been adapted from Lit to be more idiomatic in F#.
 :::
 
-TODO
+### nothing
 
+A sentinel value that signals a ChildPart to fully clear its content. Use this value when you don't want to render anything with Lit
+
+```fsharp
+html $"""Value: { if value > 0 then value else Lit.nothing } """
+```
+
+### classes
+
+Generates a single string that filters out false-y values from a tuple sequence or a string sequence
+
+```fsharp
+let classes = ["button", true; "is-active", isActive] |> Seq.ofList |> Lit.classes
+
+html $"""<button class={classes}>Click me</button>"""
+```
+
+```fsharp
+let classes =
+    seq {
+        for entry in entries do
+            $"is-{entry.kind}"
+    }
+
+html $"""<div class={classes}>... some content ...</div>"""
+```
+
+### memoize
+
+If your templates are expensive to calculate you can use memoize (cache)
+
+```fsharp
+let recalculate =
+    //... do the thing!
+    setState result
+let getExpensveTemplate value = // ...do the other thing!
+html
+    $"""
+    <div>
+        <button @click={recalculate}>Re-calculate</button>
+        {Lit.memoize(getExpensiveTemplate state)}
+    </div>
+    """
+```
+
+### ofSeq
+
+Merge several items in a single template result
+
+```fsharp
+let getItemTemplate item =
+    html $"""<li>{item.id} - {item.name}</li>"""
+
+html
+    $"""
+    <ul>
+        {items |> Seq.map getItemTemplate |> Lit.ofSeq)}
+    </ul>
+    """
+```
+
+### ofList
+
+Merge several items from a list in a single template result
+
+```fsharp
+let getItemTemplate item =
+    html $"""<li>{item.id} - {item.name}</li>"""
+
+html
+    $"""
+    <ul>
+        {items |> List.map getItemTemplate |> Lit.ofList)}
+    </ul>
+    """
+```
+
+### mapUnique
+
+Give a unique id to items in a list. This can improve performance in lists that will be sorted, filtered or re-ordered.
+
+```fsharp
+let getItemTemplate item =
+    html $"""<li>{item.name} - {item.price}</li>"""
+
+html
+    $"""
+    <ul>
+        {Lit.mapUnique
+            (fun item -> item.id)
+            getItemTemplate
+            state.items
+        }
+    </ul>
+    """
+```
+
+### ofLazy
+
+Prevents re-render of a template function until a single value or an array of values changes.
+
+```fsharp
+let name, setState = Hook.useState "Peter"
+let age, setAge = Hook.useState 10
+
+let nameTemplate _ =
+    $"Hey {name}! "
+let ageTemplate _ =
+    $"you are {age} years old!"
+
+html
+    $"""
+    <section>
+        <input type="text" @input={EvVal setName} />
+    </section
+    <section>
+        <input type="number" @input={EvVal setAge} />
+    </section
+    <div>
+    {Lit.ofLazy [name] nameTemplate}{Lit.ofLazy [age] ageTemplate}
+    </div>
+    """
+```
+
+### ofPromise
+
+Shows the placeholder until the promise is resolved
+
+```fsharp
+let loadingTpl =
+    $"<div>Loading...</div>"
+
+let startLoading =
+    promise {
+        do! Promise.sleep(2000)
+        let template =
+            // ... build a template from an async resource
+        return template
+    }
+
+html
+    $"""
+    <div>
+        {Lit.ofPromise loadingTpl startLoading}
+    </div>
+    """
+```
+
+### ofStr | ofText
+
+Convert a single string into a TemplateResult
+
+```fsharp
+let value = "my-value"
+html
+    $"""
+    <div>
+        {Lit.ofStr value}
+    </div>
+    """
+```
+
+### ofInt
+
+Convert a int into a TemplateResult
+
+```fsharp
+let value = 10
+html
+    $"""
+    <div>
+        The value is {Lit.ofInt value}
+    </div>
+    """
+```
+
+### ofFloat
+
+Convert a float into a TemplateResult
+
+```fsharp
+let x, y = 120.5, 202.5
+html
+    $"""
+    <div>
+        The point is at {Lit.ofFloat x}, {Lit.ofFloat y}
+    </div>
+    """
+```
+
+### attrOfOption
+
+Sets the attribute if the value is defined and removes the attribute if the value is undefined.
+
+```fsharp
+
+let color =
+    match state.color with
+    | "red"-> Some state.color
+    | "#FF0000" -> Some state.color
+    | _ -> None
+
+
+html
+    $"""
+    <div color={Lit.attrOption color}>
+        placeholder
+    </div>
+    """
+```
+
+:::info
+You can access to the raw bindings via the `LitBindings` static class.
+Check the full list in the [lit docs](https://lit.dev/docs/api/directives/)
+:::
 
 ## Styling
 
