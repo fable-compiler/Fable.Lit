@@ -48,6 +48,4 @@ let Clock(): TemplateResult =
     view model dispatch
 ```
 
-## UseTransition
-
 ## Writing your own hook
