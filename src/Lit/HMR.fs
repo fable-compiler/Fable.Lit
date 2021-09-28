@@ -82,6 +82,9 @@ type HMRToken() =
         let dic = getOrAdd window GLOBAL_KEY obj
         getOrAdd dic moduleUrl HMRToken
 
+type HMRSubscriber =
+    abstract subscribeHmr: (HMRToken -> unit) option
+
 type HMR =
     /// Internal use. If you want to interact with HMR API, see https://vitejs.dev/guide/api-hmr.html
     static member hot: IHot = !!obj()

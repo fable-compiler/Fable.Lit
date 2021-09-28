@@ -7,6 +7,8 @@ open Elmish
 open Lit
 
 module Helpers =
+    let hmr = HMR.createToken()
+
     type Time =
         | Hour of int
         | Minute of int
@@ -160,6 +162,14 @@ let initEl (config: LitConfig<_>) =
                 font-size: large;
                 text-align: center;
             }}
+            select {{
+                padding: 5px;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: medium;
+                border-radius: 5px;
+                border-color: gainsboro;
+                border-width: 2px;
+            }}
         """
     ]
 
@@ -169,6 +179,7 @@ let Clock() =
     let hourColor = props.hourColor.Value
     let colors = props.minuteColors.Value
 
+    Hook.useHmr(hmr)
     let model, dispatch = Hook.useElmish(init, update)
     let time = model.CurrentTime
 

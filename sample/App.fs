@@ -26,8 +26,8 @@ let view model dispatch =
 
         <br />
 
-        {elmishNameInput model.Value (ChangeValue >> dispatch)}
-        {LocalNameInput()}
+        <!-- {elmishNameInput model.Value (ChangeValue >> dispatch)}
+        {LocalNameInput()} -->
 
         {ClockDisplay model dispatch}
       </div>

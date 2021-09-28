@@ -1,5 +1,6 @@
 namespace Lit
 
+open System
 open Fable.Core
 open Fable.Core.JsInterop
 open Browser
@@ -29,12 +30,19 @@ module private LitElementUtil =
     let isDefined (x: obj) = not(isNull x)
     let failInit() = failwith "LitElement.init must be called on top of the render function"
     let failProps(key: string) = failwith $"'{key}' field in `props` record is not of Prop<'T> type"
-    let [<Literal>] CLASS_EXPR =
-        """class extends $0 {
-            constructor() {
-                super($1...);
-            }
-        }"""
+
+    [<Emit("customElements.define($0, $1)")>]
+    let defineCustomElement (name: string, cons: obj) = ()
+
+    [<Emit("Object.defineProperty($0, $1, { get: $2 })")>]
+    let defineGetter(target: obj, name: string, f: unit -> 'V) = ()
+
+    [<ImportMember("lit")>]
+    let adoptStyles(renderRoot, styles): unit = jsNative
+
+#if DEBUG
+    let definedElements = System.Collections.Generic.HashSet<string>()
+#endif
 
 open LitElementUtil
 
@@ -169,12 +177,15 @@ type LitConfig<'Props> =
     ///       """]
     /// </example>
     abstract styles: Styles list with get, set
+    /// Whether the element should render to shadow or light DOM (defaults to true).
+    abstract useShadowDom: bool with get, set
 
 type ILitElementInit<'Props> =
     abstract init: initFn: (LitConfig<'Props> -> unit) -> LitElement * 'Props
 
 type LitElementInit<'Props>() =
     let mutable _initialized = false
+    let mutable _useShadowDom = true
     let mutable _props = Unchecked.defaultof<'Props>
     let mutable _styles = Unchecked.defaultof<Styles list>
 
@@ -183,6 +194,7 @@ type LitElementInit<'Props>() =
     interface LitConfig<'Props> with
         member _.props with get() = _props and set v = _props <- v
         member _.styles with get() = _styles and set v = _styles <- v
+        member _.useShadowDom with get() = _useShadowDom and set v = _useShadowDom <- v
 
     interface ILitElementInit<'Props> with
         member this.init initFn =
@@ -193,52 +205,59 @@ type LitElementInit<'Props>() =
     interface IHookProvider with
         member _.hooks = failInit()
 
-[<AttachMembers>]
-type LitHookElement<'Props>(renderFn: JS.Function, ?initProps: obj -> unit) =
+[<AbstractClass; AttachMembers>]
+type LitHookElement<'Props>(initProps: obj -> unit) =
     inherit LitElement()
-    let mutable _hooks: HookContext option = None
-    do
-        match initProps with
-        | None -> ()
-        | Some init -> init(jsThis)
+    let _hooks = HookContext(jsThis)
+#if DEBUG
+    let mutable _hmrSub: IDisposable option = None
+#endif
+    do initProps(jsThis)
 
-    member this.render() =
-        (this :> IHookProvider).hooks.render()
+    abstract renderFn: JS.Function with get, set
+    abstract name: string
 
-    member this.disconnectedCallback() =
+    member _.render() =
+        _hooks.render()
+
+    member _.disconnectedCallback() =
         base.disconnectedCallback()
-        (this :> IHookProvider).hooks.disconnect()
+        _hooks.disconnect()
 
-    member this.connectedCallback() =
+    member _.connectedCallback() =
         base.connectedCallback()
-        (this :> IHookProvider).hooks.runEffects (onConnected = true, onRender = false)
+        _hooks.runEffects (onConnected = true, onRender = false)
+
+#if DEBUG
+    interface HMRSubscriber with
+        member this.subscribeHmr = Some <| fun token ->
+            match _hmrSub with
+            | Some _ -> ()
+            | None ->
+                _hmrSub <-
+                    token.Subscribe(fun updatedModule ->
+                        let updatedExport = updatedModule?(this.name)
+                        this.renderFn <- updatedExport?renderFn
+                        if this?shadowRoot && updatedExport?styles then
+                            adoptStyles(this?shadowRoot, updatedExport?styles)
+                    )
+                    |> Some
+#endif
 
     interface ILitElementInit<'Props> with
         member this.init(_) = this :> LitElement, box this :?> 'Props
 
     interface IHookProvider with
-        member this.hooks =
-            match _hooks with
-            | Some hooks -> hooks
-            | None ->
-                let hooks =
-                    HookContext(
-                        (fun args -> renderFn.apply(jsThis, args) :?> _),
-                        (fun _ -> this.requestUpdate()),
-                        (fun () -> this.isConnected))
-                _hooks <- Some hooks
-                hooks
+        member _.hooks = _hooks
 
 type LitElementAttribute(name: string) =
+#if !DEBUG
     inherit JS.DecoratorAttribute()
-
-    [<Emit("customElements.define($1, $2)")>]
-    member _.defineCustomElement (name: string, cons: obj) = ()
-
-    [<Emit("Object.defineProperty($1, $2, { get: $3 })")>]
-    member _.defineGetter(target: obj, name: string, f: unit -> 'V) = ()
-
     override this.Decorate(renderFn) =
+#else
+    inherit JS.ReflectedDecoratorAttribute()
+    override _.Decorate(renderFn, mi) =
+#endif
         if renderFn.length > 0 then
             failwith "Render function for LitElement cannot take arguments"
 
@@ -251,9 +270,8 @@ type LitElementAttribute(name: string) =
             failInit()
 
         let config = config :> LitConfig<obj>
-        let baseClass = jsConstructor<LitHookElement<obj>>
 
-        let classExpr =
+        let propsOptions, initProps =
             if isDefined config.props then
                 let propsValues = ResizeArray()
                 let propsOptions = obj()
@@ -268,26 +286,59 @@ type LitElementAttribute(name: string) =
                         // We could return `v, obj()` here but let's make devs used to
                         // initialize Props, which should make the code more consistent
                         | _ -> failProps(k)
-                    propsValues.Add(k, defVal)
-                    propsOptions?(k) <- options)
+                    propsOptions?(k) <- options
+                    if not(isNull defVal) then
+                        propsValues.Add(k, defVal))
 
                 let initProps (this: obj) =
                     propsValues |> Seq.iter(fun (k, v) ->
                         this?(k) <- v)
 
-                let classExpr = emitJsExpr (baseClass, renderFn, initProps) CLASS_EXPR
-                this.defineGetter(classExpr, "properties", fun () -> propsOptions)
-                classExpr
+                Some propsOptions, initProps
             else
-                emitJsExpr (baseClass, renderFn) CLASS_EXPR
+                None, fun _ -> ()
+
+        let classExpr =
+            let baseClass = jsConstructor<LitHookElement<obj>>
+#if !DEBUG
+            emitJsExpr (baseClass, renderFn, initProps) HookUtil.RENDER_FN_CLASS_EXPR
+#else
+            let renderRef = LitBindings.createRef()
+            renderRef.value <- renderFn
+            emitJsExpr (baseClass, renderRef, mi.Name, initProps) HookUtil.HMR_CLASS_EXPR
+#endif
+
+        match propsOptions with
+        | None -> ()
+        | Some propsOptions -> defineGetter(classExpr, "properties", fun () -> propsOptions)
 
         if isDefined config.styles then
-            this.defineGetter(classExpr, "styles", fun () -> List.toArray config.styles)
+            defineGetter(classExpr, "styles", fun () -> List.toArray config.styles)
 
-        // Register custom element
-        this.defineCustomElement(name, classExpr)
+        if not config.useShadowDom then
+            emitJsStatement classExpr """$0.prototype.createRenderRoot = function() {
+                return this;
+            }"""
 
-        box(fun () -> failwith $"{name} is not immediately callable, it must be created in HTML") :?> _
+        let dummy() = failwith $"{name} is not immediately callable, it must be created in HTML"
+
+#if !DEBUG
+        defineCustomElement(name, classExpr)
+#else
+        // Build a key to avoid registering the element twice when hot reloading
+        // We use the element name, the function name and the property names to minimize the chances of a false negative
+        // (if there are two actual duplicated custom elements there should be an error indeed).
+        let cacheName = mi.Name + "::" + name + "::" + (JS.Constructors.Object.keys(config.props) |> String.concat ", ")
+        if not(definedElements.Contains(cacheName)) then
+            defineCustomElement(name, classExpr)
+            definedElements.Add(cacheName) |> ignore
+
+        // This lets us access the updated render function when accepting new modules in HMR
+        dummy?renderFn <- renderFn
+        if isDefined config.styles then
+            dummy?styles <- List.toArray config.styles
+#endif
+        box dummy :?> _
 
 [<AutoOpen>]
 module LitElementExt =

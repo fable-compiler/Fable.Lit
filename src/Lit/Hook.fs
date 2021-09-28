@@ -1,12 +1,27 @@
 namespace Lit
 
 open System
-open System.Collections.Generic
 open Fable.Core
 open Fable.Core.JsInterop
-open Browser
 
 module internal HookUtil =
+    let [<Literal>] RENDER_FN_CLASS_EXPR =
+        """class extends $0 {
+            constructor() { super($2...) }
+            get renderFn() { return $1 }
+        }"""
+
+    let [<Literal>] HMR_CLASS_EXPR =
+        """class extends $0 {
+            constructor() { super($3...) }
+            get name() { return $2; }
+            get renderFn() { return $1.value; }
+            set renderFn(v) {
+                $1.value = v;
+                this.hooks.requestUpdate();
+            }
+        }"""
+
     let createDisposable(f: unit -> unit) =
         { new IDisposable with
             member _.Dispose() = f () }
@@ -16,6 +31,11 @@ module internal HookUtil =
 
     let delay ms f =
         JS.setTimeout f ms |> ignore
+
+    let runAsync(f: unit -> unit) =
+        // When using requestAnimationFrame some browsers (Firefox) skip renders
+        // window.requestAnimationFrame (fun _ -> f ()) |> ignore
+        delay 0 f
 
     [<RequireQualifiedAccess>]
     type Effect =
@@ -101,8 +121,13 @@ type Cmd<'Msg> = (('Msg -> unit) -> unit) list
 
 type RenderFn = obj[] -> TemplateResult
 
+type HookContextHost =
+    abstract renderFn: JS.Function
+    abstract requestUpdate: unit -> unit
+    abstract isConnected: bool
+
 [<AttachMembers>]
-type HookContext(renderFn: RenderFn, triggerRender: HookContext -> unit , isConnected: unit -> bool) =
+type HookContext(host: HookContextHost) =
     let mutable _firstRun = true
     let mutable _rendering = false
 
@@ -118,15 +143,15 @@ type HookContext(renderFn: RenderFn, triggerRender: HookContext -> unit , isConn
     member _.fail() =
         failwith "Hooks must be called consistently for each render call"
 
-    member this.requestUpdate() =
-        triggerRender(this)
+    member _.requestUpdate() =
+        host.requestUpdate()
 
     member this.render() =
         _stateIndex <- 0
         _effectIndex <- 0
         _rendering <- true
 
-        let res = renderFn(this.args)
+        let res = host.renderFn.apply(host, this.args)
 
         if not _firstRun &&
             (_stateIndex <> _states.Count || _effectIndex <> _effects.Count) then
@@ -134,30 +159,22 @@ type HookContext(renderFn: RenderFn, triggerRender: HookContext -> unit , isConn
 
         _rendering <- false
 
-        if isConnected() then
+        if host.isConnected then
             this.runEffects (onRender = true, onConnected = _firstRun)
 
         _firstRun <- false
-        res
+        res :?> TemplateResult
 
     member this.checkRendering() =
         if not _rendering then this.fail ()
 
-    member _.runAsync(f: unit -> unit) =
-        // When using requestAnimationFrame some browsers (Firefox) skip renders
-        // window.requestAnimationFrame (fun _ -> f ()) |> ignore
-        JS.setTimeout f 0 |> ignore
-
-    member this.runEffects(onConnected: bool, onRender: bool) =
-        this.runAsync
-            (fun () ->
-                _effects
-                |> Seq.iter
-                    (function
-                    | Effect.OnRender effect -> if onRender then effect ()
-                    | Effect.OnConnected effect ->
-                        if onConnected then
-                            _disposables.Add(effect ())))
+    member _.runEffects(onConnected: bool, onRender: bool) =
+        runAsync(fun () ->
+            _effects |> Seq.iter (function
+                | Effect.OnRender effect -> if onRender then effect ()
+                | Effect.OnConnected effect ->
+                    if onConnected then
+                        _disposables.Add(effect ())))
 
     member this.setState(index: int, newValue: 'T, ?equals: 'T -> 'T -> bool) : unit =
         let equals (oldValue: 'T) (newValue: 'T) =
@@ -171,9 +188,9 @@ type HookContext(renderFn: RenderFn, triggerRender: HookContext -> unit , isConn
             _states.[index] <- newValue
 
             if not _rendering then
-                triggerRender(this)
+                host.requestUpdate()
             else
-                this.runAsync (fun () -> triggerRender(this))
+                runAsync host.requestUpdate
 
     member this.getState() : int * 'T =
         if _stateIndex >= _states.Count then
@@ -316,6 +333,9 @@ module HookExtensions =
         member ctx.useRef<'T>() =
             ctx.useRef(fun () -> None: 'T option)
 
+        member ctx.useMemo(init: unit -> 'Value): 'Value =
+            ctx.useRef(init).Value
+
         member ctx.useEffectOnChange(value: 'T, effect: 'T -> unit) =
             ctx.useEffectOnChange(value, fun v ->
                 effect v
@@ -336,20 +356,22 @@ module HookExtensions =
 [<AttachMembers; AbstractClass>]
 type HookDirective() =
     inherit AsyncDirective()
+    let _hooks = HookContext(jsThis)
 #if DEBUG
     let mutable _hmrSub: IDisposable option = None
 #endif
-    let mutable _hooks: HookContext option = None
 
     abstract renderFn: JS.Function with get, set
     abstract name: string
 
-    member this.render([<ParamArray>] args: obj []) =
-        let hooks = (this :> IHookProvider).hooks
-        hooks.args <- args
-        hooks.render ()
+    member this.requestUpdate() =
+        this.setValue(_hooks.render())
 
-    member this.disconnected() =
+    member this.render([<ParamArray>] args: obj []) =
+        _hooks.args <- args
+        _hooks.render ()
+
+    member _.disconnected() =
 #if DEBUG
         match _hmrSub with
         | None -> ()
@@ -357,37 +379,28 @@ type HookDirective() =
             _hmrSub <- None
             d.Dispose()
 #endif
-        (this :> IHookProvider).hooks.disconnect()
+        _hooks.disconnect()
 
     // In some situations, a disconnected part may be reconnected again,
     // so we need to re-run the effects but the old state is kept
     // https://lit.dev/docs/api/custom-directives/#AsyncDirective
-    member this.reconnected() =
-        (this :> IHookProvider).hooks.runEffects (onConnected = true, onRender = false)
+    member _.reconnected() =
+        _hooks.runEffects (onConnected = true, onRender = false)
 
 #if DEBUG
-    member this.subscribeHmr(token: HMRToken) =
-        match _hmrSub with
-        | Some _ -> ()
-        | None ->
-            _hmrSub <-
-                token.Subscribe(fun updatedModule ->
-                    this.renderFn <- updatedModule?(this.name)?renderFn)
-                |> Some
+    interface HMRSubscriber with
+        member this.subscribeHmr = Some <| fun token ->
+            match _hmrSub with
+            | Some _ -> ()
+            | None ->
+                _hmrSub <-
+                    token.Subscribe(fun updatedModule ->
+                        this.renderFn <- updatedModule?(this.name)?renderFn)
+                    |> Some
 #endif
 
     interface IHookProvider with
-        member this.hooks =
-            match _hooks with
-            | Some hooks -> hooks
-            | None ->
-                let hooks =
-                    HookContext(
-                        (fun args -> this.renderFn.apply(jsThis, args) :?> _),
-                        (fun ctx -> this.setValue(ctx.render())),
-                        (fun () -> this.isConnected))
-                _hooks <- Some hooks
-                hooks
+        member _.hooks = _hooks
 
 /// <summary>
 /// Use this decorator to enable "stateful" functions
@@ -397,8 +410,7 @@ type HookComponentAttribute() =
 #if !DEBUG
     inherit JS.DecoratorAttribute()
     override _.Decorate(renderFn) =
-        emitJsExpr (jsConstructor<HookDirective>, renderFn)
-            "class extends $0 { get renderFn() { return $1 } }"
+        emitJsExpr (jsConstructor<HookDirective>, renderFn) RENDER_FN_CLASS_EXPR
         |> LitBindings.directive :?> _
 #else
     inherit JS.ReflectedDecoratorAttribute()
@@ -406,15 +418,7 @@ type HookComponentAttribute() =
         let renderRef = LitBindings.createRef()
         renderRef.value <- renderFn
         let classExpr =
-            emitJsExpr (jsConstructor<HookDirective>, renderRef, mi.Name) """
-                class extends $0 {
-                    get name() { return $2; }
-                    get renderFn() { return $1.value; }
-                    set renderFn(v) {
-                        $1.value = v;
-                        this.hooks.requestUpdate();
-                    }
-                }"""
+            emitJsExpr (jsConstructor<HookDirective>, renderRef, mi.Name) HMR_CLASS_EXPR
         let directive = classExpr |> LitBindings.directive
         // This lets us access the updated render function when accepting new modules in HMR
         directive?renderFn <- renderFn
@@ -475,15 +479,12 @@ type Hook() =
     static member inline useHmr(token: IHMRToken): unit =
         Hook.useHmr(token, jsThis)
 
-    static member useHmr(token: IHMRToken, this: obj): unit =
+    static member useHmr(token: IHMRToken, this: HMRSubscriber): unit =
 #if !DEBUG
         ()
 #else
-        match token with
-        | :? HMRToken as token ->
-            match this with
-            | :? HookDirective as directive -> directive.subscribeHmr(token)
-            | _ -> JS.console.warn("useHmr can only be used with HookComponent")
+        match token, this.subscribeHmr with
+        | :? HMRToken as token, Some subscribe -> subscribe(token)
         | _ -> ()
 #endif
 
@@ -509,7 +510,7 @@ type Hook() =
     /// Create a memoized state value. Only reruns the function when dependent values have changed.
     /// </summary>
     static member inline useMemo(init: unit -> 'Value): 'Value =
-        Hook.getContext().useRef(init).Value
+        Hook.getContext().useMemo(init)
 
     /// <summary>
     /// Used to run a side-effect each time after the component renders.
