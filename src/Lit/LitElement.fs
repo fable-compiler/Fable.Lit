@@ -19,6 +19,13 @@ type LitElement() =
     /// Returns a promise that will resolve when the element has finished updating.
     member _.updateComplete: JS.Promise<unit> = jsNative
 
+// Dummy type to simulate CSSStyleSheet
+[<Global("CSSStyleSheet")>]
+type ConstructableStyleSheet() =
+    interface Styles
+    member _.replace(css: string): JS.Promise<unit> = jsNative
+    member _.replaceSync(css: string): unit = jsNative
+
 module private LitElementUtil =
     module Types =
         let [<Global>] String = obj()
@@ -39,6 +46,9 @@ module private LitElementUtil =
 
     [<ImportMember("lit")>]
     let adoptStyles(renderRoot, styles): unit = jsNative
+
+    [<Emit("fetch($0).then(x => x.text())")>]
+    let fetchText(url: string): JS.Promise<string> = jsNative
 
 #if DEBUG
     let definedElements = System.Collections.Generic.HashSet<string>()
@@ -181,15 +191,15 @@ type LitConfig<'Props> =
     abstract useShadowDom: bool with get, set
 
 type ILitElementInit<'Props> =
-    abstract init: initFn: (LitConfig<'Props> -> unit) -> LitElement * 'Props
+    abstract init: initFn: (LitConfig<'Props> -> JS.Promise<unit>) -> LitElement * 'Props
 
 type LitElementInit<'Props>() =
-    let mutable _initialized = false
+    let mutable _initPromise: JS.Promise<unit> = null
     let mutable _useShadowDom = true
     let mutable _props = Unchecked.defaultof<'Props>
     let mutable _styles = Unchecked.defaultof<Styles list>
 
-    member _.Initialized = _initialized
+    member _.InitPromise = _initPromise
 
     interface LitConfig<'Props> with
         member _.props with get() = _props and set v = _props <- v
@@ -198,8 +208,7 @@ type LitElementInit<'Props>() =
 
     interface ILitElementInit<'Props> with
         member this.init initFn =
-            _initialized <- true
-            initFn this
+            _initPromise <- initFn this
             Unchecked.defaultof<_>
 
     interface IHookProvider with
@@ -258,86 +267,91 @@ type LitElementAttribute(name: string) =
     inherit JS.ReflectedDecoratorAttribute()
     override _.Decorate(renderFn, mi) =
 #endif
+        let config = LitElementInit()
+        let dummy() = failwith $"{name} is not immediately callable, it must be created in HTML"
         if renderFn.length > 0 then
             failwith "Render function for LitElement cannot take arguments"
-
-        let config = LitElementInit()
         try
             renderFn.apply(config, [||]) |> ignore
         with _ -> ()
 
-        if not config.Initialized then
+        if isNull config.InitPromise then
             failInit()
 
-        let config = config :> LitConfig<obj>
+        config.InitPromise
+        |> Promise.iter (fun _ ->
+            let config = config :> LitConfig<obj>
 
-        let propsOptions, initProps =
-            if isDefined config.props then
-                let propsValues = ResizeArray()
-                let propsOptions = obj()
+            let propsOptions, initProps =
+                if isDefined config.props then
+                    let propsValues = ResizeArray()
+                    let propsOptions = obj()
 
-                (JS.Constructors.Object.keys(config.props),
-                 JS.Constructors.Object.values(config.props))
-                ||> Seq.zip
-                |> Seq.iter (fun (k, v) ->
-                    let defVal, options =
-                        match box v with
-                        | :? Prop as v -> v.ToConfig()
-                        // We could return `v, obj()` here but let's make devs used to
-                        // initialize Props, which should make the code more consistent
-                        | _ -> failProps(k)
-                    propsOptions?(k) <- options
-                    if not(isNull defVal) then
-                        propsValues.Add(k, defVal))
+                    (JS.Constructors.Object.keys(config.props),
+                     JS.Constructors.Object.values(config.props))
+                    ||> Seq.zip
+                    |> Seq.iter (fun (k, v) ->
+                        let defVal, options =
+                            match box v with
+                            | :? Prop as v -> v.ToConfig()
+                            // We could return `v, obj()` here but let's make devs used to
+                            // initialize Props, which should make the code more consistent
+                            | _ -> failProps(k)
+                        propsOptions?(k) <- options
+                        if not(isNull defVal) then
+                            propsValues.Add(k, defVal))
 
-                let initProps (this: obj) =
-                    propsValues |> Seq.iter(fun (k, v) ->
-                        this?(k) <- v)
+                    let initProps (this: obj) =
+                        propsValues |> Seq.iter(fun (k, v) ->
+                            this?(k) <- v)
 
-                Some propsOptions, initProps
-            else
-                None, fun _ -> ()
+                    Some propsOptions, initProps
+                else
+                    None, fun _ -> ()
 
-        let classExpr =
-            let baseClass = jsConstructor<LitHookElement<obj>>
+            let classExpr =
+                let baseClass = jsConstructor<LitHookElement<obj>>
 #if !DEBUG
-            emitJsExpr (baseClass, renderFn, initProps) HookUtil.RENDER_FN_CLASS_EXPR
+                emitJsExpr (baseClass, renderFn, initProps) HookUtil.RENDER_FN_CLASS_EXPR
 #else
-            let renderRef = LitBindings.createRef()
-            renderRef.value <- renderFn
-            emitJsExpr (baseClass, renderRef, mi.Name, initProps) HookUtil.HMR_CLASS_EXPR
+                let renderRef = LitBindings.createRef()
+                renderRef.value <- renderFn
+                emitJsExpr (baseClass, renderRef, mi.Name, initProps) HookUtil.HMR_CLASS_EXPR
 #endif
 
-        match propsOptions with
-        | None -> ()
-        | Some propsOptions -> defineGetter(classExpr, "properties", fun () -> propsOptions)
+            match propsOptions with
+            | None -> ()
+            | Some propsOptions -> defineGetter(classExpr, "properties", fun () -> propsOptions)
 
-        if isDefined config.styles then
-            defineGetter(classExpr, "styles", fun () -> List.toArray config.styles)
+            if isDefined config.styles then
+                defineGetter(classExpr, "styles", fun () -> List.toArray config.styles)
 
-        if not config.useShadowDom then
-            emitJsStatement classExpr """$0.prototype.createRenderRoot = function() {
-                return this;
-            }"""
-
-        let dummy() = failwith $"{name} is not immediately callable, it must be created in HTML"
+            if not config.useShadowDom then
+                emitJsStatement classExpr """$0.prototype.createRenderRoot = function() {
+                    return this;
+                }"""
 
 #if !DEBUG
-        defineCustomElement(name, classExpr)
-#else
-        // Build a key to avoid registering the element twice when hot reloading
-        // We use the element name, the function name and the property names to minimize the chances of a false negative
-        // (if there are two actual duplicated custom elements there should be an error indeed).
-        let cacheName = mi.Name + "::" + name + "::" + (JS.Constructors.Object.keys(config.props) |> String.concat ", ")
-        if not(definedElements.Contains(cacheName)) then
             defineCustomElement(name, classExpr)
-            definedElements.Add(cacheName) |> ignore
+#else
+            // Build a key to avoid registering the element twice when hot reloading
+            // We use the element name, the function name and the property names to minimize the chances of a false negative
+            // (if there are two actual duplicated custom elements there should be an error indeed).
+            let cacheName =
+                match propsOptions with
+                | None -> mi.Name + "::" + name
+                | Some props -> mi.Name + "::" + name + "::" + (JS.Constructors.Object.keys(props) |> String.concat ", ")
 
-        // This lets us access the updated render function when accepting new modules in HMR
-        dummy?renderFn <- renderFn
-        if isDefined config.styles then
-            dummy?styles <- List.toArray config.styles
+            if not(definedElements.Contains(cacheName)) then
+                defineCustomElement(name, classExpr)
+                definedElements.Add(cacheName) |> ignore
+
+            // This lets us access the updated render function when accepting new modules in HMR
+            dummy?renderFn <- renderFn
+            if isDefined config.styles then
+                dummy?styles <- List.toArray config.styles
 #endif
+        )
         box dummy :?> _
 
 [<AutoOpen>]
@@ -393,22 +407,45 @@ module LitElementExt =
         /// Initializes the LitElement instance and registers the element in the custom elements registry
         /// </summary>
         static member inline init(): LitElement =
-            jsThis<ILitElementInit<unit>>.init(fun _ -> ()) |> fst
+            jsThis<ILitElementInit<unit>>.init(fun _ -> Promise.lift ()) |> fst
 
         /// <summary>
         /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
         /// </summary>
         static member inline init(initFn: LitConfig<'Props> -> unit): LitElement * 'Props =
+            jsThis<ILitElementInit<'Props>>.init(initFn >> Promise.lift)
+
+        /// <summary>
+        /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
+        /// </summary>
+        static member inline initAsync(initFn: LitConfig<'Props> -> JS.Promise<unit>): LitElement * 'Props =
             jsThis<ILitElementInit<'Props>>.init(initFn)
 
-module MyHooks =
-    // Updating a ref doesn't cause a re-render,
-    // so let's use a ref with the same signature as useState
-    let useSilentState (ctx: HookContext, v: 'Value) =
-        let r = ctx.useRef(v)
-        r.Value, fun v -> r := v
+        /// Import a CSS module and create a reusable style sheet for the Shadow DOM.
+        /// IMPORTANT: This needs a polyfill for browsers not supporting construct style sheets.
+        ///     <script src='https://unpkg.com/construct-style-sheets-polyfill'></script>
+        static member inline importStyleSheet(cssModule: string): JS.Promise<Styles> = promise {
+            let! css = importDynamic cssModule
+            let styles = ConstructableStyleSheet()
+            do! styles.replace(css?("default"))
+            return upcast styles
+        }
 
-    type Lit.Hook with
-        // IMPORTANT! This function must be inlined to access the context from the render function
-        static member inline useSilentState(v: 'Value): 'Value * ('Value -> unit) =
-            useSilentState(Hook.getContext(), v)
+        /// Import a CSS module and create a reusable style sheet for the Shadow DOM.
+        /// IMPORTANT: This needs a polyfill for browsers not supporting construct style sheets.
+        ///     <script src='https://unpkg.com/construct-style-sheets-polyfill'></script>
+        static member inline importStyleSheetSync(cssModule: string): Styles =
+            let styles = ConstructableStyleSheet()
+            styles.replaceSync(importDefault cssModule)
+            upcast styles
+
+        /// Fetch a CSS url and create a reusable style sheet for the Shadow DOM.
+        /// This method won't load other css/fonts referenced by the fetched styles.
+        /// IMPORTANT: This needs a polyfill for browsers not supporting construct style sheets.
+        ///     <script src='https://unpkg.com/construct-style-sheets-polyfill'></script>
+        static member fetchStyleSheet(cssUrl: string): JS.Promise<Styles> = promise {
+            let! css = fetchText cssUrl
+            let styles = ConstructableStyleSheet()
+            do! styles.replace(css)
+            return upcast styles
+        }
