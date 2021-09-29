@@ -19,14 +19,16 @@ type LitElement() =
     /// Returns a promise that will resolve when the element has finished updating.
     member _.updateComplete: JS.Promise<unit> = jsNative
 
-// Dummy type to simulate CSSStyleSheet
 [<Global("CSSStyleSheet")>]
-type ConstructableStyleSheet() =
+type ConstructStyleSheet() =
     interface Styles
     member _.replace(css: string): JS.Promise<unit> = jsNative
     member _.replaceSync(css: string): unit = jsNative
 
 module private LitElementUtil =
+    // Register polyfill for browsers that don't support construct style sheets (Firefox, Safari)
+    ConstructStyleSheetsPolyfill.register()
+
     module Types =
         let [<Global>] String = obj()
         let [<Global>] Number = obj()
@@ -422,30 +424,24 @@ module LitElementExt =
             jsThis<ILitElementInit<'Props>>.init(initFn)
 
         /// Import a CSS module and create a reusable style sheet for the Shadow DOM.
-        /// IMPORTANT: This needs a polyfill for browsers not supporting construct style sheets.
-        ///     <script src='https://unpkg.com/construct-style-sheets-polyfill'></script>
         static member inline importStyleSheet(cssModule: string): JS.Promise<Styles> = promise {
             let! css = importDynamic cssModule
-            let styles = ConstructableStyleSheet()
+            let styles = ConstructStyleSheet()
             do! styles.replace(css?("default"))
             return upcast styles
         }
 
         /// Import a CSS module and create a reusable style sheet for the Shadow DOM.
-        /// IMPORTANT: This needs a polyfill for browsers not supporting construct style sheets.
-        ///     <script src='https://unpkg.com/construct-style-sheets-polyfill'></script>
         static member inline importStyleSheetSync(cssModule: string): Styles =
-            let styles = ConstructableStyleSheet()
+            let styles = ConstructStyleSheet()
             styles.replaceSync(importDefault cssModule)
             upcast styles
 
         /// Fetch a CSS url and create a reusable style sheet for the Shadow DOM.
         /// This method won't load other css/fonts referenced by the fetched styles.
-        /// IMPORTANT: This needs a polyfill for browsers not supporting construct style sheets.
-        ///     <script src='https://unpkg.com/construct-style-sheets-polyfill'></script>
         static member fetchStyleSheet(cssUrl: string): JS.Promise<Styles> = promise {
             let! css = fetchText cssUrl
-            let styles = ConstructableStyleSheet()
+            let styles = ConstructStyleSheet()
             do! styles.replace(css)
             return upcast styles
         }
