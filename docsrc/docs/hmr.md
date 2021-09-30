@@ -25,7 +25,7 @@ We've personally got great results with Vite. It is somewhat opinionated and tha
 
 With this you only need to install Vite and run the commands for starting the development server or bundling for production as needed.
 
-```
+```sh
 npm i -D vite
 npx vite --open     # Start dev server and open browser
 npx vite build      # Build your site for production
@@ -33,7 +33,7 @@ npx vite build      # Build your site for production
 
 That's it, now you have an extremely fast development server and an optimized build with zero config (built files will be put in `dist` folder by default). If you need to edit some settings, you can still use a [config file](https://vitejs.dev/config/) or the CLI options (check them with `npx vite --help`).
 
-### Fable --runFast
+## Fable --runFast
 
 If you use `--runFast` option with Fable instead of `--run`, Vite will be started right away instead of waiting until first Fable compilation. When developing you usually already have the compiled files from the previous day, so this way you can get a development server up and running in under 200 milliseconds!
 

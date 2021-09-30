@@ -1,10 +1,12 @@
 {
-    "url": "https://fable.io",
-    "baseUrl": "/Fable.Lit/",
-    "editUrl": "https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc",
     "source": "docsrc",
     "output": "build/docs",
-    "title": "Fable.Lit",
+    "siteMetadata": {
+        "url": "https://fable.io",
+        "baseUrl": "/Fable.Lit/",
+        "editUrl": "https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc",
+        "title": "Fable.Lit"
+    },
     "navbar": {
         "start": [
             {
@@ -17,25 +19,27 @@
             {
                 "url": "https://github.com/fable-compiler/Fable.Lit",
                 "icon": "fab fa-github",
-                "isExternal": true
+                "label": "Github"
             },
             {
                 "url": "https://twitter.com/FableCompiler",
                 "icon": "fab fa-twitter",
-                "isExternal": true
+                "label": "Twitter"
             }
         ]
     },
-    "lightner": {
-        "backgroundColor": "#FFFFFF",
-        "textColor": "#000000",
-        "themeFile": "./lightner/themes/customized_OneLight.json",
-        "grammars": [
-            "./lightner/grammars/fsharp.json",
-            "./lightner/grammars/JSON.tmLanguage.json",
-            "./lightner/grammars/JavaScript.tmLanguage.json"
-        ]
-    },
+    "remarkPlugins": [
+        {
+            "resolve": "gatsby-remark-vscode",
+            "property": "remarkPlugin",
+            "options": {
+                "theme": "Atom One Light",
+                "extensions": [
+                    "vscode-theme-onelight"
+                ]
+            }
+        }
+    ],
     "layouts": [
         "nacara-layout-standard"
     ]
