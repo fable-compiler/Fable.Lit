@@ -19,16 +19,7 @@ type LitElement() =
     /// Returns a promise that will resolve when the element has finished updating.
     member _.updateComplete: JS.Promise<unit> = jsNative
 
-[<Global("CSSStyleSheet")>]
-type ConstructStyleSheet() =
-    interface Styles
-    member _.replace(css: string): JS.Promise<unit> = jsNative
-    member _.replaceSync(css: string): unit = jsNative
-
 module private LitElementUtil =
-    // Register polyfill for browsers that don't support construct style sheets (Firefox, Safari)
-    ConstructStyleSheetsPolyfill.register()
-
     module Types =
         let [<Global>] String = obj()
         let [<Global>] Number = obj()
@@ -422,26 +413,3 @@ module LitElementExt =
         /// </summary>
         static member inline initAsync(initFn: LitConfig<'Props> -> JS.Promise<unit>): LitElement * 'Props =
             jsThis<ILitElementInit<'Props>>.init(initFn)
-
-        /// Import a CSS module and create a reusable style sheet for the Shadow DOM.
-        static member inline importStyleSheet(cssModule: string): JS.Promise<Styles> = promise {
-            let! css = importDynamic cssModule
-            let styles = ConstructStyleSheet()
-            do! styles.replace(css?("default"))
-            return upcast styles
-        }
-
-        /// Import a CSS module and create a reusable style sheet for the Shadow DOM.
-        static member inline importStyleSheetSync(cssModule: string): Styles =
-            let styles = ConstructStyleSheet()
-            styles.replaceSync(importDefault cssModule)
-            upcast styles
-
-        /// Fetch a CSS url and create a reusable style sheet for the Shadow DOM.
-        /// This method won't load other css/fonts referenced by the fetched styles.
-        static member fetchStyleSheet(cssUrl: string): JS.Promise<Styles> = promise {
-            let! css = fetchText cssUrl
-            let styles = ConstructStyleSheet()
-            do! styles.replace(css)
-            return upcast styles
-        }

@@ -27,39 +27,42 @@ type Element with
     member this.asHTML =
         this.cast<HTMLElement>()
 
-    /// Runs querySelector and throw error if nothing is found
-    member this.getSelector(selector: string) =
-        match this.querySelector(selector) with
-        | null -> failwith $"""Cannot find element with selector "{selector}"."""
-        | v -> v
+    /// Runs querySelector on element (or shadowRoot if present) and returns None if nothing is found
+    member el.tryGetSelector(selector: string) =
+        let el = if isNull el.shadowRoot then el else el.shadowRoot :> _
+        el.querySelector(selector) |> Option.ofObj
 
-    /// Runs querySelector and returns None if nothing is found
-    member this.tryGetSelector(selector: string) =
-        this.querySelector(selector) |> Option.ofObj
+    /// Runs querySelector on element (or shadowRoot if present) and throw error if nothing is found
+    member this.getSelector(selector: string) =
+        match this.tryGetSelector(selector) with
+        | None -> failwith $"""Cannot find element with selector "{selector}"."""
+        | Some v -> v
 
     /// Return first child that has given role and whose accessible name matches the pattern, or throw error
     /// Pattern becomes an ignore-case regular expression.
-    member this.getByRole(role: string, accessibleNamePattern: string) =
-        queries.getByRole(this, role, accessibleNamePattern)
+    member el.getByRole(role: string, accessibleNamePattern: string) =
+        let el = if isNull el.shadowRoot then el else el.shadowRoot :> _
+        queries.getByRole(el, role, accessibleNamePattern)
 
     /// Same as getByRole("button", accessibleNamePattern).
     member this.getButton(accessibleNamePattern: string) =
-        queries.getByRole(this, "button", accessibleNamePattern) :?> HTMLButtonElement
+        this.getByRole("button", accessibleNamePattern) :?> HTMLButtonElement
 
     /// Same as getByRole("checkbox", accessibleNamePattern).
     /// Matches `input` elements of type "text" or `checkbox`
     member this.getCheckbox(accessibleNamePattern: string) =
-        queries.getByRole(this, "checkbox", accessibleNamePattern) :?> HTMLInputElement
+        this.getByRole("checkbox", accessibleNamePattern) :?> HTMLInputElement
 
     /// Same as getByRole("textbox", accessibleNamePattern).
     /// Matches `input` elements of type "text" or `textarea`.
     member this.getTextInput(accessibleNamePattern: string) =
-        queries.getByRole(this, "textbox", accessibleNamePattern) :?> HTMLInputElement
+        this.getByRole("textbox", accessibleNamePattern) :?> HTMLInputElement
 
     /// Return first text node child with text matching given pattern, or throw error.
     /// Pattern becomes an ignore-case regular expression.
-    member this.getByText(pattern: string) =
-        queries.getByText(this, pattern) :?> HTMLElement
+    member el.getByText(pattern: string) =
+        let el = if isNull el.shadowRoot then el else el.shadowRoot :> _
+        queries.getByText(el, pattern) :?> HTMLElement
 
 type Container =
     inherit IDisposable

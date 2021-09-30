@@ -89,50 +89,50 @@ describe "LitElement" <| fun () ->
         use! el = render_html $"<fel-attribute-changes></fel-attribute-changes>"
         let el = el.El
         // check the default value
-        el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
+        el.getSelector("#value") |> Expect.innerText "default"
         el.setAttribute("f-name", "fable")
         // wait for lit's render updates
         do! elementUpdated el
-        el.shadowRoot.querySelector("#value") |> Expect.innerText "fable"
+        el.getSelector("#value") |> Expect.innerText "fable"
         // update property manually
         el?fName <- "fable-2"
         do! elementUpdated el
-        el.shadowRoot.querySelector("#value") |> Expect.innerText "fable-2"
+        el.getSelector("#value") |> Expect.innerText "fable-2"
     }
 
     it "Doesn't react to attribute changes" <| fun () -> promise {
         use! el = render_html $"<fel-attribute-doesnt-change></fel-attribute-doesnt-change>"
         let el = el.El
         // check the default value
-        el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
+        el.getSelector("#value") |> Expect.innerText "default"
         el.setAttribute("f-name", "fable")
         // wait for lit's render updates
         do! elementUpdated el
-        el.shadowRoot.querySelector("#value") |> Expect.innerText "default"
+        el.getSelector("#value") |> Expect.innerText "default"
         // update property manually
         el?fName <- "fable"
         do! elementUpdated el
-        el.shadowRoot.querySelector("#value") |> Expect.innerText "fable"
+        el.getSelector("#value") |> Expect.innerText "fable"
     }
 
     it "Reflect Attribute changes" <| fun () -> promise {
         use! el = render_html $"<fel-attribute-reflects></fel-attribute-reflects>"
         let el = el.El
         // check the default value
-        el.shadowRoot.querySelector("#f-value") |> Expect.innerText "default"
+        el.getSelector("#f-value") |> Expect.innerText "default"
         el.getAttribute("f-name") |> Expect.equal "default"
         el?fName <- "fable"
         // wait for lit's render updates
         do! elementUpdated el
         // setting the property should have updated the value and the attribute
-        el.shadowRoot.querySelector("#f-value") |> Expect.innerText "fable"
+        el.getSelector("#f-value") |> Expect.innerText "fable"
         el.getAttribute("f-name") |> Expect.equal "fable"
     }
 
     it "From Attribute works" <| fun () -> promise {
         use! el = render_html $"""<fel-attribute-reflects rev-name="aloh"></fel-attribute-reflects>"""
         let el = el.El
-        el.shadowRoot.querySelector("#rev-value") |> Expect.innerText "h-o-l-a"
+        el.getSelector("#rev-value") |> Expect.innerText "h-o-l-a"
     }
 
     it "Fires Events" <| fun () -> promise {

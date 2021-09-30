@@ -6,75 +6,72 @@ open Elmish
 open Lit
 open Expect.Dom
 
-/// Observable that keeps a copy of the last triggered value
-/// and reports it immediately upon subscription.
-type Store<'T>() =
-    let mutable value: 'T option = None
-    let listeners = Dictionary<Guid, IObserver<'T>>()
-    member _.Trigger(v) =
-        value <- Some v
-        for l in listeners.Values do
-            l.OnNext(v)
-    interface IObservable<'T> with
-        member _.Subscribe(w) =
-            value |> Option.iter w.OnNext
-            let g = Guid.NewGuid()
-            listeners.Add(g, w)
-            { new IDisposable with
-                member _.Dispose() = listeners.Remove(g) |> ignore }
-
-/// Disposable that waits until the Disposable property is set if necessary/
-/// Useful if we need to dispose when the disposable reference may have not been set yet
-/// (e.g. when subscribing to a store).
-type LazyDisposable() =
-    let mutable _disposed = false
-    let mutable _disposable: IDisposable option = None
-    member _.Disposable with set(d: IDisposable) =
-        match _disposed, _disposable with
-        | false, Some _ -> failwith "Item was already assigned a disposable"
-        | true, Some _ -> failwith "Item is already disposed"
-        | false, None -> _disposable <- Some d
-        | true, None ->
-            _disposable <- Some d
-            d.Dispose()
-    member _.Dispose() =
-        _disposed <- true
-        _disposable |> Option.iter (fun d -> d.Dispose())
-
-type IObservable<'T> with
-    member obs.Await() =
-        Promise.create(fun resolve _ ->
-            let disp = LazyDisposable()
-            disp.Disposable <- obs.Subscribe(fun v ->
-                disp.Dispose()
-                resolve v))
-
-type ObservableContainer<'T> =
+type ElmishContainer<'Model> =
     inherit Container
-    inherit IObservable<'T>
+    abstract Model: 'Model
+
+type ElmishDispatcher<'Model, 'Msg> =
+    inherit IDisposable
+    abstract Model: 'Model
+    abstract Dispatch: 'Msg -> unit
 
 module Program =
+    let private disposeModel (model: obj) =
+        match model with
+        | :? IDisposable as disp -> disp.Dispose()
+        | _ -> ()
+
     /// Mounts an element to the DOM to render the Elmish app and returns the container
-    /// as an observable that will notify of model changes.
-    let runTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, Lit.TemplateResult>) = promise {
-        let store = Store<'model>()
+    /// with an extra property to retrieve the model.
+    let mountAndRunTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, Lit.TemplateResult>) = promise {
+        let mutable model = Unchecked.defaultof<_>
         let! container = render_html $"<div></div>"
 
-        let setState model dispatch =
+        let setState model' dispatch =
+            model <- model'
             Program.view program model dispatch |> Lit.render container.El
-            store.Trigger model
 
         Program.withSetState setState program
         |> Program.runWith arg
 
         return
-            { new ObservableContainer<'model> with
+            { new ElmishContainer<'model> with
+                member _.Dispose() =
+                    container.Dispose()
+                    disposeModel model
                 member _.El = container.El
-                member _.Dispose() = container.Dispose()
-                member _.Subscribe(w) = (store :> IObservable<_>).Subscribe(w) }
+                member _.Model = model
+            }
     }
 
     /// Mounts an element to the DOM to render the Elmish app and returns the container
-    /// as an observable that will notify of model changes.
-    let runTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) =
+    /// with an extra property to retrieve the model.
+    let mountAndRunTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) =
+        mountAndRunTestWith () program
+
+    /// Creates an elmish program that doesn't render
+    let mkHidden init update =
+        let view _ _ = ()
+        Program.mkProgram init update view
+
+    /// Returns a handler to retrieve the model and dispatch messages
+    let runTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, unit>) =
+        let mutable model = Unchecked.defaultof<_>
+        let mutable dispatch = Unchecked.defaultof<_>
+
+        let setState model' dispatch' =
+            model <- model'
+            dispatch <- dispatch'
+
+        Program.withSetState setState program
+        |> Program.runWith arg
+
+        { new ElmishDispatcher<'model, 'msg> with
+            member _.Dispose() = disposeModel model
+            member _.Model = model
+            member _.Dispatch msg = dispatch msg
+        }
+
+    /// Returns a handler to retrieve the model and dispatch messages
+    let runTest (program: Program<unit, 'model, 'msg, unit>) =
         runTestWith () program
