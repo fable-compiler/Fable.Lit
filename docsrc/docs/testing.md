@@ -107,7 +107,7 @@ The following shortcuts for common roles are provided:
 
 Except for `WebTestRunner` module, the other helpers can be run with any test runner that provides a DOM. We recommend [Web Test Runner](https://modern-web.dev/docs/test-runner/overview/) because it's compatible with ES modules and runs your tests in a headless browser by default instead of node. Web Test Runner provides the same [BDD interface as Mocha](https://mochajs.org/#interfaces) and allows you to [execute commands](https://modern-web.dev/docs/test-runner/commands/) to interact with the browser instance or the file system. At the time of writing Fable.Lit.Tests includes helpers for snapshot testing.
 
-### Snapshot testing
+## Snapshot testing
 
 Snapshot testing is helpful to make sure your UI doesn't change unintentionally. If no snapshot has been created for the specific file/name pair a new one will just be saved. Next time the given content will be compared with the stored snapshot and assertion will fail if they don't match.
 

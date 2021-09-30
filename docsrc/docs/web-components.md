@@ -134,14 +134,19 @@ constructor() {
 When you call `let host, properties = LitElement.init initFunction` you are initializing a web component instance since web components are not "constructible" (i.e. you can't do `new MyElement()`, you have to do `document.createElement('my-element')`) there's not a direct way to pass external information for that you have two ways to do it
 
 - properties
-  ```js
-  const el = document.querySelector("my-element");
-  el.property = "new value";
-  ```
+
+    ```js
+    const el = document.querySelector("my-element");
+    el.property = "new value";
+    ```
+    <br/>
+
 - attributes
-  ```html
-  <my-element my-attribute="attribute-value"></my-element>
-  ```
+
+    ```html
+    <my-element my-attribute="attribute-value"></my-element>
+    ```
+    <br/>
 
 Properties are existing members of an instance while attributes are strings defined in HTML in Fable.Lit you can use the `Prop.Of` API to get your properties in place
 
