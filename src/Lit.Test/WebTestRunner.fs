@@ -58,8 +58,7 @@ module Mocha =
 
 [<RequireQualifiedAccess>]
 module Expect =
-    // [<ImportAll("@web/test-runner-commands")>]
-    [<ImportAll("./commands.js")>]
+    [<ImportAll("@web/test-runner-commands")>]
     let private wtr: WebTestRunnerBindings = jsNative
 
     let private cleanHtml (html: string) =

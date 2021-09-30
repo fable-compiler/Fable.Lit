@@ -1,4 +1,4 @@
-### 1.1.0-beta-002
+### 1.1.0-beta-003
 
 * Drop constructable Style Sheets for now
 

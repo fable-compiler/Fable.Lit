@@ -2,13 +2,11 @@
   <PropertyGroup>
     <PackageId>Fable.Lit</PackageId>
     <Version>1.1.0</Version>
-    <PackageVersion>1.1.0-beta-002</PackageVersion>
+    <PackageVersion>1.1.0-beta-003</PackageVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup>
     <NpmDependencies>
-      <NpmPackage Name="lit" Version="&gt;= 2.0.0 &lt; 3.0.0" ResolutionStrategy="Max" />
+      <NpmPackage Name="lit" Version="gte 2.0.0" ResolutionStrategy="Max" />
     </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>

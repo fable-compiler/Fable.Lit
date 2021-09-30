@@ -19,7 +19,7 @@
         "vscode-theme-onelight": "github:akamud/vscode-theme-onelight"
     },
     "devDependencies": {
-        "@web/test-runner": "^0.13.16",
+        "@web/test-runner": "^0.13.18",
         "fable-publish-utils": "^2.2.0",
         "gh-pages": "^3.2.3",
         "nacara": "^1.0.0-beta-019",

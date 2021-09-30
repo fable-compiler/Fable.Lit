@@ -1,4 +1,4 @@
-### 1.1.0-beta-001
+### 1.1.0-beta-002
 
 * Improve Expect.Elmish API and other helpers
 
