@@ -1,10 +1,10 @@
 {
     "source": "docsrc",
-    "output": "build/docs",
+    "output": "../build/docs",
     "siteMetadata": {
         "url": "https://fable.io",
         "baseUrl": "/Fable.Lit/",
-        "editUrl": "https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc",
+        "editUrl": "https://github.com/fable-compiler/Fable.Lit/edit/main/docs/docsrc",
         "title": "Fable.Lit"
     },
     "navbar": {

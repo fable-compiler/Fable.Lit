@@ -16,11 +16,11 @@ Before doing anything make sure to install the dependencies after cloning the re
 
 ## How to work on the documentation ?
 
-1. `npm run docs -- watch`
+1. `cd docs && npm i && npm run docs:watch`
 2. Go to [http://localhost:8080/](http://localhost:8080/)
 
 ## How to update the documentation ?
 
 Deployment should be done automatically when pushing to `main` branch.
 
-If the CI is broken, you can manually deploy it by running `npm run docs:deploy`.
+If the CI is broken, you can manually deploy it by running `cd docs && npm run docs:deploy`.
