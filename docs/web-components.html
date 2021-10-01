@@ -1,284 +1,135 @@
-<html class="has-navbar-fixed-top"><head><title>Fable.Lit · Web Components</title><meta http-equiv="content-type"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" type="text/css" href="/Fable.Lit/style.css"/><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous"/></head><body><nav class="navbar is-fixed-top"><div class="container"><div class="navbar-brand"><a class="navbar-item title is-4" href="https://fable.io/Fable.Lit/">Fable.Lit</a><a class="navbar-item is-hidden-desktop" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item is-hidden-desktop" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a><a class="navbar-burger" data-target="nav-menu"><span></span><span></span><span></span></a></div><div class="navbar-menu" id="nav-menu"><div class="navbar-start"><a class="navbar-item is-active" href="/Fable.Lit/docs/getting-started.html">Documentation</a></div><div class="navbar-end"><a class="navbar-item" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a></div></div></div></nav><div class="container"><div class="mobile-menu"><nav class="breadcrumb"><ul><li><a class="menu-trigger"><span></span><span></span><span></span></a></li><li class="is-active"><a>Web Components</a></li></ul></nav></div><div class="columns is-gapless is-mobile"><div class="column is-menu-column is-3-desktop is-hidden-touch ml-5"><div class="menu-container"><aside class="menu"><ul class="menu-list"><li><a class=" " href="/Fable.Lit/docs/getting-started.html">Getting started</a></li><li><a class=" " href="/Fable.Lit/docs/templates.html">Templates</a></li><li><a class=" " href="/Fable.Lit/docs/hook-components.html">Hook Components</a></li><li><a class=" is-active has-table-of-content" href="/Fable.Lit/docs/web-components.html">Web Components</a></li><ul class="table-of-content"><li><a href="#Properties" data-toc-element="true">Properties </a></li><li><a href="#Events" data-toc-element="true">Events </a></li><li><a href="#Styles" data-toc-element="true">Styles </a></li><li><a href="#Use-cases" data-toc-element="true">Use cases </a></li></ul><li><a class=" " href="/Fable.Lit/docs/hmr.html">Hot Reloading</a></li><li><a class=" " href="/Fable.Lit/docs/testing.html">Testing</a></li></ul></aside></div></div><div class="column is-8-desktop is-full-touch"><section class="section"><div class="content"><header class="page-header"><a class="button is-hidden-touch is-outlined is-primary is-pulled-right" target="_blank" href="https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc/docs\web-components.md">Edit</a><h1 class="title is-1">Web Components</h1></header><div><p><a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components">Web Components</a> are a way to create custom reusable HTML Elements and are part of the browser standards. These elements work as any other HTML tag like a <code>div</code>, <code>span</code>, or <code>article</code> meaning that you can produce web components that are able to be used by any framework without having to write any kind of wrapper on top of it.</p>
-<blockquote>
-<p>These web components use <a href="https://lit.dev">Lit</a> under the hood, visit <a href="https://lit.dev">lit.dev</a> for more detailed information on how <code>LitElement</code> Web Components work.</p>
-</blockquote>
-<p>Let's see a quick simple example of a web component</p>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-counter&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
-<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">Counter</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
-<span>    </span><span style="color: #A0A1A7;font-style: italic">// This call is obligatory to initialize the web component</span>
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">props </span><span style="color: #A626A4">=</span>
-<span>        LitElement.init</span><span style="color: #A626A4">(</span>
-<span>            </span><span style="color: #A626A4">fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
-<span>                </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">props</span><span> </span><span style="color: #A626A4">=</span><span> </span><span style="color: #A626A4">{|</span><span> initial </span><span style="color: #A626A4">=</span><span> Prop.</span><span style="color: #A626A4">of(</span><span style="color: #986801">0</span><span style="color: #A626A4">,</span><span> attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;initial&quot;</span><span style="color: #A626A4">)</span><span> </span><span style="color: #A626A4">|}</span>
-<span>                init.props </span><span style="color: #A626A4">&lt;-</span><span> props</span><span style="color: #A626A4">)</span>
-
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">counter</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">setCounter </span><span style="color: #A626A4">=</span><span> Hook.useState props.initial.Value</span>
-
-<span>    html</span>
-<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
-<span style="color: #50A14F">        &lt;article&gt;</span>
-<span style="color: #50A14F">            &lt;p&gt;{counter}&lt;/p&gt;</span>
-<span style="color: #50A14F">            &lt;button @click={fun _ -&gt; setCounter(counter + 1)}&gt;+&lt;/button&gt;</span>
-<span style="color: #50A14F">            &lt;button @click={fun _ -&gt; setCounter(counter - 1)}&gt;-&lt;/button&gt;</span>
-<span style="color: #50A14F">        &lt;/article&gt;</span>
-<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
-<article class="message is-info">
-                    <div class="message-body"><p>Check <a href="./hook-components.html">hooks</a> for a more detailed explanation of how to use them.</p>
-</div>
-</article>
-<p>And then in HTML you can use it as</p>
-<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;my-counter&gt;&lt;/my-counter&gt;
-</code></pre>
-<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;my-counter initial=&quot;10&quot;&gt;&lt;/my-counter&gt;
-</code></pre>
-<p>This will produce two different instances of <code>my-counter</code> the first one will start at 0 the second one will start at 10</p>
-<blockquote>
-<p>When we say you can use it in HTML we mean it, wherever you are used to put an HTML tag you are able to use it, vue, angular, server side pages... You name it.</p>
-</blockquote>
-<p>To be able to define web components with Lit (and Fable.Lit) you need to pay attention to the following things since we have abstracted some of the <a href="https://lit.dev/docs/components/properties/">Lit mechanisms to declare reactive properties</a> to have a nicer API from F#'s perspective</p>
-<table>
-    <thead>
-        <th>Name</th>
-        <th>Js Counterpart</th>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;element-name&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
-<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">ConstructorFunction</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span></code></pre>
-</td>
-            <td>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #E45649">customElements</span><span style="color: #383A42">.</span><span style="color: #4078F2">define</span><span style="color: #383A42">(</span><span style="color: #50A14F">&quot;element-name&quot;</span><span style="color: #383A42">,</span><span> </span><span style="color: #383A42">ConstructorFunction);</span></code></pre>
-</td>
-        </tr>
-        <tr>
-            <td>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">host</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">properties </span><span style="color: #A626A4">=</span><span> LitElement.init</span><span style="color: #A626A4">(</span><span>initFn</span><span style="color: #A626A4">)</span></code></pre>
-</td>
-            <td>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #E45649">Component</span><span style="color: #383A42">.</span><span style="color: #4078F2">properties</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #A626A4">function</span><span> </span><span style="color: #383A42">()</span><span> </span><span style="color: #383A42">{</span>
-<span>  </span><span style="color: #A626A4">return</span><span> </span><span style="color: #383A42">properties;</span>
-<span style="color: #383A42">};</span>
-<span style="color: #E45649">Component</span><span style="color: #383A42">.</span><span style="color: #4078F2">styles</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #A626A4">function</span><span> </span><span style="color: #383A42">()</span><span> </span><span style="color: #383A42">{</span>
-<span>  </span><span style="color: #A626A4">return</span><span> </span><span style="color: #383A42">styles;</span>
-<span style="color: #383A42">};</span></code></pre>
-</td>
-        </tr>
-        <tr>
-            <td>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">{|</span><span> </span><span style="color: #A626A4">property</span><span> </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;defaultValue&quot;</span><span style="color: #A626A4">)</span><span> </span><span style="color: #A626A4">|}</span></code></pre>
-</td>
-            <td>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #4078F2">constructor</span><span style="color: #383A42">()</span><span> </span><span style="color: #383A42">{</span>
-<span>    </span><span style="color: #E45649">this</span><span style="color: #383A42">.</span><span style="color: #E45649">property</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #50A14F">&quot;defaultValue&quot;</span>
-<span style="color: #383A42">}</span></code></pre>
-</td>
-        </tr>
-    </tbody>
-</table>
-<h2>Properties <a href="#Properties" aria-hidden="true"><span class="anchor" id="Properties"></span>#</a></h2>
-<p>When you call <code>let host, properties = LitElement.init initFunction</code> you are initializing a web component instance since web components are not &quot;constructible&quot; (i.e. you can't do <code>new MyElement()</code>, you have to do <code>document.createElement('my-element')</code>) there's not a direct way to pass external information for that you have two ways to do it</p>
-<ul>
-<li>properties<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">const</span><span> </span><span style="color: #986801">el</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #E45649">document</span><span style="color: #383A42">.</span><span style="color: #4078F2">querySelector</span><span style="color: #383A42">(</span><span style="color: #50A14F">&quot;my-element&quot;</span><span style="color: #383A42">);</span>
-<span style="color: #E45649">el</span><span style="color: #383A42">.</span><span style="color: #E45649">property</span><span> </span><span style="color: #0184BC">=</span><span> </span><span style="color: #50A14F">&quot;new value&quot;</span><span style="color: #383A42">;</span></code></pre>
-</li>
-<li>attributes<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;my-element my-attribute=&quot;attribute-value&quot;&gt;&lt;/my-element&gt;
-</code></pre>
-</li>
-</ul>
-<p>Properties are existing members of an instance while attributes are strings defined in HTML in Fable.Lit you can use the <code>Prop.Of</code> API to get your properties in place</p>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">initFn</span><span style="color: #383A42"> init </span><span style="color: #A626A4">=</span>
-<span>    init.props </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">{|</span><span> name </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;&quot;</span><span style="color: #A626A4">,</span><span> attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;name&quot;</span><span style="color: #A626A4">);</span><span> age </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">(</span><span style="color: #986801">10</span><span style="color: #A626A4">,</span><span> attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;age&quot;</span><span style="color: #A626A4">)</span><span>  </span><span style="color: #A626A4">|}</span>
-<span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-component&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
-<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">MyComponent</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">props </span><span style="color: #A626A4">=</span><span> LitElement.init initFn</span>
-<span>    </span><span style="color: #A0A1A7;font-style: italic">(* ...  the rest of the function ... *)</span></code></pre>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span>Prop.Of</span><span style="color: #A626A4">(</span>
-<span>    </span><span style="color: #50A14F">&quot;defaultValue&quot;</span><span style="color: #A626A4">,</span>
-<span>    attribute </span><span style="color: #A626A4">=</span><span> </span><span style="color: #50A14F">&quot;name-of-the-attribute&quot;</span><span style="color: #A626A4">,</span>
-<span>    hasChanged </span><span style="color: #A626A4">=</span><span> boolPredicateFn</span><span style="color: #A626A4">,</span>
-<span>    fromAttribute </span><span style="color: #A626A4">=</span><span> stringToTypeFunctionFn</span><span style="color: #A626A4">,</span>
-<span>    toAttribute </span><span style="color: #A626A4">=</span><span> typeToStringFunctionFn</span><span style="color: #A626A4">,</span>
-<span>    reflect </span><span style="color: #A626A4">=</span><span> </span><span style="color: #986801">false</span>
-<span style="color: #A626A4">)</span></code></pre>
-<article class="message is-info">
-                    <div class="message-body"><p>When you use this API each of the properties declared wil be accessible via the element's instance, except from the first parameter all of the other are optional</p>
-</div>
-</article>
-<article class="message is-warning">
-                    <div class="message-body"><p>Use attribute for primitive values only, otherwise Json objects and Arrays will be serialized using <code>JSON.(parse|stringify)</code>, for complex objects use properties only to prevent attribute strings converting your object in a string</p>
-</div>
-</article>
-<h2>Events <a href="#Events" aria-hidden="true"><span class="anchor" id="Events"></span>#</a></h2>
-<p>With properties we can obtain information from the outside world, but to let the outside world something happened we use events. Events while not strictly required, they should be triggered by a user interaction a click, a selection a scroll rather than emitted when a property changes.</p>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;product-settings&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
-<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">CloseMe</span><span style="color: #986801">()</span><span> </span><span style="color: #A626A4">=</span>
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">host</span><span style="color: #A626A4">,</span><span> </span><span style="color: #383A42">props </span><span style="color: #A626A4">=</span>
-<span>        LitElement.init</span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
-<span>            init.props </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">{|</span><span> product </span><span style="color: #A626A4">=</span><span> Prop.Of</span><span style="color: #A626A4">({</span><span> </span><span style="color: #A0A1A7;font-style: italic">(* ... product definition ...*)</span><span> </span><span style="color: #A626A4">})</span><span> </span><span style="color: #A626A4">|})</span>
-
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">product</span><span> </span><span style="color: #A626A4">=</span><span> props.product.Value</span>
-
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">onDeleteFromInventory</span><span style="color: #383A42"> _ </span><span style="color: #A626A4">=</span>
-<span>        host.dispatchEvent</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;on-delete-from-inventory&quot;</span><span style="color: #A626A4">)</span>
-
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">onHideFromCustomers</span><span style="color: #383A42"> _ </span><span style="color: #A626A4">=</span>
-<span>        host.dispatchCustomEvent</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;on-hide-from-customers&quot;</span><span style="color: #A626A4">,</span><span> </span><span style="color: #A626A4">{</span><span> product </span><span style="color: #A626A4">with</span><span> hidden </span><span style="color: #A626A4">=</span><span> </span><span style="color: #986801">true</span><span> </span><span style="color: #A626A4">})</span>
-
-<span>    html</span>
-<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
-<span style="color: #50A14F">        &lt;article&gt;</span>
-<span style="color: #50A14F">            &lt;header&gt;</span>
-<span style="color: #50A14F">                &lt;h3&gt;{product.name}&lt;/h3&gt;</span>
-<span style="color: #50A14F">            &lt;/header&gt;</span>
-<span style="color: #50A14F">            &lt;aside&gt;</span>
-<span style="color: #50A14F">                &lt;button @click={onHideFromCustomers}&gt;Delete&lt;/button&gt;</span>
-<span style="color: #50A14F">                &lt;button @click={onDeleteFromInventory}&gt;Hide&lt;/button&gt;</span>
-<span style="color: #50A14F">            &lt;/aside&gt;</span>
-<span style="color: #50A14F">            &lt;section&gt;</span>
-<span style="color: #50A14F">                &lt;!-- the rest of the component --&gt;</span>
-<span style="color: #50A14F">            &lt;/section&gt;</span>
-<span style="color: #50A14F">        &lt;/article&gt;</span>
-<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
-<p><code>host.dispatchEvent</code> and <code>host.dispatchCustomEvent</code> have the following optional arguments</p>
-<ul>
-<li>detail -&gt; (CustomEvent only) A value or object that you want to send to the listeners of this event</li>
-<li>bubbles -&gt; Allow the event to enter the bubblibg phase</li>
-<li>composed -&gt; Let the event cross the shadow DOM boundary</li>
-<li>cancelable -&gt; Allow this event to be default prevented</li>
-</ul>
-<article class="message is-info">
-                    <div class="message-body"><p>These parameters are set to true by default (except from detail which is None by default) for convenience since most of the time this is what you want when you dispatch events</p>
-</div>
-</article>
-<h2>Styles <a href="#Styles" aria-hidden="true"><span class="anchor" id="Styles"></span>#</a></h2>
-<p>Web components internals live in what is called <a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM">Shadow DOM</a> this means the normal document styles don't affect them as an example doing the following in the head of the document</p>
-<pre class="skip-code-lightner-grammar-not-found" ><code class="language-css">p {
-  color: red;
-}
-</code></pre>
-<p>would paint every <code>p</code> element in the document except those inside the shadow DOM.</p>
-<p>To define styles for your web components you have to provide them in the init function of the component.</p>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-element&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
-<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">MyElement</span><span style="color: #986801">()</span>
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span> </span><span style="color: #A626A4">=</span><span> LitElement.init</span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
-<span>        init.styles </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">[</span>
-<span>            css $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
-<span style="color: #50A14F">                :host {{</span>
-<span style="color: #50A14F">                    display: flex;</span>
-<span style="color: #50A14F">                    flex-direction: column;</span>
-<span style="color: #50A14F">                }}</span>
-
-<span style="color: #50A14F">                p {{</span>
-<span style="color: #50A14F">                    color: red;</span>
-<span style="color: #50A14F">                }}</span>
-<span style="color: #50A14F">                &quot;&quot;&quot;</span>
-<span>            </span><span style="color: #A626A4">yield!</span><span> Shared.styles</span>
-<span>        </span><span style="color: #A626A4">])</span>
-<span>    html</span>
-<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
-<span style="color: #50A14F">        &lt;p&gt;This text is red!&lt;/p&gt;</span>
-<span style="color: #50A14F">        &lt;my-other-element header=&quot;This element&#039;s p&#039;s won&#039;t be red&quot;&gt;&lt;/my-other-element&gt;</span>
-<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
-<p>Assuming <code>&lt;my-other-element header=&quot;This element's p's won't be red&quot;&gt;&lt;/my-other-element&gt;</code> is another web component (meaning it has it's own Shadow DOM) the <code>p</code> tags inside that element won't be affected by our own CSS styles.</p>
-<p>We have CSS Encapsulation but customization is possible via</p>
-<ul>
-<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties">Custom CSS Properties</a></li>
-<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/::part">Css Parts</a></li>
-</ul>
-<p>A brief example of this would be defining the font color for a component</p>
-<p>Having a web component defined like this</p>
-<pre style="background-color: #FFFFFF;color: #000000;padding: 1em"><code><span style="color: #0184BC">[&lt;LitElement</span><span style="color: #A626A4">(</span><span style="color: #50A14F">&quot;my-element&quot;</span><span style="color: #A626A4">)</span><span style="color: #0184BC">&gt;]</span>
-<span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">MyElement</span><span style="color: #986801">()</span>
-<span>    </span><span style="color: #A626A4">let</span><span> </span><span style="color: #E45649">_</span><span> </span><span style="color: #A626A4">=</span><span> LitElement.init</span><span style="color: #A626A4">(fun</span><span style="color: #383A42"> init </span><span style="color: #A626A4">-&gt;</span>
-<span>        init.styles </span><span style="color: #A626A4">&lt;-</span><span> </span><span style="color: #A626A4">[</span>
-<span>            css $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
-<span style="color: #50A14F">                p {{</span>
-<span style="color: #50A14F">                    color: var(--primary-color);</span>
-<span style="color: #50A14F">                }}</span>
-<span style="color: #50A14F">                button {{</span>
-<span style="color: #50A14F">                    color: pink;</span>
-<span style="color: #50A14F">                }}</span>
-<span style="color: #50A14F">                &quot;&quot;&quot;</span>
-<span>        </span><span style="color: #A626A4">])</span>
-<span>    html</span>
-<span>        $</span><span style="color: #50A14F">&quot;&quot;&quot;</span>
-<span style="color: #50A14F">        &lt;p&gt;This text is red!&lt;/p&gt;</span>
-<span style="color: #50A14F">        &lt;button part=&quot;hi-btn&quot;&gt;Say Hi&lt;/button&gt;</span>
-<span style="color: #50A14F">        &quot;&quot;&quot;</span></code></pre>
-<p>we can define a CSS stylesheet in the normal document, either a <code>link</code> tag or a <code>style</code> tag in the head of the document works.</p>
-<pre class="skip-code-lightner-grammar-not-found" ><code class="language-css">:root {
-  --primary-color: rebeccapurple;
-}
-
-.primary-red {
-  --primary-color: red;
-}
-
-.primary-blue {
-  --primary-blue: blue;
-}
-
-.primary-blue my-element::part(hi-btn) {
-  color: blue;
-  border: 2px solid pink;
-}
-</code></pre>
-<p>Here we are going to leverage the cascading aspect of the CSS the <code>--primary-color</code> variable has a rule to match from the <code>:root</code> of the document, then each time we're inside a particular class we're going to override that variable to give it a new value, our web component will consume the final value of that variable <code>var(--primary-color)</code>, in the case of the part, we defined the rule when the element is a child of <code>.primary-blue</code> we will style the <code>part</code> completely at our own taste</p>
-<pre class="skip-code-lightner-grammar-not-found" ><code class="language-html">&lt;section&gt;
-  &lt;!-- color: rebeccapurple --&gt;
-  &lt;my-element&gt;&lt;/my-element&gt;
-&lt;/section&gt;
-&lt;section class=&quot;primary-red&quot;&gt;
-  &lt;!-- color: red --&gt;
-  &lt;my-element&gt;&lt;/my-element&gt;
-&lt;/section&gt;
-&lt;section class=&quot;primary-blue&quot;&gt;
-  &lt;!-- color: blue --&gt;
-  &lt;!-- button border: pink --&gt;
-  &lt;my-element&gt;&lt;/my-element&gt;
-&lt;/section&gt;
-</code></pre>
-<p>between parts and variables you can expose only those particular areas of your components that you as an author are allowing to modify</p>
-<article class="message is-info">
-                    <div class="message-body"><p>To know more about applying styles to LitElement check the <a href="https://lit.dev/docs/components/styles/#theming">theming</a> docs in their site.</p>
-</div>
-</article>
-<h2>Use cases <a href="#Use-cases" aria-hidden="true"><span class="anchor" id="Use-cases"></span>#</a></h2>
-<p>Popular libraries made with Web components are</p>
-<ul>
-<li><a href="https://fast.design">FAST</a> - Microsoft
-<ul>
-<li><a href="https://github.com/microsoft/fluentui/tree/master/packages/web-components">Fluent UI</a> - The design langauge that powers Windows</li>
-</ul>
-</li>
-<li><a href="https://github.com/adobe/spectrum-web-components">Spectrum Web Components</a> - Adobe Spectrum design language</li>
-<li><a href="https://vaadin.com/components">Vaadin</a></li>
-<li><a href="https://ionicframework.com/docs/components">Ionic Framework</a></li>
-</ul>
-<blockquote>
-<p>Most of those are actually build with Lit as well!</p>
-</blockquote>
-<p>If these libraries already provide UI libraries why would you want to author web components?</p>
-<ul>
-<li>Testability</li>
-<li>Design Systems/Branding</li>
-<li>Portability</li>
-</ul>
-<h4>Testability <a href="#Testability" aria-hidden="true"><span class="anchor" id="Testability"></span>#</a></h4>
-<p>Components are a single unit of the UI they have behavior and state it's easier to test them in isolation.
-They are similar to functions</p>
-<ul>
-<li><code>inputs -&gt; processing -&gt; outputs</code></li>
-<li><code>attr/props -&gt; processing | User Interaction -&gt; UIChanges | Events</code></li>
-</ul>
-<p>That means that it should be easy to determine which things changed inside a component when their properties or attributes have changed, if the user changed something or if the element is trying to communicate with the parent elements</p>
-<article class="message is-info">
-                    <div class="message-body"><p>Check <a href="./testing.html">Testing</a> to know more about how can you test Lit components</p>
-</div>
-</article>
-<h4>Design Systems <a href="#Design-Systems" aria-hidden="true"><span class="anchor" id="Design-Systems"></span>#</a></h4>
-<p>If you're part of a company with multiple teams, chances are that those teams might have chosen different tools to work with if your company wants to implement a branding or a uniform way to distinguish itself from others it would be hard to create components in each library, web components are a perfect fit for that, Adobe Spectrum and Ionic Framework are excelent examples of that they define dozens of web components with a particular design language that makes the brand easily recognizable.</p>
-<h4>Portability <a href="#Portability" aria-hidden="true"><span class="anchor" id="Portability"></span>#</a></h4>
-<p>Web components are designed to work in the browser, once you include the script tag and register them you can use them in any UI library Angular, Vue, Server, etc. write once use everywhere.</p>
-</div></div></section><div class="navigation-container"><a class="button navigate-to-previous is-primary is-outlined" href="/Fable.Lit/docs/hook-components.html"><span class="icon"><i class=" fas fa-arrow-left"></i></span><span class=" is-uppercase">Hook Components</span></a><br class="is-hidden-tablet"/><a class="button navigate-to-next is-primary is-outlined" href="/Fable.Lit/docs/hmr.html"><span class=" is-uppercase">Hot Reloading</span><span class="icon"><i class=" fas fa-arrow-right"></i></span></a></div></div></div></div><script async="" src="/Fable.Lit/resources/nacara-standard-layouts/scripts/menu.js"></script></body></html>
+<html class="has-navbar-fixed-top" lang="en"><head><title>Fable.Lit · Web Components</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" charSet="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" type="text/css" href="/Fable.Lit/style.css"/><script src="https://unpkg.com/scroll-into-view-if-needed@2.2.28/umd/scroll-into-view-if-needed.min.js"></script></head><body><nav class="navbar is-fixed-top is-spaced"><div class="container"><div class="navbar-brand"><a class="navbar-item title is-4" href="https://fable.io/Fable.Lit/">Fable.Lit</a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item is-active is-hidden-mobile" href="/Fable.Lit/docs/getting-started.html">Documentation</a><div class="navbar-item navbar-burger-dots is-hidden-tablet"><svg height="4" stroke="none" viewBox="0 0 22 4" width="22"><circle cx="2" cy="2" r="2"></circle><circle cx="2" cy="2" r="2" transform="translate(9,0)"></circle><circle cx="2" cy="2" r="2" transform="translate(18,0)"></circle></svg></div></div><div class="navbar-end is-hidden-mobile"><a class="navbar-item" href="https://github.com/fable-compiler/Fable.Lit"><span class="icon"><i class=" fab fa-github fa-lg"></i></span></a><a class="navbar-item" href="https://twitter.com/FableCompiler"><span class="icon"><i class=" fab fa-twitter fa-lg"></i></span></a></div></div><div class="nacara-navbar-menu"><a class="nacara-navbar-menu-item" href="/Fable.Lit/docs/getting-started.html">Documentation</a><a class="nacara-navbar-menu-item" href="https://github.com/fable-compiler/Fable.Lit">Github</a><a class="nacara-navbar-menu-item" href="https://twitter.com/FableCompiler">Twitter</a></div></div></nav><div class="grey-overlay"></div><div class="container"><div class="mobile-menu"><nav class="breadcrumb"><ul><li><a class="menu-trigger"><span></span><span></span><span></span></a></li><li class="is-active"><a>Documentation</a></li><li class="is-active"><a>Web Components</a></li></ul></nav></div><div class="columns is-gapless is-mobile"><div class="column is-menu-column is-3-desktop is-hidden-touch"><div class="menu-container"><aside class="menu"><ul class="menu-list"><li><li><a class=" " href="/Fable.Lit/docs/getting-started.html">Getting started</a></li></li></ul><ul class="menu-list"><li><li><a class=" " href="/Fable.Lit/docs/templates.html">Templates</a></li></li></ul><ul class="menu-list"><li><li><a class=" " href="/Fable.Lit/docs/hook-components.html">Hook Components</a></li></li></ul><ul class="menu-list"><li><li><a class=" is-active" href="/Fable.Lit/docs/web-components.html">Web Components</a></li></li></ul><ul class="menu-list"><li><li><a class=" " href="/Fable.Lit/docs/hmr.html">Hot Reloading</a></li></li></ul><ul class="menu-list"><li><li><a class=" " href="/Fable.Lit/docs/testing.html">Testing</a></li></li></ul></aside></div></div><div class="column is-8-desktop is-full-touch"><section class="section"><div class="content"><header class="page-header"><div class="columns is-vcentered"><div class="column"><nav class="breadcrumb is-category-navigation is-hidden-touch"><ul><li class="is-active"><a>Documentation</a></li><li class="is-active"><a>Web Components</a></li></ul></nav></div><div class="column is-narrow"><a class="button is-hidden-touch is-ghost" target="_blank" href="https://github.com/fable-compiler/Fable.Lit/edit/main/docsrc/docs\web-components.md">Edit</a></div></div><h1 class="title is-1">Web Components</h1></header><div><style class=grvsc-styles>.grvsc-container{overflow:auto;position:relative;-webkit-overflow-scrolling:touch;padding-top:1rem;padding-top:var(--grvsc-padding-top,var(--grvsc-padding-v,1rem));padding-bottom:1rem;padding-bottom:var(--grvsc-padding-bottom,var(--grvsc-padding-v,1rem));border-radius:8px;border-radius:var(--grvsc-border-radius,8px);font-feature-settings:normal;line-height:1.4}.grvsc-code{display:table}.grvsc-line{display:table-row;box-sizing:border-box;width:100%;position:relative}.grvsc-line>*{position:relative}.grvsc-gutter-pad{display:table-cell;padding-left:.75rem;padding-left:calc(var(--grvsc-padding-left,var(--grvsc-padding-h,1.5rem))/ 2)}.grvsc-gutter{display:table-cell;-webkit-user-select:none;-moz-user-select:none;user-select:none}.grvsc-gutter::before{content:attr(data-content)}.grvsc-source{display:table-cell;padding-left:1.5rem;padding-left:var(--grvsc-padding-left,var(--grvsc-padding-h,1.5rem));padding-right:1.5rem;padding-right:var(--grvsc-padding-right,var(--grvsc-padding-h,1.5rem))}.grvsc-source:empty::after{content:' ';-webkit-user-select:none;-moz-user-select:none;user-select:none}.grvsc-gutter+.grvsc-source{padding-left:.75rem;padding-left:calc(var(--grvsc-padding-left,var(--grvsc-padding-h,1.5rem))/ 2)}.grvsc-has-line-highlighting>.grvsc-code>.grvsc-line::before{content:' ';position:absolute;width:100%}.grvsc-line-diff-add::before{background-color:var(--grvsc-line-diff-add-background-color,rgba(0,255,60,.2))}.grvsc-line-diff-del::before{background-color:var(--grvsc-line-diff-del-background-color,rgba(255,0,20,.2))}.grvsc-line-number{padding:0 2px;text-align:right;opacity:.7}.atom-one-light{background-color:#fafafa;color:#383a42}.atom-one-light .mtki{font-style:italic}.atom-one-light .mtk8{color:#0184bc}.atom-one-light .mtk14{color:#a626a4}.atom-one-light .mtk10{color:#50a14f}.atom-one-light .mtk1{color:#383a42}.atom-one-light .mtk5{color:#e45649}.atom-one-light .mtk6{color:#986801}.atom-one-light .mtk7{color:#a0a1a7}.atom-one-light .mtk9{color:#4078f2}.atom-one-light .grvsc-line-highlighted::before{background-color:var(--grvsc-line-highlighted-background-color,rgba(0,0,0,.05));box-shadow:inset var(--grvsc-line-highlighted-border-width,4px) 0 0 0 var(--grvsc-line-highlighted-border-color,rgba(0,0,0,.2))}</style><p><a href=https://developer.mozilla.org/en-US/docs/Web/Web_Components>Web Components</a> are a way to create custom reusable HTML Elements and are part of the browser standards. These elements work as any other HTML tag like a <code>div</code>, <code>span</code>, or <code>article</code> meaning that you can produce web components that are able to be used by any framework without having to write any kind of wrapper on top of it.<blockquote><p>These web components use <a href=https://lit.dev>Lit</a> under the hood, visit <a href=https://lit.dev>lit.dev</a> for more detailed information on how <code>LitElement</code> Web Components work.</blockquote><p>Let's see a quick simple example of a web component<pre class="atom-one-light grvsc-container"data-index=0 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk8>[&#60LitElement</span><span class=mtk14>(</span><span class=mtk10>"my-counter"</span><span class=mtk14>)</span><span class=mtk8>>]</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>Counter</span><span class=mtk6>()</span><span class=mtk1> </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class="mtk7 mtki">// This call is obligatory to initialize the web component</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>_</span><span class=mtk14>,</span><span class=mtk1> props </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        LitElement.init</span><span class=mtk14>(</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>            </span><span class=mtk14>fun</span><span class=mtk1> init </span><span class=mtk14>-></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>                </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>props</span><span class=mtk1> </span><span class=mtk14>=</span><span class=mtk1> </span><span class=mtk14>{|</span><span class=mtk1> initial </span><span class=mtk14>=</span><span class=mtk1> Prop.</span><span class=mtk14>of(</span><span class=mtk6>0</span><span class=mtk14>,</span><span class=mtk1> attribute </span><span class=mtk14>=</span><span class=mtk1> </span><span class=mtk10>"initial"</span><span class=mtk14>)</span><span class=mtk1> </span><span class=mtk14>|}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>                init.props </span><span class=mtk14>&#60-</span><span class=mtk1> props</span><span class=mtk14>)</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>counter</span><span class=mtk14>,</span><span class=mtk1> setCounter </span><span class=mtk14>=</span><span class=mtk1> Hook.useState props.initial.Value</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    html</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        $</span><span class=mtk10>"""</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60article></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60p>{counter}&#60/p></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60button @click={fun _ -> setCounter(counter + 1)}>+&#60/button></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60button @click={fun _ -> setCounter(counter - 1)}>-&#60/button></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60/article></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        """</span></span></span></code></pre><article class="message is-info"><div class=message-body><div><p>Check [hooks] for a more detailed explanation of how to use them.</div></div></article><p>And then in HTML you can use it as<pre class="atom-one-light grvsc-container"data-index=1 data-language=html><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk1>&lt;</span><span class=mtk5>my-counter</span><span class=mtk1>>&#60/</span><span class=mtk5>my-counter</span><span class=mtk1>></span></span></span></code></pre><pre class="atom-one-light grvsc-container"data-index=2 data-language=html><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk1>&lt;</span><span class=mtk5>my-counter</span><span class=mtk1> </span><span class=mtk6>initial</span><span class=mtk1>=</span><span class=mtk10>"10"</span><span class=mtk1>>&#60/</span><span class=mtk5>my-counter</span><span class=mtk1>></span></span></span></code></pre><p>This will produce two different instances of <code>my-counter</code> the first one will start at 0 the second one will start at 10<blockquote><p>When we say you can use it in HTML we mean it, wherever you are used to put an HTML tag you are able to use it, vue, angular, server side pages... You name it.</blockquote><p>To be able to define web components with Lit (and Fable.Lit) you need to pay attention to the following things since we have abstracted some of the <a href=https://lit.dev/docs/components/properties/>Lit mechanisms to declare reactive properties</a> to have a nicer API from F#'s perspective<table><thead><tr><th>Name<th>Js Counterpart<tbody><tr><td><pre class="atom-one-light grvsc-container"data-index=3 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk8>[&#60LitElement</span><span class=mtk14>(</span><span class=mtk10>"element-name"</span><span class=mtk14>)</span><span class=mtk8>>]</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>ConstructorFunction</span><span class=mtk6>()</span><span class=mtk1> </span><span class=mtk14>=</span></span></span></code></pre><td><pre class="atom-one-light grvsc-container"data-index=4 data-language=js><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk1>customElements.</span><span class=mtk9>define</span><span class=mtk1>(</span><span class=mtk10>"element-name"</span><span class=mtk1>, ConstructorFunction);</span></span></span></code></pre><tr><td><pre class="atom-one-light grvsc-container"data-index=5 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>host</span><span class=mtk14>,</span><span class=mtk1> properties </span><span class=mtk14>=</span><span class=mtk1> LitElement.init</span><span class=mtk14>(</span><span class=mtk1>initFn</span><span class=mtk14>)</span></span></span></code></pre><td><pre class="atom-one-light grvsc-container"data-index=6 data-language=js><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk1>Component.</span><span class=mtk9>properties</span><span class=mtk1> </span><span class=mtk8>=</span><span class=mtk1> </span><span class=mtk14>function</span><span class=mtk1> () {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class=mtk14>return</span><span class=mtk1> properties;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>};</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>Component.</span><span class=mtk9>styles</span><span class=mtk1> </span><span class=mtk8>=</span><span class=mtk1> </span><span class=mtk14>function</span><span class=mtk1> () {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class=mtk14>return</span><span class=mtk1> styles;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>};</span></span></span></code></pre><tr><td><pre class="atom-one-light grvsc-container"data-index=7 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk14>{|</span><span class=mtk1> property </span><span class=mtk14>=</span><span class=mtk1> Prop.Of</span><span class=mtk14>(</span><span class=mtk10>"defaultValue"</span><span class=mtk14>)</span><span class=mtk1> </span><span class=mtk14>|}</span></span></span></code></pre><td><pre class="atom-one-light grvsc-container"data-index=8 data-language=js><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk9>constructor</span><span class=mtk1>() {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk5>this</span><span class=mtk1>.</span><span class=mtk5>property</span><span class=mtk1> </span><span class=mtk8>=</span><span class=mtk1> </span><span class=mtk10>"defaultValue"</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>}</span></span></span></code></pre></table><h2 id=properties>Properties<a href=#properties aria-hidden=true tabindex=-1><span class=[anchor]></span>#</a></h2><p>When you call <code>let host, properties = LitElement.init initFunction</code> you are initializing a web component instance since web components are not "constructible" (i.e. you can't do <code>new MyElement()</code>, you have to do <code>document.createElement('my-element')</code>) there's not a direct way to pass external information for that you have two ways to do it<ul><li><p>properties<pre class="atom-one-light grvsc-container"data-index=9 data-language=js><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk14>const</span><span class=mtk1> </span><span class=mtk6>el</span><span class=mtk1> </span><span class=mtk8>=</span><span class=mtk1> document.</span><span class=mtk9>querySelector</span><span class=mtk1>(</span><span class=mtk10>"my-element"</span><span class=mtk1>);</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>el.</span><span class=mtk5>property</span><span class=mtk1> </span><span class=mtk8>=</span><span class=mtk1> </span><span class=mtk10>"new value"</span><span class=mtk1>;</span></span></span></code></pre><br><li><p>attributes<pre class="atom-one-light grvsc-container"data-index=10 data-language=html><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk1>&lt;</span><span class=mtk5>my-element</span><span class=mtk1> </span><span class=mtk6>my-attribute</span><span class=mtk1>=</span><span class=mtk10>"attribute-value"</span><span class=mtk1>>&#60/</span><span class=mtk5>my-element</span><span class=mtk1>></span></span></span></code></pre><br></ul><p>Properties are existing members of an instance while attributes are strings defined in HTML in Fable.Lit you can use the <code>Prop.Of</code> API to get your properties in place<pre class="atom-one-light grvsc-container"data-index=11 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>initFn</span><span class=mtk1> init </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    init.props </span><span class=mtk14>&#60-</span><span class=mtk1> </span><span class=mtk14>{|</span><span class=mtk1> name </span><span class=mtk14>=</span><span class=mtk1> Prop.Of</span><span class=mtk14>(</span><span class=mtk10>""</span><span class=mtk14>,</span><span class=mtk1> attribute </span><span class=mtk14>=</span><span class=mtk1> </span><span class=mtk10>"name"</span><span class=mtk14>);</span><span class=mtk1> age </span><span class=mtk14>=</span><span class=mtk1> Prop.Of</span><span class=mtk14>(</span><span class=mtk6>10</span><span class=mtk14>,</span><span class=mtk1> attribute </span><span class=mtk14>=</span><span class=mtk1> </span><span class=mtk10>"age"</span><span class=mtk14>)</span><span class=mtk1>  </span><span class=mtk14>|}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk8>[&#60LitElement</span><span class=mtk14>(</span><span class=mtk10>"my-component"</span><span class=mtk14>)</span><span class=mtk8>>]</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>MyComponent</span><span class=mtk6>()</span><span class=mtk1> </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>_</span><span class=mtk14>,</span><span class=mtk1> props </span><span class=mtk14>=</span><span class=mtk1> LitElement.init initFn</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class="mtk7 mtki">(* ...  the rest of the function ... *)</span></span></span></code></pre><pre class="atom-one-light grvsc-container"data-index=12 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk1>Prop.Of</span><span class=mtk14>(</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk10>"defaultValue"</span><span class=mtk14>,</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    attribute </span><span class=mtk14>=</span><span class=mtk1> </span><span class=mtk10>"name-of-the-attribute"</span><span class=mtk14>,</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    hasChanged </span><span class=mtk14>=</span><span class=mtk1> boolPredicateFn</span><span class=mtk14>,</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    fromAttribute </span><span class=mtk14>=</span><span class=mtk1> stringToTypeFunctionFn</span><span class=mtk14>,</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    toAttribute </span><span class=mtk14>=</span><span class=mtk1> typeToStringFunctionFn</span><span class=mtk14>,</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    reflect </span><span class=mtk14>=</span><span class=mtk1> </span><span class=mtk6>false</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk14>)</span></span></span></code></pre><article class="message is-info"><div class=message-body><div><p>When you use this API each of the properties declared wil be accessible via the element's instance, except from the first parameter all of the other are optional</div></div></article><article class="message is-warning"><div class=message-body><div><p>Use attribute for primitive values only, otherwise Json objects and Arrays will be serialized using <code>JSON.(parse|stringify)</code>, for complex objects use properties only to prevent attribute strings converting your object in a string</div></div></article><h2 id=events>Events<a href=#events aria-hidden=true tabindex=-1><span class=[anchor]></span>#</a></h2><p>With properties we can obtain information from the outside world, but to let the outside world something happened we use events. Events while not strictly required, they should be triggered by a user interaction a click, a selection a scroll rather than emitted when a property changes.<pre class="atom-one-light grvsc-container"data-index=13 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk8>[&#60LitElement</span><span class=mtk14>(</span><span class=mtk10>"product-settings"</span><span class=mtk14>)</span><span class=mtk8>>]</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>CloseMe</span><span class=mtk6>()</span><span class=mtk1> </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>host</span><span class=mtk14>,</span><span class=mtk1> props </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        LitElement.init</span><span class=mtk14>(fun</span><span class=mtk1> init </span><span class=mtk14>-></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>            init.props </span><span class=mtk14>&#60-</span><span class=mtk1> </span><span class=mtk14>{|</span><span class=mtk1> product </span><span class=mtk14>=</span><span class=mtk1> Prop.Of</span><span class=mtk14>({</span><span class=mtk1> </span><span class="mtk7 mtki">(* ... product definition ...*)</span><span class=mtk1> </span><span class=mtk14>})</span><span class=mtk1> </span><span class=mtk14>|})</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>product</span><span class=mtk1> </span><span class=mtk14>=</span><span class=mtk1> props.product.Value</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>onDeleteFromInventory</span><span class=mtk1> _ </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        host.dispatchEvent</span><span class=mtk14>(</span><span class=mtk10>"on-delete-from-inventory"</span><span class=mtk14>)</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>onHideFromCustomers</span><span class=mtk1> _ </span><span class=mtk14>=</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        host.dispatchCustomEvent</span><span class=mtk14>(</span><span class=mtk10>"on-hide-from-customers"</span><span class=mtk14>,</span><span class=mtk1> </span><span class=mtk14>{</span><span class=mtk1> product </span><span class=mtk14>with</span><span class=mtk1> hidden </span><span class=mtk14>=</span><span class=mtk1> </span><span class=mtk6>true</span><span class=mtk1> </span><span class=mtk14>})</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    html</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        $</span><span class=mtk10>"""</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60article></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60header></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                &#60h3>{product.name}&#60/h3></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60/header></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60aside></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                &#60button @click={onHideFromCustomers}>Delete&#60/button></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                &#60button @click={onDeleteFromInventory}>Hide&#60/button></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60/aside></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60section></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                &#60!-- the rest of the component --></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>            &#60/section></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60/article></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        """</span></span></span></code></pre><p><code>host.dispatchEvent</code> and <code>host.dispatchCustomEvent</code> have the following optional arguments<ul><li>detail -> (CustomEvent only) A value or object that you want to send to the listeners of this event<li>bubbles -> Allow the event to enter the bubblibg phase<li>composed -> Let the event cross the shadow DOM boundary<li>cancelable -> Allow this event to be default prevented</ul><article class="message is-info"><div class=message-body><div><p>These parameters are set to true by default (except from detail which is None by default) for convenience since most of the time this is what you want when you dispatch events</div></div></article><h2 id=styles>Styles<a href=#styles aria-hidden=true tabindex=-1><span class=[anchor]></span>#</a></h2><p>Web components internals live in what is called <a href=https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM>Shadow DOM</a> this means the normal document styles don't affect them as an example doing the following in the head of the document<pre class="atom-one-light grvsc-container"data-index=14 data-language=css><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk5>p</span><span class=mtk1> {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  color: </span><span class=mtk6>red</span><span class=mtk1>;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>}</span></span></span></code></pre><p>would paint every <code>p</code> element in the document except those inside the shadow DOM.<p>To define styles for your web components you have to provide them in the init function of the component.<pre class="atom-one-light grvsc-container"data-index=15 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk8>[&#60LitElement</span><span class=mtk14>(</span><span class=mtk10>"my-element"</span><span class=mtk14>)</span><span class=mtk8>>]</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>MyElement</span><span class=mtk6>()</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>_</span><span class=mtk1> </span><span class=mtk14>=</span><span class=mtk1> LitElement.init</span><span class=mtk14>(fun</span><span class=mtk1> init </span><span class=mtk14>-></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        init.styles </span><span class=mtk14>&#60-</span><span class=mtk1> </span><span class=mtk14>[</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>            css $</span><span class=mtk10>"""</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                :host {{</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                    display: flex;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                    flex-direction: column;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                }}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                p {{</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                    color: red;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                }}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                """</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>            </span><span class=mtk14>yield!</span><span class=mtk1> Shared.styles</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        </span><span class=mtk14>])</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    html</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        $</span><span class=mtk10>"""</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60p>This text is red!&#60/p></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60my-other-element header="This element's p's won't be red">&#60/my-other-element></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        """</span></span></span></code></pre><p>Assuming <code>&#60my-other-element header="This element's p's won't be red">&#60/my-other-element></code> is another web component (meaning it has it's own Shadow DOM) the <code>p</code> tags inside that element won't be affected by our own CSS styles.<p>We have CSS Encapsulation but customization is possible via<ul><li><a href=https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties>Custom CSS Properties</a><li><a href=https://developer.mozilla.org/en-US/docs/Web/CSS/::part>Css Parts</a></ul><p>A brief example of this would be defining the font color for a component<p>Having a web component defined like this<pre class="atom-one-light grvsc-container"data-index=16 data-language=fsharp><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk8>[&#60LitElement</span><span class=mtk14>(</span><span class=mtk10>"my-element"</span><span class=mtk14>)</span><span class=mtk8>>]</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>MyElement</span><span class=mtk6>()</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    </span><span class=mtk14>let</span><span class=mtk1> </span><span class=mtk5>_</span><span class=mtk1> </span><span class=mtk14>=</span><span class=mtk1> LitElement.init</span><span class=mtk14>(fun</span><span class=mtk1> init </span><span class=mtk14>-></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        init.styles </span><span class=mtk14>&#60-</span><span class=mtk1> </span><span class=mtk14>[</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>            css $</span><span class=mtk10>"""</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                p {{</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                    color: var(--primary-color);</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                }}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                button {{</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                    color: pink;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                }}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>                """</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        </span><span class=mtk14>])</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>    html</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>        $</span><span class=mtk10>"""</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60p>This text is red!&#60/p></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60button part="hi-btn">Say Hi&#60/button></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        """</span></span></span></code></pre><p>we can define a CSS stylesheet in the normal document, either a <code>link</code> tag or a <code>style</code> tag in the head of the document works.<pre class="atom-one-light grvsc-container"data-index=17 data-language=css><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk6>:root</span><span class=mtk1> {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class=mtk5>--primary-color</span><span class=mtk1>: </span><span class=mtk6>rebeccapurple</span><span class=mtk1>;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk6>.primary-red</span><span class=mtk1> {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class=mtk5>--primary-color</span><span class=mtk1>: </span><span class=mtk6>red</span><span class=mtk1>;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk6>.primary-blue</span><span class=mtk1> {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class=mtk5>--primary-blue</span><span class=mtk1>: </span><span class=mtk6>blue</span><span class=mtk1>;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk6>.primary-blue</span><span class=mtk14> </span><span class=mtk5>my-element</span><span class=mtk14>::part(</span><span class=mtk5>hi-btn</span><span class=mtk1>) {</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  color: </span><span class=mtk6>blue</span><span class=mtk1>;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  border: </span><span class=mtk6>2px</span><span class=mtk1> solid </span><span class=mtk6>pink</span><span class=mtk1>;</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>}</span></span></span></code></pre><p>Here we are going to leverage the cascading aspect of the CSS the <code>--primary-color</code> variable has a rule to match from the <code>:root</code> of the document, then each time we're inside a particular class we're going to override that variable to give it a new value, our web component will consume the final value of that variable <code>var(--primary-color)</code>, in the case of the part, we defined the rule when the element is a child of <code>.primary-blue</code> we will style the <code>part</code> completely at our own taste<pre class="atom-one-light grvsc-container"data-index=18 data-language=html><code class=grvsc-code><span class=grvsc-line><span class=grvsc-source><span class=mtk1>&lt;</span><span class=mtk5>section</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class="mtk7 mtki">&#60!-- color: rebeccapurple --></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  &lt;</span><span class=mtk5>my-element</span><span class=mtk1>>&#60/</span><span class=mtk5>my-element</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>&#60/</span><span class=mtk5>section</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>&lt;</span><span class=mtk5>section</span><span class=mtk1> </span><span class=mtk6>class</span><span class=mtk1>=</span><span class=mtk10>"primary-red"</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class="mtk7 mtki">&#60!-- color: red --></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  &lt;</span><span class=mtk5>my-element</span><span class=mtk1>>&#60/</span><span class=mtk5>my-element</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>&#60/</span><span class=mtk5>section</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>&lt;</span><span class=mtk5>section</span><span class=mtk1> </span><span class=mtk6>class</span><span class=mtk1>=</span><span class=mtk10>"primary-blue"</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class="mtk7 mtki">&#60!-- color: blue --></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  </span><span class="mtk7 mtki">&#60!-- button border: pink --></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>  &lt;</span><span class=mtk5>my-element</span><span class=mtk1>>&#60/</span><span class=mtk5>my-element</span><span class=mtk1>></span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk1>&#60/</span><span class=mtk5>section</span><span class=mtk1>></span></span></span></code></pre><p>between parts and variables you can expose only those particular areas of your components that you as an author are allowing to modify<article class="message is-info"><div class=message-body><div><p>To know more about applying styles to LitElement check the <a href=https://lit.dev/docs/components/styles/#theming>theming</a> docs in their site.</div></div></article><h2 id=use-cases>Use cases<a href=#use-cases aria-hidden=true tabindex=-1><span class=[anchor]></span>#</a></h2><p>Popular libraries made with Web components are<ul><li><a href=https://fast.design>FAST</a> - Microsoft<ul><li><a href=https://github.com/microsoft/fluentui/tree/master/packages/web-components>Fluent UI</a> - The design langauge that powers Windows</ul><li><a href=https://github.com/adobe/spectrum-web-components>Spectrum Web Components</a> - Adobe Spectrum design language<li><a href=https://vaadin.com/components>Vaadin</a><li><a href=https://ionicframework.com/docs/components>Ionic Framework</a></ul><blockquote><p>Most of those are actually build with Lit as well!</blockquote><p>If these libraries already provide UI libraries why would you want to author web components?<ul><li>Testability<li>Design Systems/Branding<li>Portability</ul><h4 id=testability>Testability<a href=#testability aria-hidden=true tabindex=-1><span class=[anchor]></span>#</a></h4><p>Components are a single unit of the UI they have behavior and state it's easier to test them in isolation. They are similar to functions<ul><li><code>inputs -> processing -> outputs</code><li><code>attr/props -> processing | User Interaction -> UIChanges | Events</code></ul><p>That means that it should be easy to determine which things changed inside a component when their properties or attributes have changed, if the user changed something or if the element is trying to communicate with the parent elements<article class="message is-info"><div class=message-body><div><p>Check [Testing] to know more about how can you test Lit components</div></div></article><h4 id=design-systems>Design Systems<a href=#design-systems aria-hidden=true tabindex=-1><span class=[anchor]></span>#</a></h4><p>If you're part of a company with multiple teams, chances are that those teams might have chosen different tools to work with if your company wants to implement a branding or a uniform way to distinguish itself from others it would be hard to create components in each library, web components are a perfect fit for that, Adobe Spectrum and Ionic Framework are excelent examples of that they define dozens of web components with a particular design language that makes the brand easily recognizable.<h4 id=portability>Portability<a href=#portability aria-hidden=true tabindex=-1><span class=[anchor]></span>#</a></h4><p>Web components are designed to work in the browser, once you include the script tag and register them you can use them in any UI library Angular, Vue, Server, etc. write once use everywhere.</div></div></section><div class="section bd-docs-pagination bd-pagination-links"><a class="button bd-fat-button is-primary is-light bd-pagination-prev" href="/Fable.Lit/docs/hook-components.html"><i>←</i><span class="is-hidden-mobile"><em></em><strong>Hook Components</strong></span></a><a class="button bd-fat-button is-primary is-light bd-pagination-next" href="/Fable.Lit/docs/hmr.html"><span class="is-hidden-mobile"><em></em><strong>Hot Reloading</strong></span><i>→</i></a></div></div></div></div><script async="" src="/Fable.Lit/resources/nacara-standard-layouts/scripts/menu.js"></script></body></html>
