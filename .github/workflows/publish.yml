@@ -1,0 +1,27 @@
+name: Publish
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14.17.*
+      - name: Install and use custom node version
+        run: npm i -g npm@7
+      - name: Restore dependencies
+        run: npm install
+      - name: Build site
+        run: npm run docs
+      - name: Deploy site
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/docs
