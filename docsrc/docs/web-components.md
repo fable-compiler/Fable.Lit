@@ -153,6 +153,7 @@ Properties are existing members of an instance while attributes are strings defi
 ```fsharp
 let initFn init =
     init.props <- {| name = Prop.Of("", attribute = "name"); age = Prop.Of(10, attribute = "age")  |}
+
 [<LitElement("my-component")>]
 let MyComponent() =
     let _, props = LitElement.init initFn

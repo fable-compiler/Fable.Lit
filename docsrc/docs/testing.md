@@ -49,6 +49,8 @@ describe "Todo" <| fun () ->
     }
 ```
 
+<br />
+
 You can also render Lit components/functions or directly an HTML template, which is useful when testing custom elements.
 
 ```fsharp
@@ -118,11 +120,15 @@ it "snapshots" <| fun () -> promise {
 }
 ```
 
+<br />
+
 If you have changed the UI intentionally you can update the snapshots with the self-telling `--update-snapshots` argument.
 
 ```
 npm test -- --update-snapshots
 ```
+
+<br />
 
 The main caveat is at the time of writing Web Test Runner doesn't support configuring the directory for snapshots and they will be placed next to the test files. This can be problematic if you're outputting the compiled JS files to a gitignored folder. In this case, you need to add an exception to make sure git checks the snapshots:
 

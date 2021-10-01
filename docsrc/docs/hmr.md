@@ -53,13 +53,9 @@ dotnet fable src -o build/client --run vite build
 
 Lit.Elmish.HMR works with non-bundling development servers like Vite or Snowpack, but with a important caveat. These dev servers do "true" Hot-Module-Replacement in the sense they only replace the updated module (remember in JS "modules" is roughly the same as "file"). However, in Elmish apps the function that triggers rendering `Program.run` is usually located in the last file. When updating any other file, the render function won't be triggered and you won't see anything changing on screen.
 
-Solving this for Vite and Snowpack requires injecting special code in each module containing a component. This is usually done by plugins like [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react). Indeed you can already get a hyper-fast hot reloading experience out-of-the-box with Vite/Snowpack thanks to [Feliz ReactComponent](https://zaid-ajaj.github.io/Feliz/#/Feliz/React/StatelessComponents). At the time of writing, there is no such a plugin for Lit, instead Fable.Lit provides code helpers for [HookComponents](./hook-components.html) so you can control HMR at the component level.
+Solving this for Vite and Snowpack requires injecting special code in each module containing a component. This is usually done by plugins like [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react). Indeed you can already get a hyper-fast hot reloading experience out-of-the-box with Vite/Snowpack thanks to [Feliz ReactComponent](https://zaid-ajaj.github.io/Feliz/#/Feliz/React/StatelessComponents). At the time of writing, there is no such a plugin for Lit, instead Fable.Lit provides code helpers so you can control HMR at the component level.
 
-:::info
-At the time of writing HMR is **only available for HookComponents** not for web components declared with `LitElement`.
-:::
-
-First thing you need to do is to instantiate a private _HMR token_ at the top of the file containing your HookComponents:
+First thing you need to do is to instantiate a private _HMR token_ at the top of the file containing your components:
 
 ```fsharp
 open Lit
@@ -67,7 +63,7 @@ open Lit
 let hmr = HMR.createToken()
 ```
 
-One important thing to remember though, is that HMR in non-bundling dev servers doesn't just update the whole module (this wouldn't have any effect because other modules would still reference the old exports). In the case of Fable.Lit it will just update the render function of the HookComponents, so in order to avoid breaking dependent modules it's a good idea to put internal helpers (together with the HMR token) within a private inner module, and only expose the HookComponents.
+One important thing to remember though, is that HMR in non-bundling dev servers doesn't just update the whole module (this wouldn't have any effect because other modules would still reference the old exports). In the case of Fable.Lit it will just update the render function of the component, so in order to avoid breaking dependent modules it's a good idea to put internal helpers (together with the HMR token) within a private inner module, and only expose the function components.
 
 ```fsharp
 module private Util =
@@ -81,10 +77,10 @@ let MyComponent() = ..
 ```
 
 :::info
-This limitation is the same as with React Fast Refresh. The main difference is with Fable.Lit you can have multiple HookComponents in the same file.
+This limitation is the same as with React Fast Refresh. The main difference is with Fable.Lit you can have multiple components in the same file.
 :::
 
-Now the only thing left is to pass the HMR token to the HookComponents, this has to be done for each component you want to enable HMR for, and can be done with the `useHmr` hook.
+Now the only thing left is to pass the HMR token, this has to be done for each component you want to enable HMR for, and can be done with the `useHmr` hook.
 
 ```fsharp
 [<HookComponent>]
@@ -92,6 +88,8 @@ let MyComponent() =
     Hook.useHmr(hmr)
     ..
 ```
+
+<br />
 
 This is a bit of a set up but it will enable a blazing fast feedback loop that is extremely valuable when you're making small UI adjustments. Also, when compiling in Release mode the HMR helpers will automatically be removed, so you don't need to worry about disabling them manually.
 

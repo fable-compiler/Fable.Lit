@@ -12,6 +12,8 @@ dotnet tool update fable
 npm install lit
 ```
 
+<br />
+
 Then, in the directory of your .fsproj, install the packages you need. Note the package ids are prefixed by `Fable.` but not the actual namespaces.
 
 ```

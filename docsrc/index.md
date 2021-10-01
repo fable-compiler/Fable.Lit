@@ -20,9 +20,9 @@ layout: nacara-navbar-only
         <p class="content is-size-5 has-text-centered">
             Fable.Lit lets you take full advantage of modern web development, including blazing-fast hot reloading, best-practice component testing and a <a href="https://marketplace.visualstudio.com/items?itemName=alfonsogarciacaro.vscode-template-fsharp-highlight">VS Code extension</a>.
         </p>
-        <p class="has-text-centered">
-            <img src="screencast.gif" style="max-width: 600px; border-radius: 10px">
-        </p>
+        <figure class="image">
+            <img src="screencast.gif" style="margin: 0 auto; max-width: 600px; border-radius: 10px">
+        </figure>
         <br />
         <p class="has-text-centered">
             <a href="docs/getting-started.html">
