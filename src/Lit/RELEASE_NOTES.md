@@ -1,12 +1,7 @@
-### 1.1.0-beta-003
-
-* Drop constructable Style Sheets for now
-
-### 1.1.0-beta-001
+### 1.1.0
 
 * useShadowDOM setting for LitElements
 * HMR support for LitElement
-* Constructable Style Sheets
 
 ### 1.0.0
 
