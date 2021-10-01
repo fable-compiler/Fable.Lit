@@ -7,19 +7,18 @@ layout: nacara-standard
 
 Fable.Lit packages require **fable 3.3** dotnet tool and **Lit 2** from npm.
 
-```
-dotnet tool update fable
-npm install lit
-```
+## Installation
 
-<br />
+In the directory of your .fsproj, install the packages you need. Note the package ids are prefixed by `Fable.` but not the actual namespaces.
 
-Then, in the directory of your .fsproj, install the packages you need. Note the package ids are prefixed by `Fable.` but not the actual namespaces.
+:::info
+We recommend using [Femto](https://github.com/Zaid-Ajaj/Femto) so Nuget and NPM dependencies are installed automatically.
+:::
 
 ```
-dotnet add package Fable.Lit
-dotnet add package Fable.Lit.Elmish
-dotnet add package Fable.Lit.Test
+dotnet femto install Fable.Lit
+dotnet femto install Fable.Lit.Elmish
+dotnet femto install Fable.Lit.Test
 ```
 
 ## Scaffolding
