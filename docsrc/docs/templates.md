@@ -58,8 +58,8 @@ Lit uses standard HTML for the templates, with only three special characters `@`
             <td>Event listeners</td>
             <td>
 
-```fsharp
-html $"""<button @click={Ev(fun ev -> doSomething())}>Click me!</button>"""
+```html
+<button @click={Ev(fun ev -> doSomething())}>Click me!</button>
 ```
 
 </td>
@@ -68,8 +68,8 @@ html $"""<button @click={Ev(fun ev -> doSomething())}>Click me!</button>"""
             <td>Boolean attributes</td>
             <td>
 
-```fsharp
-html $"""<button ?disabled={not enabled}>Click me!</button>"""
+```html
+<button ?disabled={not enabled}>Click me!</button>
 ```
 
 </td>
@@ -78,8 +78,8 @@ html $"""<button ?disabled={not enabled}>Click me!</button>"""
             <td>Properties</td>
             <td>
 
-```fsharp
-html $"""<my-component .someData={nonStringData}></my-component>"""
+```html
+<my-component .someData={nonStringData}></my-component>
 ```
 
 </td>
@@ -231,12 +231,12 @@ let style = transition.css + inline_css """.{
 Don't use `css` function as this one is reserved for LitElements.
 :::
 
-If you want to use an F# interpolated string, you'll need to escape CSS braces by "doubling" them:
+If you want to use an F# interpolated string, you'll need to escape `{`, `}` and `%` characters by "doubling" them:
 
 ```fsharp
 inline_css $""".{{
     opacity: 0;
-    transform: scale({scale}) rotate({rotation}turn)
+    transform: scale({scale}%%) rotate({rotation}turn)
 }}"""
 ```
 
