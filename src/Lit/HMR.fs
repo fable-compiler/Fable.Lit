@@ -55,13 +55,17 @@ type IWebpackHot =
 type IHMRToken =
     interface end
 
+type HMRInfo =
+    abstract NewModule: obj
+    abstract Data: obj
+
 /// Internal use, not meant to be used directly.
 type HMRToken() =
-    let listeners = Dictionary<Guid, (obj -> unit)>()
+    let listeners = Dictionary<Guid, _>()
 
     interface IHMRToken
 
-    member _.Subscribe(handler: obj -> unit) =
+    member _.Subscribe(handler: HMRInfo -> unit) =
         let guid = Guid.NewGuid()
         listeners.Add(guid, handler)
         { new IDisposable with
@@ -70,8 +74,13 @@ type HMRToken() =
                 |> ignore }
 
     member _.RequestUpdate(newModule: obj) =
-        listeners.Values |> Seq.iter (fun handler ->
-            handler newModule)
+        let data = obj()
+        let info =
+            { new HMRInfo with
+                member _.NewModule = newModule
+                member _.Data = data
+            }
+        listeners.Values |> Seq.iter (fun handler -> handler info)
 
     static member Get(moduleUrl: string): HMRToken =
         // Dev server may add query params to the url

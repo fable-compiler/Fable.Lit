@@ -394,7 +394,8 @@ type HookDirective() =
             | Some _ -> ()
             | None ->
                 _hmrSub <-
-                    token.Subscribe(fun updatedModule ->
+                    token.Subscribe(fun info ->
+                        let updatedModule = info.NewModule
                         this.renderFn <- updatedModule?(this.name)?renderFn)
                     |> Some
 #endif

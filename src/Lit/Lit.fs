@@ -47,8 +47,15 @@ type ElementPart =
     inherit Part
     abstract element : Element
 
-type Styles =
-    interface end
+// This type should come from Fable.Browser.Css but add it here
+// for now to avoid the dependency
+type CSSStyleSheet =
+    abstract replace: css: string -> JS.Promise<unit>
+    abstract replaceSync: css: string -> unit
+
+type CSSResult =
+    abstract cssText: string
+    abstract styleSheet: CSSStyleSheet
 
 type LitBindings =
     /// <summary>
@@ -64,7 +71,7 @@ type LitBindings =
     static member svg: Template.JsTag<TemplateResult> = jsNative
 
     [<ImportMember("lit")>]
-    static member css: Template.JsTag<Styles> = jsNative
+    static member css: Template.JsTag<CSSResult> = jsNative
 
     /// <summary>
     /// Renders a value, usually a lit-html TemplateResult, to the container.
@@ -181,7 +188,7 @@ module LitHelpers =
     let svg: Template.Tag<TemplateResult> = Template.transform LitBindings.svg
 
     /// CSS used in the Shadow DOM of LitElements
-    let css: Template.Tag<Styles> = Template.transform LitBindings.css
+    let css: Template.Tag<CSSResult> = Template.transform LitBindings.css
 
     /// Just trims the braces {} out of a css block to be used in a `style` attribute
     let inline_css (css: string) =
@@ -205,7 +212,7 @@ type Lit() =
     static member svg: Template.Tag<TemplateResult> = svg
 
     /// CSS used in the Shadow DOM of LitElements
-    static member css: Template.Tag<Styles> = css
+    static member css: Template.Tag<CSSResult> = css
 
     /// <summary>
     /// Used when you don't want to render anything with Lit, usually in conditional expressions.
@@ -302,6 +309,10 @@ type Lit() =
 
 [<AutoOpen>]
 module DomHelpers =
+    type ShadowRoot with
+        [<Emit("$0.adoptedStyleSheets")>]
+        member _.adoptedStyleSheets: CSSStyleSheet[] = jsNative
+
     type EventTarget with
         /// Casts the event target to HTMLInputElement and gets the `value` property.
         member this.Value: string = (this :?> HTMLInputElement).value

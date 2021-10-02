@@ -27,7 +27,8 @@ module private LitElementUtil =
         let [<Global>] Array = obj()
         let [<Global>] Object = obj()
 
-    let isDefined (x: obj) = not(isNull x)
+    let isNotNull (x: obj) = not(isNull x)
+    let isNotReferenceEquals (x: obj) (y: obj) = not(obj.ReferenceEquals(x, y))
     let failInit() = failwith "LitElement.init must be called on top of the render function"
     let failProps(key: string) = failwith $"'{key}' field in `props` record is not of Prop<'T> type"
 
@@ -44,7 +45,19 @@ module private LitElementUtil =
     let fetchText(url: string): JS.Promise<string> = jsNative
 
 #if DEBUG
-    let definedElements = System.Collections.Generic.HashSet<string>()
+    let definedElements = Collections.Generic.HashSet<string>()
+
+    let updateStyleSheets (data: obj) (litEl: LitElement) (newCSSResults: CSSResult[]) =
+        if isNotNull litEl.el.shadowRoot && isNotNull litEl.el.shadowRoot.adoptedStyleSheets && isNotNull newCSSResults then
+            let oldSheets = litEl.el.shadowRoot.adoptedStyleSheets
+            let updatedSheets = HMRUtil.getOrAdd data "updatedSheets" (fun _ -> JS.Constructors.Set.Create())
+            if oldSheets.Length = newCSSResults.Length then
+                Array.zip oldSheets newCSSResults
+                |> Array.iter (fun (oldSheet, newCSSResult) ->
+                    let newSheet = newCSSResult.styleSheet
+                    if isNotNull newCSSResult.cssText && isNotReferenceEquals oldSheet newSheet && not(updatedSheets.has(newSheet)) then
+                        oldSheet.replace(newCSSResult.cssText) |> Promise.start
+                        updatedSheets.add(newSheet) |> ignore)
 #endif
 
 open LitElementUtil
@@ -179,7 +192,7 @@ type LitConfig<'Props> =
     ///         .p { color: red; }
     ///       """]
     /// </example>
-    abstract styles: Styles list with get, set
+    abstract styles: CSSResult list with get, set
     /// Whether the element should render to shadow or light DOM (defaults to true).
     abstract useShadowDom: bool with get, set
 
@@ -190,7 +203,7 @@ type LitElementInit<'Props>() =
     let mutable _initPromise: JS.Promise<unit> = null
     let mutable _useShadowDom = true
     let mutable _props = Unchecked.defaultof<'Props>
-    let mutable _styles = Unchecked.defaultof<Styles list>
+    let mutable _styles = Unchecked.defaultof<CSSResult list>
 
     member _.InitPromise = _initPromise
 
@@ -237,11 +250,11 @@ type LitHookElement<'Props>(initProps: obj -> unit) =
             | Some _ -> ()
             | None ->
                 _hmrSub <-
-                    token.Subscribe(fun updatedModule ->
+                    token.Subscribe(fun info ->
+                        let updatedModule = info.NewModule
                         let updatedExport = updatedModule?(this.name)
                         this.renderFn <- updatedExport?renderFn
-                        if this?shadowRoot && updatedExport?styles then
-                            adoptStyles(this?shadowRoot, updatedExport?styles)
+                        updateStyleSheets info.Data this (updatedExport?styles)
                     )
                     |> Some
 #endif
@@ -261,7 +274,7 @@ type LitElementAttribute(name: string) =
     override _.Decorate(renderFn, mi) =
 #endif
         let config = LitElementInit()
-        let dummy() = failwith $"{name} is not immediately callable, it must be created in HTML"
+        let dummyFn() = failwith $"{name} is not immediately callable, it must be created in HTML"
         if renderFn.length > 0 then
             failwith "Render function for LitElement cannot take arguments"
         try
@@ -275,8 +288,12 @@ type LitElementAttribute(name: string) =
         |> Promise.iter (fun _ ->
             let config = config :> LitConfig<obj>
 
+            let styles =
+                if isNotNull config.styles then List.toArray config.styles |> Some
+                else None
+
             let propsOptions, initProps =
-                if isDefined config.props then
+                if isNotNull config.props then
                     let propsValues = ResizeArray()
                     let propsOptions = obj()
 
@@ -312,12 +329,8 @@ type LitElementAttribute(name: string) =
                 emitJsExpr (baseClass, renderRef, mi.Name, initProps) HookUtil.HMR_CLASS_EXPR
 #endif
 
-            match propsOptions with
-            | None -> ()
-            | Some propsOptions -> defineGetter(classExpr, "properties", fun () -> propsOptions)
-
-            if isDefined config.styles then
-                defineGetter(classExpr, "styles", fun () -> List.toArray config.styles)
+            propsOptions |> Option.iter (fun props -> defineGetter(classExpr, "properties", fun () -> props))
+            styles |> Option.iter (fun styles -> defineGetter(classExpr, "styles", fun () -> styles))
 
             if not config.useShadowDom then
                 emitJsStatement classExpr """$0.prototype.createRenderRoot = function() {
@@ -340,12 +353,11 @@ type LitElementAttribute(name: string) =
                 definedElements.Add(cacheName) |> ignore
 
             // This lets us access the updated render function when accepting new modules in HMR
-            dummy?renderFn <- renderFn
-            if isDefined config.styles then
-                dummy?styles <- List.toArray config.styles
+            dummyFn?renderFn <- renderFn
+            styles |> Option.iter (fun styles -> dummyFn?styles <- styles)
 #endif
         )
-        box dummy :?> _
+        box dummyFn :?> _
 
 [<AutoOpen>]
 module LitElementExt =

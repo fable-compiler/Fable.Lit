@@ -20,7 +20,7 @@
     <Content Include="*.fsproj; *.fs; package.json" PackagePath="fable\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Browser.Dom" Version="2.4.4" />
+    <PackageReference Include="Fable.Browser.Dom" Version="2.5.0" />
     <PackageReference Include="Fable.Core" Version="3.3.1" />
     <PackageReference Include="Fable.Promise" Version="3.1.0" />
   </ItemGroup>
