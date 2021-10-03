@@ -7,92 +7,92 @@ open Fable.Core.JsInterop
 open Fable.Core.DynamicExtensions
 open Browser
 
-module HMRUtil =
+module HMRTypes =
     let [<Literal>] GLOBAL_KEY = "__FABLE_LIT_HMR__"
     let [<Emit("import.meta.url")>] importMetaUrl: string = jsNative
     let [<Emit("$0[$1] || ($0[$1] = $2()) ")>] getOrAdd (o: obj) (key: string) (init: unit -> 'T): 'T = jsNative
 
-open HMRUtil
+    // Vite seems to be very strict on how import.meta.hot is invoked
+    // so make sure Fable doesn't surround it with parens
+    type IHot =
+        [<Emit("import.meta.hot")>]
+        abstract active: bool
 
-// Vite seems to be very strict on how import.meta.hot is invoked
-// so make sure Fable doesn't surround it with parens
-type IHot =
-    [<Emit("import.meta.hot")>]
-    abstract active: bool
+        [<Emit("import.meta.hot.data[$1]")>]
+        abstract getData: key: string -> obj
 
-    [<Emit("import.meta.hot.data[$1]")>]
-    abstract getData: key: string -> obj
+        [<Emit("import.meta.hot.data[$1] = $2")>]
+        abstract setData: key: string * obj -> unit
 
-    [<Emit("import.meta.hot.data[$1] = $2")>]
-    abstract setData: key: string * obj -> unit
+        [<Emit("import.meta.hot.accept($1...)")>]
+        abstract accept: ?handler: (obj -> unit) -> unit
 
-    [<Emit("import.meta.hot.accept($1...)")>]
-    abstract accept: ?handler: (obj -> unit) -> unit
+        [<Emit("import.meta.hot.dispose($1...)")>]
+        abstract dispose: (obj -> unit) -> unit
 
-    [<Emit("import.meta.hot.dispose($1...)")>]
-    abstract dispose: (obj -> unit) -> unit
+        [<Emit("import.meta.hot.invalidate()")>]
+        abstract invalidate: unit -> unit
 
-    [<Emit("import.meta.hot.invalidate()")>]
-    abstract invalidate: unit -> unit
+    // Webpack uses import.meta.webpackHot instead :/
+    type IWebpackHot =
+        [<Emit("import.meta.webpackHot")>]
+        abstract active: bool
 
-// Webpack uses import.meta.webpackHot instead :/
-type IWebpackHot =
-    [<Emit("import.meta.webpackHot")>]
-    abstract active: bool
+        [<Emit("import.meta.webpackHot.data ? import.meta.webpackHot.data[$1] : null")>]
+        abstract getData: key: string -> obj
 
-    [<Emit("import.meta.webpackHot.data ? import.meta.webpackHot.data[$1] : null")>]
-    abstract getData: key: string -> obj
+        [<Emit("import.meta.webpackHot.accept($1...)")>]
+        abstract accept: ?handler: (obj -> unit) -> unit
 
-    [<Emit("import.meta.webpackHot.accept($1...)")>]
-    abstract accept: ?handler: (obj -> unit) -> unit
+        [<Emit("import.meta.webpackHot.dispose($1...)")>]
+        abstract dispose: (obj -> unit) -> unit
 
-    [<Emit("import.meta.webpackHot.dispose($1...)")>]
-    abstract dispose: (obj -> unit) -> unit
+        [<Emit("import.meta.webpackHot.invalidate()")>]
+        abstract invalidate: unit -> unit
 
-    [<Emit("import.meta.webpackHot.invalidate()")>]
-    abstract invalidate: unit -> unit
+    type IHMRToken =
+        interface end
 
-type IHMRToken =
-    interface end
+    type HMRInfo =
+        abstract NewModule: obj
+        abstract Data: obj
 
-type HMRInfo =
-    abstract NewModule: obj
-    abstract Data: obj
+    /// Internal use, not meant to be used directly.
+    type HMRToken() =
+        let listeners = Dictionary<Guid, _>()
 
-/// Internal use, not meant to be used directly.
-type HMRToken() =
-    let listeners = Dictionary<Guid, _>()
+        interface IHMRToken
 
-    interface IHMRToken
+        member _.Subscribe(handler: HMRInfo -> unit) =
+            let guid = Guid.NewGuid()
+            listeners.Add(guid, handler)
+            { new IDisposable with
+                member _.Dispose() =
+                    listeners.Remove(guid)
+                    |> ignore }
 
-    member _.Subscribe(handler: HMRInfo -> unit) =
-        let guid = Guid.NewGuid()
-        listeners.Add(guid, handler)
-        { new IDisposable with
-            member _.Dispose() =
-                listeners.Remove(guid)
-                |> ignore }
+        member _.RequestUpdate(newModule: obj) =
+            let data = obj()
+            let info =
+                { new HMRInfo with
+                    member _.NewModule = newModule
+                    member _.Data = data
+                }
+            listeners.Values |> Seq.iter (fun handler -> handler info)
 
-    member _.RequestUpdate(newModule: obj) =
-        let data = obj()
-        let info =
-            { new HMRInfo with
-                member _.NewModule = newModule
-                member _.Data = data
-            }
-        listeners.Values |> Seq.iter (fun handler -> handler info)
+        static member Get(moduleUrl: string): HMRToken =
+            // Dev server may add query params to the url
+            let moduleUrl =
+                match moduleUrl.IndexOf("?") with
+                | -1 -> moduleUrl
+                | i -> moduleUrl.[..i-1]
+            let dic = getOrAdd window GLOBAL_KEY obj
+            getOrAdd dic moduleUrl HMRToken
 
-    static member Get(moduleUrl: string): HMRToken =
-        // Dev server may add query params to the url
-        let moduleUrl =
-            match moduleUrl.IndexOf("?") with
-            | -1 -> moduleUrl
-            | i -> moduleUrl.[..i-1]
-        let dic = getOrAdd window GLOBAL_KEY obj
-        getOrAdd dic moduleUrl HMRToken
+    type HMRSubscriber =
+        abstract subscribeHmr: (HMRToken -> unit) option
 
-type HMRSubscriber =
-    abstract subscribeHmr: (HMRToken -> unit) option
+open HMRTypes
 
 type HMR =
     /// Internal use. If you want to interact with HMR API, see https://vitejs.dev/guide/api-hmr.html

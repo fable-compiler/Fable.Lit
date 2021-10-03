@@ -22,6 +22,21 @@ let Counter () =
     """
 
 [<HookComponent>]
+let Input() =
+    let value, setValue = Hook.useState "World"
+
+    html
+        $"""
+      <div>
+        <p>Hello {value}!</p>
+        <label>
+            Name
+            <input type="text" @input={EvVal setValue}>
+        </label>
+      </div>
+    """
+
+[<HookComponent>]
 let Disposable (r: ref<int>) =
     let value, setValue = Hook.useState 5
 
@@ -114,9 +129,19 @@ let ElmishComponent () =
           """
 
 describe "Hook" <| fun () ->
-    it "counter renders" <| fun () -> promise {
-        use! el = Counter() |> render
-        return! el.El |> Expect.matchHtmlSnapshot "counter"
+    it "renders Counter" <| fun () -> promise {
+        use! container = Counter() |> render
+        return! container.El |> Expect.matchHtmlSnapshot "counter"
+    }
+
+    it "renders Input" <| fun () -> promise {
+        use! container = Input() |> render
+        let el = container.El
+        let greeting = el.getByText("hello")
+        greeting |> Expect.innerText "Hello World!"
+        el.getTextInput("name").focus()
+        do! Wtr.typeChars("Mexico")
+        greeting |> Expect.innerText "Hello Mexico!"
     }
 
     it "increases/decreases the counter on button click" <| fun () -> promise {

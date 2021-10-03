@@ -5,6 +5,7 @@ open Fable.Core
 open Fable.Core.JsInterop
 open Browser
 open Browser.Types
+open HMRTypes
 
 // LitElement should inherit HTMLElement but HTMLElement
 // is still implemented as interface in Fable.Browser
@@ -27,6 +28,19 @@ module private LitElementUtil =
         let [<Global>] Array = obj()
         let [<Global>] Object = obj()
 
+    type Converter =
+        abstract fromAttribute: JS.Function with get, set
+        abstract toAttribute: JS.Function with get, set
+
+    type PropConfig =
+        abstract ``type``: obj with get, set
+        abstract attribute: U2<string, bool> with get, set
+        abstract state: bool with get, set
+        abstract reflect: bool with get, set
+        abstract noAccessor: bool with get, set
+        abstract converter: Converter with get, set
+        abstract hasChanged: JS.Function with get, set
+
     let isNotNull (x: obj) = not(isNull x)
     let isNotReferenceEquals (x: obj) (y: obj) = not(obj.ReferenceEquals(x, y))
     let failInit() = failwith "LitElement.init must be called on top of the render function"
@@ -38,19 +52,13 @@ module private LitElementUtil =
     [<Emit("Object.defineProperty($0, $1, { get: $2 })")>]
     let defineGetter(target: obj, name: string, f: unit -> 'V) = ()
 
-    [<ImportMember("lit")>]
-    let adoptStyles(renderRoot, styles): unit = jsNative
-
-    [<Emit("fetch($0).then(x => x.text())")>]
-    let fetchText(url: string): JS.Promise<string> = jsNative
-
 #if DEBUG
     let definedElements = Collections.Generic.HashSet<string>()
 
     let updateStyleSheets (data: obj) (litEl: LitElement) (newCSSResults: CSSResult[]) =
         if isNotNull litEl.el.shadowRoot && isNotNull litEl.el.shadowRoot.adoptedStyleSheets && isNotNull newCSSResults then
             let oldSheets = litEl.el.shadowRoot.adoptedStyleSheets
-            let updatedSheets = HMRUtil.getOrAdd data "updatedSheets" (fun _ -> JS.Constructors.Set.Create())
+            let updatedSheets = getOrAdd data "updatedSheets" (fun _ -> JS.Constructors.Set.Create())
             if oldSheets.Length = newCSSResults.Length then
                 Array.zip oldSheets newCSSResults
                 |> Array.iter (fun (oldSheet, newCSSResult) ->
@@ -61,60 +69,6 @@ module private LitElementUtil =
 #endif
 
 open LitElementUtil
-
-type Converter =
-    abstract fromAttribute: JS.Function with get, set
-    abstract toAttribute: JS.Function with get, set
-
-type PropConfig =
-    /// <summary>
-    /// JS Constructor to help with value change detection and comparison.
-    /// Indicates the type of the property. This is used only as a hint for the
-    /// `converter` to determine how to convert the attribute to/from a property.
-    /// `Boolean`, `String`, `Number`, `Object`, and `Array` should be used.
-    /// </summary>
-    abstract ``type``: obj with get, set
-    /// <summary>
-    /// Indicates the property becomes an observed attribute.
-    /// </summary>
-    /// <remarks>The value has to be lower-cased and dash-cased due to the HTML Spec.</remarks>
-    abstract attribute: U2<string, bool> with get, set
-    /// <summary>
-    /// Indicates the property is internal private state. The property should not be set by users.
-    /// A common practice is to use a leading `_` in the name.
-    /// The property is not added to `observedAttributes`.
-    /// </summary>
-    abstract state: bool with get, set
-    /// <summary>
-    /// Indicates if the property should reflect to an attribute.
-    /// If `true`, when the property is set, the attribute is set using the
-    /// attribute name determined according to the rules for the `attribute`
-    /// property option and the value of the property converted using the rules
-    /// from the `converter` property option.
-    /// </summary>
-    abstract reflect: bool with get, set
-    /// <summary>
-    /// Indicates whether an accessor will be created for this property. By
-    /// default, an accessor will be generated for this property that requests an
-    /// update when set. No accessor will be created, and
-    /// it will be the user's responsibility to call
-    /// `this.requestUpdate(propertyName, oldValue)` to request an update when
-    /// the property changes.
-    /// </summary>
-    abstract noAccessor: bool with get, set
-    /// <summary>
-    /// Indicates how to convert the attribute to/from a property.
-    /// If this value is a function, it is used to convert the attribute value a the property value.
-    /// If it's an object, it can have keys for fromAttribute and toAttribute.
-    /// If no toAttribute function is provided and reflect is set to true,
-    /// the property value is set directly to the attribute. A default converter is used if none is provided;
-    /// it supports Boolean, String, Number, Object, and Array. Note, when a property changes
-    /// and the converter is used to update the attribute,
-    /// the property is never updated again as a result of the attribute changing, and vice versa.
-    /// </summary>
-    abstract converter: Converter with get, set
-
-    abstract hasChanged: JS.Function with get, set
 
 type Prop internal (defaultValue: obj, options: obj) =
     member internal _.ToConfig() = defaultValue, options
@@ -360,9 +314,8 @@ type LitElementAttribute(name: string) =
         box dummyFn :?> _
 
 [<AutoOpen>]
-module LitElementExt =
-    // TODO: Not sure why we don't have this constructor in Fable.Browser, we should add it
-    // CustomEvent constructor is also transpiled incorrectly, not sure why
+module LitElementExtensions =
+    // TODO: Fix event constructors in Fable.Browser.Event
     [<Emit("new Event($0, $1)")>]
     let private createEvent (name: string) (opts: EventInit): Event = jsNative
 

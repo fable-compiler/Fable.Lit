@@ -3,6 +3,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ImportSideEffect.fs" />
+    <Compile Include="ImportTemplate.fs" />
+    <Compile Include="DirectiveTest.fs" />
     <Compile Include="HookTest.fs" />
     <Compile Include="LitElementTest.fs" />
   </ItemGroup>

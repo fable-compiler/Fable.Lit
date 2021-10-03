@@ -12,7 +12,7 @@ open Lit
 /// </summary>
 [<AttachMembers>]
 type ReactDirective() =
-    inherit AsyncDirective()
+    inherit Types.AsyncDirective()
 
     let mutable _domEl = Unchecked.defaultof<Element>
 
@@ -20,7 +20,7 @@ type ReactDirective() =
     member _.renderFn = Unchecked.defaultof<obj -> ReactElement>
 
     member this.render(props: obj) =
-        Lit.html $"""<div class={this.className} {Lit.ref (function
+        Lit.html $"""<div class={this.className} {Lit.refCallback(function
             | Some el when this.isConnected ->
                 _domEl <- el
                 let reactEl = this.renderFn props

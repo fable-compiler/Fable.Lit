@@ -4,55 +4,43 @@ open System
 open Browser.Types
 open Fable.Core
 
-/// <summary>
+module Types =
+    type RefValue<'T> =
+        abstract value : 'T with get, set
+
+    [<ImportMember("lit-html/directive.js")>]
+    type Directive() =
+        class end
+
+    [<ImportMember("lit-html/async-directive.js")>]
+    type AsyncDirective() =
+        member _.isConnected: bool = jsNative
+        member _.setValue(value: obj) : unit = jsNative
+
+    type Part =
+        interface end
+
+    type ChildPart =
+        inherit Part
+        abstract parentNode : Element
+
+    type ElementPart =
+        inherit Part
+        abstract element : Element
+
+    // This type should come from Fable.Browser.Css but add it here
+    // for now to avoid the dependency
+    type CSSStyleSheet =
+        abstract replace: css: string -> JS.Promise<unit>
+        abstract replaceSync: css: string -> unit
+
+open Types
+
 /// The return type of the template tag functions.
-/// </summary>
 type TemplateResult =
-    interface
-    end
+    interface end
 
-type RefValue<'T> =
-    abstract value : 'T with get, set
-
-/// <summary>
-/// Base class for creating custom directives.
-/// Users should extend this class, implement render and/or update,
-/// and then pass their subclass to directive.
-/// </summary>
-[<ImportMember("lit-html/directive.js")>]
-type Directive() =
-    class
-    end
-
-/// <summary>
-/// An abstract Directive base class whose disconnected method will be called
-/// when the part containing the directive is cleared as a result of re-rendering,
-/// or when the user calls part.setDirectiveConnection(false)
-/// on a part that was previously rendered containing the directive.
-/// </summary>
-[<ImportMember("lit-html/async-directive.js")>]
-type AsyncDirective() =
-    member _.isConnected: bool = jsNative
-    member _.setValue(value: obj) : unit = jsNative
-
-type Part =
-    interface
-    end
-
-type ChildPart =
-    inherit Part
-    abstract parentNode : Element
-
-type ElementPart =
-    inherit Part
-    abstract element : Element
-
-// This type should come from Fable.Browser.Css but add it here
-// for now to avoid the dependency
-type CSSStyleSheet =
-    abstract replace: css: string -> JS.Promise<unit>
-    abstract replaceSync: css: string -> unit
-
+/// The return type of the style tag functions.
 type CSSResult =
     abstract cssText: string
     abstract styleSheet: CSSStyleSheet
@@ -239,12 +227,6 @@ type Lit() =
     /// </summary>
     static member classes(classes: string seq): string = classes |> String.concat " "
 
-    /// <summary>
-    /// Use memoize only when the template argument can change considerable depending on some condition (e.g. a modal or nothing).
-    /// </summary>
-    /// <param name="template">A template to be rendered.</param>
-    static member memoize(template: TemplateResult) : TemplateResult = LitBindings.cache template
-
     static member ofSeq(items: TemplateResult seq) : TemplateResult = unbox items
 
     static member ofList(items: TemplateResult list) : TemplateResult = unbox items
@@ -258,50 +240,78 @@ type Lit() =
     static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq): TemplateResult =
         LitBindings.repeat (items, getId, (fun x _ -> template x))
 
-    /// <summary>
-    /// Prevents re-render of a template function until one of the dependencies changes.
-    /// </summary>
-    /// <param name="dependencies">A set of dependencies that will trigger a re-render when any of them changes.</param>
-    /// <param name="view">A render function.</param>
-    static member ofLazy (dependencies: obj list) (view: unit -> TemplateResult): TemplateResult =
-        // TODO: Should we try to use F# equality here?
-        LitBindings.guard (List.toArray dependencies, view)
-
-    /// <summary>
     /// Shows the placeholder until the promise is resolved
-    /// </summary>
-    /// <param name="deferred">A promise to be resolved.</param>
-    /// <param name="placeholder">A placeholder to be shown while the promise is pending.</param>
-    static member ofPromise (placeholder: TemplateResult) (deferred: JS.Promise<TemplateResult>): TemplateResult =
-        LitBindings.until (deferred, placeholder)
-
-    static member ofStr(v: string) : TemplateResult = unbox v
-
-    static member ofText(v: string) : TemplateResult = unbox v
-
-    static member ofInt(v: int) : TemplateResult = unbox v
-
-    static member ofFloat(v: float) : TemplateResult = unbox v
+    static member ofPromise(template: JS.Promise<TemplateResult>, ?placeholder: TemplateResult): TemplateResult =
+        LitBindings.until(template, defaultArg placeholder Lit.nothing)
 
     /// <summary>
-    /// Sets the attribute if the value is defined and removes the attribute if the value is undefined.
+    /// Lazily import a register or render function from another module, this helps JS bundlers to split the code and optimize loading times.
+    /// Be careful not to reference anything else from the imported module.
     /// </summary>
-    /// <param name="attributeValue">A value to set the attribute to</param>
-    static member attrOfOption(attributeValue: string option) = LitBindings.ifDefined attributeValue
+    /// <example>
+    ///     Lit.ofImport(MyComponent, fun render -> render "foo" "bar")
+    /// </example>
+    /// <example>
+    ///     Lit.ofImport(MyWebComponent.register, fun _ -> html $"<my-web-component></my-web-component>")
+    /// </example>
+    static member inline ofImport(registerOrRenderFunction: 'Fn, template: 'Fn -> TemplateResult, ?placeholder: TemplateResult): TemplateResult =
+        LitBindings.until((JsInterop.importValueDynamic registerOrRenderFunction).``then``(fun fn -> template fn), defaultArg placeholder Lit.nothing)
 
+    /// Only re-render the template if one of the dependencies changes.
+    static member onChange(dependency: 'T, template: 'T -> TemplateResult): TemplateResult =
+        let dependencies = if JS.Constructors.Array.isArray dependency then unbox dependency else [| box dependency |]
+        LitBindings.guard(dependencies, fun () -> template dependency)
+
+    /// Only re-render the template if one of the dependencies changes.
+    static member onChange(dependency1: 'T1, dependency2: 'T2, template: 'T1 -> 'T2 -> TemplateResult): TemplateResult =
+        LitBindings.guard([|dependency1; dependency2|], fun () -> template dependency1 dependency2)
+
+    /// Only re-render the template if one of the dependencies changes.
+    static member onChange(dependency1: 'T1, dependency2: 'T2, dependency3: 'T3, template: 'T1 -> 'T2 -> 'T3 -> TemplateResult): TemplateResult =
+        LitBindings.guard([|dependency1; dependency2; dependency3|], fun () -> template dependency1 dependency2 dependency3)
+
+    /// Only re-render the template if one of the dependencies changes.
+    static member onChange(dependency1: 'T1, dependency2: 'T2, dependency3: 'T3, dependency4: 'T4, template: 'T1 -> 'T2 -> 'T3 -> 'T4 -> TemplateResult): TemplateResult =
+        LitBindings.guard([|dependency1; dependency2; dependency3; dependency4|], fun () -> template dependency1 dependency2 dependency3 dependency4)
+
+    static member inline ofStr(v: string) : TemplateResult = unbox v
+
+    static member inline ofText(v: string) : TemplateResult = unbox v
+
+    static member inline ofInt(v: int) : TemplateResult = unbox v
+
+    static member inline ofFloat(v: float) : TemplateResult = unbox v
+
+    /// <summary>
+    /// Sets the attribute if the value is Some and removes the attribute if the value is None.
+    /// </summary>
+    /// <remarks>
+    /// ONLY ATTRIBUTES.
+    /// </remarks>
+    /// <param name="attributeValue">A value to set the attribute to</param>
+    static member ifSome(attributeValue: string option) = LitBindings.ifDefined attributeValue
+
+    /// <summary>
     /// When placed on an element in the template, the ref directive will retrieve a reference to that element once rendered.
-    /// Example: <input {Lit.refValue inputRef}>
-    static member ref<'El when 'El :> Element>(r: ref<'El option>): TemplateResult =
+    /// </summary>
+    /// <example>
+    ///     &lt;input {Lit.refValue inputRef}&gt;
+    /// </example>
+    static member refValue<'El when 'El :> Element>(r: ref<'El option>): TemplateResult =
         LitBindings.ref
             { new RefValue<'El option> with
                 member _.value with get() = r.Value
                                 and set(v) = r := v }
 
+    /// <summary>
     /// When placed on an element in the template, the callback will be called each time the referenced element changes.
     /// If a ref callback is rendered to a different element position or is removed in a subsequent render,
     /// it will first be called with undefined, followed by another call with the new element it was rendered to (if any).
-    /// Example: <input {Lit.refFn inputFn}>
-    static member ref<'El when 'El :> Element>(fn: 'El option -> unit): TemplateResult = LitBindings.ref fn
+    /// </summary>
+    /// <example>
+    ///     &lt;input {Lit.refCallback inputFn}&gt;
+    /// </example>
+    static member refCallback<'El when 'El :> Element>(fn: 'El option -> unit): TemplateResult = LitBindings.ref fn
 
     /// Used when building custom directives. [More info](https://lit.dev/docs/templates/custom-directives/).
     static member inline directive<'Class, 'Arg>() : 'Arg -> TemplateResult =
@@ -327,6 +337,3 @@ module DomHelpers =
     /// Extracts `event.target.value` and passes it to the handler.
     let inline EvVal (handler: string -> unit): Event -> unit =
         fun (ev: Event) -> handler ev.target.Value
-
-    /// Alias of `Lit.ref`
-    let inline Ref (r: ref<'El option>): TemplateResult = Lit.ref r

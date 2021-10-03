@@ -87,7 +87,13 @@ module internal HookUtil =
                 | true -> state <- ReadWritable(items |> doubleSize rix, items.Length, 0)
                 | _ -> state <- ReadWritable(items, wix', rix)
 
+    type Cmd<'Msg> = (('Msg -> unit) -> unit) list
+
+    type RenderFn = obj[] -> TemplateResult
+
 open HookUtil
+open HMRTypes
+open Types
 
 type TransitionState = HasLeft | AboutToEnter | Entering | HasEntered | Leaving
 
@@ -116,10 +122,6 @@ type Transition =
     abstract css: string
     /// Trigger the enter `trigger(true)` or leave `trigger(false)` transition.
     abstract trigger: enter: bool -> unit
-
-type Cmd<'Msg> = (('Msg -> unit) -> unit) list
-
-type RenderFn = obj[] -> TemplateResult
 
 type HookContextHost =
     abstract renderFn: JS.Function
@@ -176,7 +178,7 @@ type HookContext(host: HookContextHost) =
                     if onConnected then
                         _disposables.Add(effect ())))
 
-    member this.setState(index: int, newValue: 'T, ?equals: 'T -> 'T -> bool) : unit =
+    member _.setState(index: int, newValue: 'T, ?equals: 'T -> 'T -> bool) : unit =
         let equals (oldValue: 'T) (newValue: 'T) =
             match equals with
             | Some equals -> equals oldValue newValue

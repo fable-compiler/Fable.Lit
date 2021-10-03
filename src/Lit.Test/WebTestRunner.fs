@@ -7,16 +7,65 @@ open Browser.Types
 type SnapshotConfig =
     abstract updateSnapshots: bool
 
+type AccessibilitySnapshot =
+    interface end
+
+type AccessibilityNode =
+    abstract name: string
+    abstract role: string
+    abstract children: AccessibilityNode array
+
+type JsObject<'T> =
+    abstract Item: string -> 'T
+
 type WebTestRunnerBindings =
-    // getSnapshots,
-    // removeSnapshot,
     abstract getSnapshotConfig: unit -> JS.Promise<SnapshotConfig>
+    abstract getSnapshots: unit -> JS.Promise<JsObject<string>>
     [<Emit("$0.getSnapshot({ name: $1 })")>]
     abstract getSnapshot: name: string -> JS.Promise<string>
     [<Emit("$0.saveSnapshot({ name: $1, content: $2 })")>]
     abstract saveSnapshot: name: string * content: string -> JS.Promise<unit>
+    [<Emit("$0.removeSnapshot({ name: $1 })")>]
+    abstract removeSnapshot: name: string -> JS.Promise<unit>
     [<Emit("$0.compareSnapshot({ name: $1, content: $2 })")>]
     abstract compareSnapshot: name: string * content: string -> JS.Promise<unit>
+
+    /// Request a snapshot of the accessibility tree built in the browser representing the current page.
+    abstract a11ySnapshot: unit -> JS.Promise<SnapshotConfig>
+    /// Request a snapshot of the accessibility tree built in the browser representing the tree rooter by the passed selector property.
+    [<Emit("$0.a11ySnapshot({ selector: $1 })")>]
+    abstract a11ySnapshot: selector: string -> JS.Promise<SnapshotConfig>
+    abstract findAccessibilityNode: snapshot: AccessibilitySnapshot * selector: (AccessibilityNode -> bool) -> AccessibilityNode option
+
+    [<Emit("$0.setViewport({ width: $1, height: $2 })")>]
+    abstract setViewport: width: int * height: int -> JS.Promise<unit>
+
+    abstract setUserAgent: userAgent: string -> JS.Promise<unit>
+
+    [<Emit("$0.emulateMedia({ media: $1 })")>]
+    abstract emulateMedia: media: string -> JS.Promise<unit>
+    [<Emit("$0.emulateMedia({ colorSchema: $1 })")>]
+    abstract emulateColorScheme: colorScheme: string -> JS.Promise<unit>
+    [<Emit("$0.emulateMedia({ reducedMotion: $1 })")>]
+    abstract emulateReducedMotion: reducedMotion: string -> JS.Promise<unit>
+
+    /// Types a sequence of characters.
+    /// Not affected by modifier keys, holding Shift will not type the text in upper-case.
+    [<Emit("$0.sendKeys({ type: $1 })")>]
+    abstract typeChars: characters: string -> JS.Promise<unit>
+    /// Presses a single key, resulting in a key down, and a key up.
+    /// Affected by modifier keys, holding Shift will type the text in upper-case.
+    [<Emit("$0.sendKeys({ press: $1 })")>]
+    abstract pressKey: key: string -> JS.Promise<unit>
+    /// Holds down a single key.
+    [<Emit("$0.sendKeys({ down: $1 })")>]
+    abstract holdKey: key: string -> JS.Promise<unit>
+    /// Releases a single key
+    [<Emit("$0.sendKeys({ up: $1 })")>]
+    abstract releaseKey: key: string -> JS.Promise<unit>
+
+[<ImportAll("@web/test-runner-commands")>]
+let Wtr: WebTestRunnerBindings = jsNative
 
 [<AutoOpen>]
 module Mocha =
@@ -58,8 +107,6 @@ module Mocha =
 
 [<RequireQualifiedAccess>]
 module Expect =
-    [<ImportAll("@web/test-runner-commands")>]
-    let private wtr: WebTestRunnerBindings = jsNative
 
     let private cleanHtml (html: string) =
         // Lit inserts comments with different values every time, so remove them
@@ -71,14 +118,14 @@ module Expect =
     /// Compares the content string with the snapshot of the given name within the current file.
     /// If the snapshot doesn't exist or tests are run with `--update-snapshots` option the snapshot will just be saved/updated.
     let matchSnapshot (description: string) (name: string) (content: string) = promise {
-        let! config = wtr.getSnapshotConfig()
+        let! config = Wtr.getSnapshotConfig()
         if config.updateSnapshots then
-            return! wtr.saveSnapshot(name, content)
+            return! Wtr.saveSnapshot(name, content)
         else
             try
-                do! wtr.compareSnapshot(name, content)
+                do! Wtr.compareSnapshot(name, content)
             with _ ->
-                let! snapshot = wtr.getSnapshot(name)
+                let! snapshot = Wtr.getSnapshot(name)
                 // Snapshots can be large, so use `brief` argument to hide them in the error message (diffing should be displayed correctly)
                 return Expect.AssertionError.Throw("match snapshot", description=description, actual=content, expected=snapshot, brief=true)
     }
