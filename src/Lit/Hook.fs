@@ -258,12 +258,13 @@ type HookContext(host: HookContextHost) =
     member this.useEffectOnce(effect) : unit =
         this.setEffect(Effect.OnConnected effect)
 
-    member this.useElmish(init, update) =
+    member this.useElmish(mkProgram) =
         if _firstRun then
             // TODO: Error handling? (also when running update)
             let exec dispatch cmd =
                 cmd |> List.iter (fun call -> call dispatch)
 
+            let init, update = mkProgram()
             let (model, cmd) = init ()
             let index, (model, _) = this.addState (model, null)
 
@@ -326,11 +327,6 @@ module HookExtensions =
         member this.triggerLeave() = this.trigger(false)
 
     type HookContext with
-        member ctx.useEffectOnce(effect: (unit -> unit)) =
-            ctx.useEffectOnce(fun () ->
-                effect()
-                emptyDisposable)
-
         member ctx.useState(v: 'T) =
             ctx.useState(fun () -> v)
 
@@ -342,6 +338,14 @@ module HookExtensions =
 
         member ctx.useMemo(init: unit -> 'Value): 'Value =
             ctx.useRef(init).Value
+
+        member ctx.useElmish(init, update) =
+            ctx.useElmish(fun () -> init, update)
+
+        member ctx.useEffectOnce(effect: (unit -> unit)) =
+            ctx.useEffectOnce(fun () ->
+                effect()
+                emptyDisposable)
 
         member ctx.useEffectOnChange(value: 'T, effect: 'T -> unit) =
             ctx.useEffectOnChange(value, fun v ->

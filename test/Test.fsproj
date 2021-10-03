@@ -10,7 +10,7 @@
     <Compile Include="LitElementTest.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\src\Lit\Lit.fsproj" />
+    <ProjectReference Include="..\src\Lit.Elmish\Lit.Elmish.fsproj" />
     <ProjectReference Include="..\src\Lit.Test\Lit.Test.fsproj" />
   </ItemGroup>
   <ItemGroup>

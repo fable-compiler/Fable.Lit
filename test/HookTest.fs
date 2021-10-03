@@ -2,6 +2,7 @@ module HookTest
 
 open Elmish
 open Lit
+open Lit.Elmish
 open Expect
 open Expect.Dom
 open WebTestRunner
@@ -111,7 +112,10 @@ let private update msg state =
 
 [<HookComponent>]
 let ElmishComponent () =
-    let state, dispatch = Hook.useElmish (init, update)
+    let state, dispatch =
+        // Check useElmish works out of an Elmish program
+        lazy Program.mkHidden init update
+        |> Hook.useElmish
 
     let resetDisplay() =
         if state.reset then html $"""<p id="reset">Has reset!</p>"""

@@ -49,11 +49,6 @@ module Program =
     let mountAndRunTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) =
         mountAndRunTestWith () program
 
-    /// Creates an elmish program that doesn't render
-    let mkHidden init update =
-        let view _ _ = ()
-        Program.mkProgram init update view
-
     /// Returns a handler to retrieve the model and dispatch messages
     let runTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, unit>) =
         let mutable model = Unchecked.defaultof<_>
