@@ -132,14 +132,13 @@ type HookContextHost =
 type HookContext(host: HookContextHost) =
     let mutable _firstRun = true
     let mutable _rendering = false
+    let mutable _args = [||]
 
     let mutable _stateIndex = 0
     let mutable _effectIndex = 0
     let _states = ResizeArray<obj>()
     let _effects = ResizeArray<Effect>()
     let _disposables = ResizeArray<IDisposable>()
-
-    member val args = [||] with get, set
 
     // TODO: Improve error message for each situation
     member _.fail() =
@@ -148,12 +147,18 @@ type HookContext(host: HookContextHost) =
     member _.requestUpdate() =
         host.requestUpdate()
 
-    member this.render() =
+    member this.renderWith(args: obj array) =
+        if _firstRun || args <> _args then
+            _args <- args
+            this.render() |> Some
+        else None
+
+    member this.render(): TemplateResult =
         _stateIndex <- 0
         _effectIndex <- 0
         _rendering <- true
 
-        let res = host.renderFn.apply(host, this.args)
+        let res = host.renderFn.apply(host, _args)
 
         if not _firstRun &&
             (_stateIndex <> _states.Count || _effectIndex <> _effects.Count) then
@@ -369,9 +374,10 @@ type HookDirective() =
     member this.requestUpdate() =
         this.setValue(_hooks.render())
 
-    member this.render([<ParamArray>] args: obj []) =
-        _hooks.args <- args
-        _hooks.render ()
+    member _.render([<ParamArray>] args: obj []) =
+        match _hooks.renderWith(args) with
+        | Some template -> template
+        | None -> LitBindings.noChange
 
     member _.disconnected() =
 #if DEBUG
