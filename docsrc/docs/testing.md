@@ -28,7 +28,7 @@ describe "Todo" <| fun () ->
         // that's also an observable reporting model updates
         use! container =
             Program.mkProgram init update view
-            |> Program.runTest
+            |> Program.mountAndTest
 
         // Get the element from the container and do snapshot testing
         let el = container.El

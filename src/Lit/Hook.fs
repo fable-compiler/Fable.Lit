@@ -87,8 +87,6 @@ module internal HookUtil =
                 | true -> state <- ReadWritable(items |> doubleSize rix, items.Length, 0)
                 | _ -> state <- ReadWritable(items, wix', rix)
 
-    type Cmd<'Msg> = (('Msg -> unit) -> unit) list
-
     type RenderFn = obj[] -> TemplateResult
 
 open HookUtil
@@ -258,7 +256,7 @@ type HookContext(host: HookContextHost) =
     member this.useEffectOnce(effect) : unit =
         this.setEffect(Effect.OnConnected effect)
 
-    member this.useElmish(mkProgram) =
+    member this.useElmish(mkProgram): 'State * ('Msg -> unit) =
         if _firstRun then
             // TODO: Error handling? (also when running update)
             let exec dispatch cmd =
@@ -339,8 +337,8 @@ module HookExtensions =
         member ctx.useMemo(init: unit -> 'Value): 'Value =
             ctx.useRef(init).Value
 
-        member ctx.useElmish(init, update) =
-            ctx.useElmish(fun () -> init, update)
+        member ctx.useElmish(init, update): 'model * ('msg -> unit) =
+            ctx.useElmish(fun () -> (init, update))
 
         member ctx.useEffectOnce(effect: (unit -> unit)) =
             ctx.useEffectOnce(fun () ->
@@ -604,8 +602,8 @@ type Hook() =
     ///                &lt;/button>
     ///              """
     /// </example>
-    static member inline useElmish<'State,'Msg when 'State : equality> (init: unit -> 'State * Cmd<'Msg>, update: 'Msg -> 'State -> 'State * Cmd<'Msg>): 'State * ('Msg -> unit) =
-        Hook.getContext().useElmish(init, update)
+    static member inline useElmish(init, update): 'State * ('Msg -> unit) =
+        Hook.getContext().useElmish(fun () -> (init, update))
 
     /// <summary>
     /// Helper to implement CSS transitions in your component.

@@ -1,4 +1,4 @@
-﻿module Lit.Elmish
+﻿namespace Lit.Elmish
 
 open Browser
 open Browser.Types
@@ -35,34 +35,40 @@ module Program =
 
         withLitOnElement el program
 
-let useElmish(ctx: HookContext, program: unit -> Program<unit, 'State, 'Msg, unit>) =
-    ctx.useElmish(fun () ->
-        let mutable init = Unchecked.defaultof<_>
-        let mutable update = Unchecked.defaultof<_>
-        let mutable subscribe = Unchecked.defaultof<_>
 
-        // Poor man's way of accessing program's functions
-        program() |> Program.map
-            (fun _init -> init <- _init; _init)
-            (fun _update -> update <- _update; _update)
-            id // view
-            id // setState
-            (fun _subscribe -> subscribe <- _subscribe; _subscribe)
-            |> ignore
+[<AutoOpen>]
+module LitElmishExtensions =
+    module LitElmishExtensionsUtil =
+        let useElmish(ctx: HookContext, program: unit -> Program<unit, 'State, 'Msg, unit>) =
+            ctx.useElmish(fun () ->
+                let mutable init = Unchecked.defaultof<_>
+                let mutable update = Unchecked.defaultof<_>
+                let mutable subscribe = Unchecked.defaultof<_>
 
-        let init() =
-            let model, cmd1 = init()
-            let cmd2 = subscribe model
-            model, cmd1 @ cmd2
+                // Poor man's way of accessing program's functions
+                program() |> Program.map
+                    (fun _init -> init <- _init; _init)
+                    (fun _update -> update <- _update; _update)
+                    id // view
+                    id // setState
+                    (fun _subscribe -> subscribe <- _subscribe; _subscribe)
+                    |> ignore
 
-        init, update)
+                let init() =
+                    let model, cmd1 = init()
+                    let cmd2 = subscribe model
+                    model, cmd1 @ cmd2
 
-type Hook with
-    static member inline useElmish<'State, 'Msg when 'State : equality>(program: Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
-        useElmish(Hook.getContext(), fun () -> program)
+                init, update)
 
-    static member inline useElmish<'State, 'Msg when 'State : equality>(program: Lazy<Program<unit, 'State, 'Msg, unit>>): 'State * ('Msg -> unit) =
-        useElmish(Hook.getContext(), program.Force)
+    open LitElmishExtensionsUtil
 
-    static member inline useElmish<'State, 'Msg when 'State : equality>(program: unit -> Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
-        useElmish(Hook.getContext(), program)
+    type Hook with
+        static member inline useElmish(program: Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
+            useElmish(Hook.getContext(), fun () -> program)
+
+        static member inline useElmish(program: Lazy<Program<unit, 'State, 'Msg, unit>>): 'State * ('Msg -> unit) =
+            useElmish(Hook.getContext(), program.Force)
+
+        static member inline useElmish(program: unit -> Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
+            useElmish(Hook.getContext(), program)

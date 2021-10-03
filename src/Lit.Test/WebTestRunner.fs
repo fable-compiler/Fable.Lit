@@ -37,6 +37,13 @@ type WebTestRunnerBindings =
     abstract a11ySnapshot: selector: string -> JS.Promise<SnapshotConfig>
     abstract findAccessibilityNode: snapshot: AccessibilitySnapshot * selector: (AccessibilityNode -> bool) -> AccessibilityNode option
 
+    /// The specified path is resolved relative to the (JS-compiled) test file being executed.
+    abstract writeFile: path: string * content: string -> JS.Promise<unit>
+    /// The specified path is resolved relative to the (JS-compiled) test file being executed.
+    abstract readFile: path: string -> JS.Promise<string>
+    /// The specified path is resolved relative to the (JS-compiled) test file being executed.
+    abstract removeFile: path: string -> JS.Promise<unit>
+
     [<Emit("$0.setViewport({ width: $1, height: $2 })")>]
     abstract setViewport: width: int * height: int -> JS.Promise<unit>
 

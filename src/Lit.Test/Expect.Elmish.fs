@@ -1,7 +1,6 @@
 module Expect.Elmish
 
 open System
-open System.Collections.Generic
 open Elmish
 open Lit
 open Expect.Dom
@@ -23,7 +22,7 @@ module Program =
 
     /// Mounts an element to the DOM to render the Elmish app and returns the container
     /// with an extra property to retrieve the model.
-    let mountAndRunTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, Lit.TemplateResult>) = promise {
+    let mountAndTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, Lit.TemplateResult>) = promise {
         let mutable model = Unchecked.defaultof<_>
         let! container = render_html $"<div></div>"
 
@@ -46,11 +45,11 @@ module Program =
 
     /// Mounts an element to the DOM to render the Elmish app and returns the container
     /// with an extra property to retrieve the model.
-    let mountAndRunTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) =
-        mountAndRunTestWith () program
+    let mountAndTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) =
+        mountAndTestWith () program
 
     /// Returns a handler to retrieve the model and dispatch messages
-    let runTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, unit>) =
+    let testWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, unit>) =
         let mutable model = Unchecked.defaultof<_>
         let mutable dispatch = Unchecked.defaultof<_>
 
@@ -68,5 +67,5 @@ module Program =
         }
 
     /// Returns a handler to retrieve the model and dispatch messages
-    let runTest (program: Program<unit, 'model, 'msg, unit>) =
-        runTestWith () program
+    let test (program: Program<unit, 'model, 'msg, unit>) =
+        testWith () program

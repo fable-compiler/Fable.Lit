@@ -122,26 +122,6 @@ let classes = Lit.classes [
 html $"""<button class={classes}>Click me</button>"""
 ```
 
-### memoize
-
-If your templates are expensive to calculate you can use memoize (cache).
-
-```fsharp
-let recalculate _ =
-    //... do the thing!
-    setState result
-
-let getExpensiveTemplate value =
-    // Render the template!
-
-html $"""
-    <div>
-        <button @click={recalculate}>Re-calculate</button>
-        {Lit.memoize(getExpensiveTemplate state)}
-    </div>
-    """
-```
-
 ### mapUnique
 
 You can pass any iterable (including F# lists) to Lit, but when it's important to identify items in a list (e.g. when the list can be sorted, filtered or included item transitions), use `Lit.mapUnique` to five each item a unique id.
@@ -159,23 +139,23 @@ html $"""
     """
 ```
 
-### ofLazy
+### ifSome
 
-Prevents re-render of a template function until one of the dependencies changes.
+Sets the attribute if the value is Some and removes the attribute if the value is None.
 
 ```fsharp
-let name, setState = Hook.useState "Peter"
-let age, setAge = Hook.useState 10
+html $"""<img src="/images/${ifSome filename}">"""
+```
 
-let nameTemplate() = html $"Hey {name}! "
-let ageTemplate() = html $"you are {age} years old!"
+### onChange
 
-html $"""
-    <input type="text" @input={EvVal setName} />
-    <input type="number" @input={EvVal setAge} />
-    {Lit.ofLazy [name] nameTemplate}
-    {Lit.ofLazy [age] ageTemplate}
-    """
+Prevents re-render of a template function unless one of the dependencies has changed.
+
+```fsharp
+let greetingTemplate (name: string) (age: int) =
+    html $"Hey {name}! You are {age} years old!"
+
+Lit.onChange("Angel", 10, greetingTemplate)
 ```
 
 ### ofPromise
@@ -183,29 +163,29 @@ html $"""
 Shows the placeholder until the promise is resolved.
 
 ```fsharp
-let loadingTpl =
-    html $"<div>Loading...</div>"
+let deferredTemplate = promise {
+    do! Promise.sleep 80
+    return html $"<p>Sorry for being late!</p>"
+}
 
-let startLoading =
-    promise {
-        do! Promise.sleep(2000)
-        let template = // ... build a template from an async resource
-        return template
-    }
-
-html $"""
-    <div>
-        {Lit.ofPromise loadingTpl startLoading}
-    </div>
-    """
+Lit.ofPromise(deferredTemplate, placeholder=html $"<p>I'm already here!</p>")
 ```
 
-### attrOfOption
+### ofImport
 
-Sets the attribute if the value is defined and removes the attribute if the value is undefined.
+Lazily imports a register or render function from another module, this helps JS bundlers to split the code and optimize loading times. Be careful not to reference anything else from the imported module.
 
 ```fsharp
-html $"""<img src="/images/${attrOfOption size}/${attrOfOption filename}">"""
+// Components.fs
+
+module Components
+
+[<HookComponent>]
+let MyComponent(text: string) = // ..
+
+// App.fs
+
+Lit.ofImport(Components.MyComponent, fun render -> render "something")
 ```
 
 :::info

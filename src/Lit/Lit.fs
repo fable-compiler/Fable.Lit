@@ -227,10 +227,6 @@ type Lit() =
     /// </summary>
     static member classes(classes: string seq): string = classes |> String.concat " "
 
-    static member ofSeq(items: TemplateResult seq) : TemplateResult = unbox items
-
-    static member ofList(items: TemplateResult list) : TemplateResult = unbox items
-
     /// <summary>
     /// Give a unique id to items in a list. This can improve performance in lists that will be sorted, filtered or re-ordered.
     /// </summary>
@@ -273,6 +269,12 @@ type Lit() =
     /// Only re-render the template if one of the dependencies changes.
     static member onChange(dependency1: 'T1, dependency2: 'T2, dependency3: 'T3, dependency4: 'T4, template: 'T1 -> 'T2 -> 'T3 -> 'T4 -> TemplateResult): TemplateResult =
         LitBindings.guard([|dependency1; dependency2; dependency3; dependency4|], fun () -> template dependency1 dependency2 dependency3 dependency4)
+
+    static member inline ofSeq(items: TemplateResult seq) : TemplateResult = unbox items
+
+    static member inline ofList(items: TemplateResult list) : TemplateResult = unbox items
+
+    static member inline ofArray(items: TemplateResult array) : TemplateResult = unbox items
 
     static member inline ofStr(v: string) : TemplateResult = unbox v
 
