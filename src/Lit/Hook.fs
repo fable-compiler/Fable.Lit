@@ -42,51 +42,6 @@ module internal HookUtil =
         | OnConnected of (unit -> IDisposable)
         | OnRender of (unit -> unit)
 
-    [<Struct>]
-    type RingState<'item> =
-        | Writable of wx: 'item array * ix: int
-        | ReadWritable of rw: 'item array * wix: int * rix: int
-
-    type RingBuffer<'item>(size) =
-        let doubleSize ix (items: 'item array) =
-            seq {
-                yield! items |> Seq.skip ix
-                yield! items |> Seq.take ix
-
-                for _ in 0 .. items.Length do
-                    yield Unchecked.defaultof<'item>
-            }
-            |> Array.ofSeq
-
-        let mutable state: 'item RingState =
-            Writable(Array.zeroCreate (max size 10), 0)
-
-        member _.Pop() =
-            match state with
-            | ReadWritable (items, wix, rix) ->
-                let rix' = (rix + 1) % items.Length
-
-                match rix' = wix with
-                | true -> state <- Writable(items, wix)
-                | _ -> state <- ReadWritable(items, wix, rix')
-
-                Some items.[rix]
-            | _ -> None
-
-        member _.Push(item: 'item) =
-            match state with
-            | Writable (items, ix) ->
-                items.[ix] <- item
-                let wix = (ix + 1) % items.Length
-                state <- ReadWritable(items, wix, ix)
-            | ReadWritable (items, wix, rix) ->
-                items.[wix] <- item
-                let wix' = (wix + 1) % items.Length
-
-                match wix' = rix with
-                | true -> state <- ReadWritable(items |> doubleSize rix, items.Length, 0)
-                | _ -> state <- ReadWritable(items, wix', rix)
-
     type RenderFn = obj[] -> TemplateResult
 
 open HookUtil
@@ -256,64 +211,6 @@ type HookContext(host: HookContextHost) =
     member this.useEffectOnce(effect) : unit =
         this.setEffect(Effect.OnConnected effect)
 
-    member this.useElmish(mkProgram): 'State * ('Msg -> unit) =
-        if _firstRun then
-            // TODO: Error handling? (also when running update)
-            let exec dispatch cmd =
-                cmd |> List.iter (fun call -> call dispatch)
-
-            let init, update = mkProgram()
-            let (model, cmd) = init ()
-            let index, (model, _) = this.addState (model, null)
-
-            let setState (model: 'State) (dispatch: 'Msg -> unit) =
-                this.setState (
-                    index,
-                    (model, dispatch),
-                    equals = fun (oldModel, _) (newModel, _) -> (box oldModel).Equals(newModel)
-                )
-
-            let rb = RingBuffer 10
-            let mutable reentered = false
-            let mutable state = model
-
-            let rec dispatch msg =
-                if reentered then
-                    rb.Push msg
-                else
-                    reentered <- true
-                    let mutable nextMsg = Some msg
-
-                    while Option.isSome nextMsg do
-                        let msg = nextMsg.Value
-                        let (model', cmd') = update msg state
-                        setState model' dispatch
-                        cmd' |> exec dispatch
-                        state <- model'
-                        nextMsg <- rb.Pop()
-
-                    reentered <- false
-
-            _effects.Add(
-                Effect.OnConnected
-                    (fun () ->
-                        cmd |> exec dispatch
-
-                        { new IDisposable with
-                            member _.Dispose() =
-                                let (state, _) = _states.[index] :?> _
-
-                                match box state with
-                                | :? IDisposable as disp -> disp.Dispose()
-                                | _ -> () })
-            )
-
-            _states.[index] <- (state, dispatch)
-            state, dispatch
-        else
-            _effectIndex <- _effectIndex + 1
-            this.getState () |> snd
-
 [<AllowNullLiteral>]
 type IHookProvider =
     abstract hooks: HookContext
@@ -336,9 +233,6 @@ module HookExtensions =
 
         member ctx.useMemo(init: unit -> 'Value): 'Value =
             ctx.useRef(init).Value
-
-        member ctx.useElmish(init, update): 'model * ('msg -> unit) =
-            ctx.useElmish(fun () -> (init, update))
 
         member ctx.useEffectOnce(effect: (unit -> unit)) =
             ctx.useEffectOnce(fun () ->
@@ -572,38 +466,6 @@ type Hook() =
     /// Fire a side effect after the component renders if the given value changes.
     static member inline useEffectOnChange(value: 'T, effect: 'T -> unit): unit =
         Hook.getContext().useEffectOnChange(value, effect)
-
-    /// <summary>
-    /// Start an [Elmish](https://elmish.github.io/elmish/) model-view-update loop.
-    /// </summary>
-    /// <example>
-    ///      type State = { counter: int }
-    ///
-    ///      type Msg = Increment | Decrement
-    ///
-    ///      let init () = { counter = 0 }
-    ///
-    ///      let update msg state =
-    ///          match msg with
-    ///          | Increment -&gt; { state with counter = state.counter + 1 }
-    ///          | Decrement -&gt; { state with counter = state.counter - 1 }
-    ///
-    ///      [&lt;HookComponent>]
-    ///      let app () =
-    ///          let state, dispatch = Hook.useElmish(init, update)
-    ///         html $"""
-    ///               &lt;header>Click the counter&lt;/header>
-    ///               &lt;div id="count">{state.counter}&lt;/div>
-    ///               &lt;button type="button" @click=${fun _ -> dispatch Increment}>
-    ///                 Increment
-    ///               &lt;/button>
-    ///               &lt;button type="button" @click=${fun _ -> dispatch Decrement}>
-    ///                   Decrement
-    ///                &lt;/button>
-    ///              """
-    /// </example>
-    static member inline useElmish(init, update): 'State * ('Msg -> unit) =
-        Hook.getContext().useElmish(fun () -> (init, update))
 
     /// <summary>
     /// Helper to implement CSS transitions in your component.

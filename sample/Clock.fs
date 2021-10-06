@@ -5,6 +5,7 @@ open Fable.Core
 open Browser.Types
 open Elmish
 open Lit
+open Lit.Elmish
 
 module Helpers =
     let hmr = HMR.createToken()

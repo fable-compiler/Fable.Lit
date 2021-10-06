@@ -1,5 +1,6 @@
 ﻿namespace Lit.Elmish
 
+open System
 open Browser
 open Browser.Types
 open Elmish
@@ -35,35 +36,86 @@ module Program =
 
         withLitOnElement el program
 
-
 [<AutoOpen>]
 module LitElmishExtensions =
-    module LitElmishExtensionsUtil =
-        let useElmish(ctx: HookContext, program: unit -> Program<unit, 'State, 'Msg, unit>) =
-            ctx.useElmish(fun () ->
-                let mutable init = Unchecked.defaultof<_>
-                let mutable update = Unchecked.defaultof<_>
-                let mutable subscribe = Unchecked.defaultof<_>
+    type ElmishObservable<'State, 'Msg>() =
+        let mutable state: 'State option = None
+        let mutable listener: ('State -> unit) option = None
+        let mutable dispatcher: ('Msg -> unit) option = None
 
-                // Poor man's way of accessing program's functions
-                program() |> Program.map
-                    (fun _init -> init <- _init; _init)
-                    (fun _update -> update <- _update; _update)
-                    id // view
-                    id // setState
-                    (fun _subscribe -> subscribe <- _subscribe; _subscribe)
-                    |> ignore
+        member _.Value = state
 
-                let init() =
-                    let model, cmd1 = init()
-                    let cmd2 = subscribe model
-                    model, cmd1 @ cmd2
+        member _.SetState (model: 'State) (dispatch: 'Msg -> unit) =
+            state <- Some model
+            dispatcher <- Some dispatch
+            match listener with
+            | None -> ()
+            | Some listener -> listener model
 
-                init, update)
+        member _.Dispatch(msg) =
+            match dispatcher with
+            | None -> () // Error?
+            | Some dispatch -> dispatch msg
 
-    open LitElmishExtensionsUtil
+        member _.Subscribe(f) =
+            match listener with
+            | Some _ -> ()
+            | None -> listener <- Some f
+
+    let useElmish(ctx: HookContext, program: unit -> Program<unit, 'State, 'Msg, unit>) =
+        let obs = ctx.useMemo(fun () -> ElmishObservable())
+
+        let state, setState = ctx.useState(fun () ->
+            program()
+            |> Program.withSetState obs.SetState
+            |> Program.run
+
+            match obs.Value with
+            | None -> failwith "Elmish program has not initialized"
+            | Some v -> v)
+
+        ctx.useEffectOnce(fun () ->
+            Hook.createDisposable(fun () ->
+                match box state with
+                | :? System.IDisposable as disp -> disp.Dispose()
+                | _ -> ()))
+
+        obs.Subscribe(setState)
+        state, obs.Dispatch
 
     type Hook with
+        /// <summary>
+        /// Start an [Elmish](https://elmish.github.io/elmish/) model-view-update loop.
+        /// </summary>
+        /// <example>
+        ///      type State = { counter: int }
+        ///
+        ///      type Msg = Increment | Decrement
+        ///
+        ///      let init () = { counter = 0 }
+        ///
+        ///      let update msg state =
+        ///          match msg with
+        ///          | Increment -&gt; { state with counter = state.counter + 1 }
+        ///          | Decrement -&gt; { state with counter = state.counter - 1 }
+        ///
+        ///      [&lt;HookComponent>]
+        ///      let app () =
+        ///          let state, dispatch = Hook.useElmish(init, update)
+        ///         html $"""
+        ///               &lt;header>Click the counter&lt;/header>
+        ///               &lt;div id="count">{state.counter}&lt;/div>
+        ///               &lt;button type="button" @click=${fun _ -> dispatch Increment}>
+        ///                 Increment
+        ///               &lt;/button>
+        ///               &lt;button type="button" @click=${fun _ -> dispatch Decrement}>
+        ///                   Decrement
+        ///                &lt;/button>
+        ///              """
+        /// </example>
+        static member inline useElmish(init: unit -> ('State * Cmd<'Msg>), update: 'Msg -> 'State -> ('State * Cmd<'Msg>)): 'State * ('Msg -> unit) =
+            useElmish(Hook.getContext(), fun () -> Program.mkHidden init update)
+
         static member inline useElmish(program: Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
             useElmish(Hook.getContext(), fun () -> program)
 
