@@ -270,10 +270,13 @@ type Lit() =
     static member onChange(dependency1: 'T1, dependency2: 'T2, dependency3: 'T3, dependency4: 'T4, template: 'T1 -> 'T2 -> 'T3 -> 'T4 -> TemplateResult): TemplateResult =
         LitBindings.guard([|dependency1; dependency2; dependency3; dependency4|], fun () -> template dependency1 dependency2 dependency3 dependency4)
 
+    /// To respect list item identities when sorting, inserting, removing... use `mapUnique`
     static member inline ofSeq(items: TemplateResult seq) : TemplateResult = unbox items
 
+    /// To respect list item identities when sorting, inserting, removing... use `mapUnique`
     static member inline ofList(items: TemplateResult list) : TemplateResult = unbox items
 
+    /// To respect list item identities when sorting, inserting, removing... use `mapUnique`
     static member inline ofArray(items: TemplateResult array) : TemplateResult = unbox items
 
     static member inline ofStr(v: string) : TemplateResult = unbox v

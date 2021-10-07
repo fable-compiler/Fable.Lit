@@ -5,16 +5,9 @@
     <PackageVersion>1.2.0</PackageVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NpmDependencies>
-      <NpmPackage Name="@web/test-runner" Version="gte 0.13.18" ResolutionStrategy="Max" DevDependency="true" />
-      <NpmPackage Name="@web/test-runner-commands" Version="gte 0.5.13" ResolutionStrategy="Max" DevDependency="true" />
-    </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Expect.fs" />
-    <Compile Include="Expect.Dom.fs" />
-    <Compile Include="Expect.Elmish.fs" />
-    <Compile Include="WebTestRunner.fs" />
+    <Compile Include="Lit.Test.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs; *.js" PackagePath="fable\" />
@@ -23,7 +16,6 @@
     <ProjectReference Include="..\Lit\Lit.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Browser.Dom" Version="2.5.0" />
-    <PackageReference Include="Fable.Elmish" Version="3.1.0" />
+    <PackageReference Include="Fable.Expect" Version="1.1.0" />
   </ItemGroup>
 </Project>

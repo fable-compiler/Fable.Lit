@@ -5,7 +5,7 @@ open Lit
 open Expect
 open Expect.Dom
 open WebTestRunner
-open Browser.Types
+open Lit.Test
 
 [<LitElement("fable-element")>]
 let MyEl () =

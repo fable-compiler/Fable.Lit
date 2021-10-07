@@ -119,8 +119,5 @@ module LitElmishExtensions =
         static member inline useElmish(program: Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
             useElmish(Hook.getContext(), fun () -> program)
 
-        static member inline useElmish(program: Lazy<Program<unit, 'State, 'Msg, unit>>): 'State * ('Msg -> unit) =
-            useElmish(Hook.getContext(), program.Force)
-
         static member inline useElmish(program: unit -> Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
             useElmish(Hook.getContext(), program)

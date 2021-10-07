@@ -6,6 +6,7 @@ open Lit.Elmish
 open Expect
 open Expect.Dom
 open WebTestRunner
+open Lit.Test
 
 [<HookComponent>]
 let Counter () =
@@ -91,6 +92,7 @@ type private State = { counter: int; reset: bool }
 
 type private Msg =
     | Increment
+    | IncrementAgain
     | Decrement
     | DelayedReset
     | AfterDelay
@@ -103,6 +105,10 @@ let private update msg state =
         { state with
               counter = state.counter + 1 },
         Cmd.none
+    | IncrementAgain ->
+        { state with
+              counter = state.counter + 1 },
+        Cmd.ofMsg Increment
     | Decrement ->
         { state with
               counter = state.counter - 1 },
@@ -112,10 +118,7 @@ let private update msg state =
 
 [<HookComponent>]
 let ElmishComponent () =
-    let state, dispatch =
-        // Check useElmish works out of an Elmish program
-        lazy Program.mkHidden init update
-        |> Hook.useElmish
+    let state, dispatch = Hook.useElmish(init, update)
 
     let resetDisplay() =
         if state.reset then html $"""<p id="reset">Has reset!</p>"""
@@ -127,6 +130,7 @@ let ElmishComponent () =
                <p id="count">{state.counter}</p>
                {resetDisplay()}
                <button @click={Ev(fun _ -> dispatch Increment)}>Increment</button>
+               <button @click={Ev(fun _ -> dispatch IncrementAgain)}>Increment Again</button>
                <button @click={Ev(fun _ -> dispatch Decrement)}>Decrement</button>
                <button @click={Ev(fun _ -> dispatch DelayedReset)}>Delayed Reset</button>
             </div>
@@ -208,24 +212,30 @@ describe "Hook" <| fun () ->
         use! el = ElmishComponent() |> render
         let el = el.El
         let inc = el.getButton("increment")
+        let incAgain = el.getButton("increment again")
         let decr = el.getButton("decrement")
-
         let delayedReset = el.getButton("delay")
+
         // normal dispatch works
         el.querySelector("#count") |> Expect.innerText "0"
         inc.click()
         inc.click()
-
-        // normal dispatch works
         el.querySelector("#count") |> Expect.innerText "2"
-        decr.click()
-        decr.click()
 
-        el.querySelector("#count") |> Expect.innerText "0"
-        decr.click()
-        decr.click()
+        // Cmd works, see https://github.com/fable-compiler/fable-promise/issues/24#issuecomment-934328900
+        incAgain.click()
+        el.querySelector("#count") |> Expect.innerText "4"
 
         // normal dispatch works
+        decr.click()
+        decr.click()
+        decr.click()
+        decr.click()
+        el.querySelector("#count") |> Expect.innerText "0"
+
+        // normal dispatch works
+        decr.click()
+        decr.click()
         el.querySelector("#count") |> Expect.innerText "-2"
 
         delayedReset.click()
