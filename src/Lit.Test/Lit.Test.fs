@@ -47,14 +47,12 @@ let render_html (template: FormattableString) =
 
 [<RequireQualifiedAccess>]
 module Program =
-    open Elmish
-
     /// Mounts an element to the DOM to render the Elmish app and returns the container
     /// with an extra property to retrieve the model.
-    let mountAndTestWith (arg: 'arg) (program: Program<'arg, 'model, 'msg, Lit.TemplateResult>) =
+    let mountAndTestWith (arg: 'arg) (program: Elmish.Program<'arg, 'model, 'msg, Lit.TemplateResult>) =
         Expect.Elmish.Program.mountAndTestWith Lit.render arg program
 
     /// Mounts an element to the DOM to render the Elmish app and returns the container
     /// with an extra property to retrieve the model.
-    let mountAndTest (program: Program<unit, 'model, 'msg, Lit.TemplateResult>) =
+    let mountAndTest (program: Elmish.Program<unit, 'model, 'msg, Lit.TemplateResult>) =
         Expect.Elmish.Program.mountAndTest Lit.render program

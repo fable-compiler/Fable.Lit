@@ -176,7 +176,7 @@ let initEl (config: LitConfig<_>) =
 
 [<LitElement("my-clock")>]
 let Clock() =
-    let _, props = LitElement.init initEl
+    let host, props = LitElement.init initEl
     let hourColor = props.hourColor.Value
     let colors = props.minuteColors.Value
 
@@ -208,8 +208,9 @@ let Clock() =
         </svg>
 
         <div class="container">
-            <p>This is a clock</p>
+            <p id="message">This is a clock</p>
             {select colors model.MinuteHandColor (fun color ->
+                host.renderRoot.querySelector("#message").textContent <- "Color selected"
                 List.tryFindIndex ((=) color) colors
                 |> Option.iter (fun i ->
                     props.evenColor.Value <- (i + 1) % 2 = 0)

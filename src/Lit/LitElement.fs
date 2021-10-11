@@ -11,8 +11,9 @@ open HMRTypes
 // is still implemented as interface in Fable.Browser
 [<Import("LitElement", "lit")>]
 type LitElement() =
-    /// Access the underlying HTMLElement
-    [<Emit("$0")>] member _.el: HTMLElement = jsNative
+    /// Node or ShadowRoot into which element DOM should be rendered. Defaults to an open shadowRoot.
+    member _.renderRoot: HTMLElement = jsNative
+    member _.shadowRoot: ShadowRoot = jsNative
     member _.isConnected: bool = jsNative
     member _.connectedCallback(): unit = jsNative
     member _.disconnectedCallback(): unit = jsNative
@@ -56,8 +57,8 @@ module private LitElementUtil =
     let definedElements = Collections.Generic.HashSet<string>()
 
     let updateStyleSheets (data: obj) (litEl: LitElement) (newCSSResults: CSSResult[]) =
-        if isNotNull litEl.el.shadowRoot && isNotNull litEl.el.shadowRoot.adoptedStyleSheets && isNotNull newCSSResults then
-            let oldSheets = litEl.el.shadowRoot.adoptedStyleSheets
+        if isNotNull litEl.shadowRoot && isNotNull litEl.shadowRoot.adoptedStyleSheets && isNotNull newCSSResults then
+            let oldSheets = litEl.shadowRoot.adoptedStyleSheets
             let updatedSheets = getOrAdd data "updatedSheets" (fun _ -> JS.Constructors.Set.Create())
             if oldSheets.Length = newCSSResults.Length then
                 Array.zip oldSheets newCSSResults
@@ -337,7 +338,7 @@ module LitElementExtensions =
                 o.cancelable <- defaultArg cancelable true
             )
             |> createEvent name
-            |> this.el.dispatchEvent
+            |> this.renderRoot.dispatchEvent
             |> ignore
 
         /// <summary>
@@ -358,7 +359,7 @@ module LitElementExtensions =
                 o.cancelable <- defaultArg cancelable true
             )
             |> createCustomEvent name
-            |> this.el.dispatchEvent
+            |> this.renderRoot.dispatchEvent
             |> ignore
 
         /// <summary>
