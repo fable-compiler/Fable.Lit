@@ -1,3 +1,7 @@
+### 1.3.0
+
+* Use Fable.Expect
+
 ### 1.2.0
 
 * Add rest of Web Test Runner commands

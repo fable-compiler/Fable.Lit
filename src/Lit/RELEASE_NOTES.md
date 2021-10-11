@@ -1,3 +1,8 @@
+### 1.3.0
+
+* Remove custom useElmish implementation
+* Fix #22: Add renderRoot to LitElement
+
 ### 1.2.0
 
 * Add ofImport
