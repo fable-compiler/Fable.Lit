@@ -37,6 +37,13 @@ module internal HookUtil =
         // window.requestAnimationFrame (fun _ -> f ()) |> ignore
         delay 0 f
 
+    let iter (f: 'T -> unit) (xs: ResizeArray<'T>) =
+        let mutable i = 0
+        let len = xs.Count
+        while i < len do
+            f xs.[i]
+            i <- i + 1
+
     [<RequireQualifiedAccess>]
     type Effect =
         | OnConnected of (unit -> IDisposable)
@@ -83,7 +90,7 @@ type HookContextHost =
 
 [<AttachMembers>]
 type HookContext(host: HookContextHost) =
-    let mutable _firstRun = true
+    let mutable _firstRender = true
     let mutable _rendering = false
     let mutable _args = [||]
 
@@ -97,14 +104,18 @@ type HookContext(host: HookContextHost) =
     member _.fail() =
         failwith "Hooks must be called consistently for each render call"
 
+    member _.hasUpdated = not _firstRender
+    member _.isUpdating = _rendering
+
     member _.requestUpdate() =
         host.requestUpdate()
 
-    member this.renderWith(args: obj array) =
-        if _firstRun || args <> _args then
+    /// Returns false if args haven't changed
+    member _.setArgs(args: obj array) =
+        if _firstRender || args <> _args then
             _args <- args
-            this.render() |> Some
-        else None
+            true
+        else false
 
     member this.render(): TemplateResult =
         _stateIndex <- 0
@@ -113,16 +124,16 @@ type HookContext(host: HookContextHost) =
 
         let res = host.renderFn.apply(host, _args)
 
-        if not _firstRun &&
+        if not _firstRender &&
             (_stateIndex <> _states.Count || _effectIndex <> _effects.Count) then
             this.fail ()
 
         _rendering <- false
 
         if host.isConnected then
-            this.runEffects (onRender = true, onConnected = _firstRun)
+            this.runEffects (onRender = true, onConnected = _firstRender)
 
-        _firstRun <- false
+        _firstRender <- false
         res :?> TemplateResult
 
     member this.checkRendering() =
@@ -146,11 +157,7 @@ type HookContext(host: HookContextHost) =
 
         if not (equals oldValue newValue) then
             _states.[index] <- newValue
-
-            if not _rendering then
-                host.requestUpdate()
-            else
-                runAsync host.requestUpdate
+            host.requestUpdate()
 
     member this.getState() : int * 'T =
         if _stateIndex >= _states.Count then
@@ -174,7 +181,7 @@ type HookContext(host: HookContextHost) =
         this.checkRendering ()
 
         let index, state =
-            if _firstRun then
+            if _firstRender then
                 init () |> this.addState
             else
                 this.getState ()
@@ -184,7 +191,7 @@ type HookContext(host: HookContextHost) =
     member this.useRef(init: unit -> 'T) : ref<'T> =
         this.checkRendering ()
 
-        if _firstRun then
+        if _firstRender then
             init ()
             |> ref
             |> this.addState
@@ -195,7 +202,7 @@ type HookContext(host: HookContextHost) =
     member private this.setEffect(effect) : unit =
         this.checkRendering ()
 
-        if _firstRun then
+        if _firstRender then
             _effects.Add(effect)
         else
             if _effectIndex >= _effects.Count then
@@ -260,6 +267,8 @@ module HookExtensions =
 type HookDirective() =
     inherit AsyncDirective()
     let _hooks = HookContext(jsThis)
+    let _controllers = ResizeArray<ReactiveController>()
+    let mutable _isUpdatePending = false
 #if DEBUG
     let mutable _hmrSub: IDisposable option = None
 #endif
@@ -267,13 +276,33 @@ type HookDirective() =
     abstract renderFn: JS.Function with get, set
     abstract name: string
 
-    member this.requestUpdate() =
-        this.setValue(_hooks.render())
+    member this.performUpdate(): unit =
+        _isUpdatePending <- true
+        try
+            assert(_controllers.Count = 0)
+            _controllers |> iter (fun c ->
+                c.safeHostUpdate())
 
+            this.setValue(_hooks.render())
+
+            _controllers |> iter (fun c ->
+                c.safeHostUpdated())
+            // TODO: set _hasUpdated <- true here instead of HookContext?
+        finally
+            _isUpdatePending <- false
+
+    member this.update(part: Part, args: obj[]) =
+        // TODO: Keep a reference to `part` so we can set host also in requestUpdate?
+        part.options.host <- this
+        if _hooks.setArgs(args) then
+            (this :> ReactiveControllerHost).requestUpdate()
+
+        LitBindings.noChange
+
+    // This should only be called in SSR
     member _.render([<ParamArray>] args: obj []) =
-        match _hooks.renderWith(args) with
-        | Some template -> template
-        | None -> LitBindings.noChange
+        _hooks.setArgs(args) |> ignore
+        _hooks.render()
 
     member _.disconnected() =
 #if DEBUG
@@ -284,11 +313,13 @@ type HookDirective() =
             d.Dispose()
 #endif
         _hooks.disconnect()
+        _controllers |> iter (fun c -> c.safeHostDisconnected())
 
     // In some situations, a disconnected part may be reconnected again,
     // so we need to re-run the effects but the old state is kept
     // https://lit.dev/docs/api/custom-directives/#AsyncDirective
     member _.reconnected() =
+        _controllers |> iter (fun c -> c.safeHostConnected())
         _hooks.runEffects (onConnected = true, onRender = false)
 
 #if DEBUG
@@ -306,6 +337,29 @@ type HookDirective() =
 
     interface IHookProvider with
         member _.hooks = _hooks
+
+    interface ReactiveControllerHost with
+        member this.addController(controller) =
+            if this.isConnected then
+                controller.safeHostConnected()
+            _controllers.Add(controller)
+
+        member _.removeController(controller) =
+            // ReactiveElement doesn't call hostDisconnected here
+            // https://github.com/lit/lit/blob/f8ee010bc515e4bb319e98408d38ef3d971cc08b/packages/reactive-element/src/reactive-element.ts#L785-L789
+            _controllers.Remove(controller) |> ignore
+
+        member this.requestUpdate() =
+            if not _isUpdatePending then
+                this.performUpdate()
+
+        // Updates are synchronous and updates within updates are not allowed
+        // so this resolves immediately to true (no updates pending)
+        member _.updateComplete =
+            not _isUpdatePending |> Promise.lift
+
+        member _.hasUpdated =
+           _hooks.hasUpdated
 
 /// <summary>
 /// Use this decorator to enable "stateful" functions

@@ -17,12 +17,28 @@ module Types =
         member _.isConnected: bool = jsNative
         member _.setValue(value: obj) : unit = jsNative
 
+    type PartOptions =
+        abstract host: obj with get, set
+
     type Part =
-        interface end
+        abstract options: PartOptions
 
     type ChildPart =
         inherit Part
         abstract parentNode : Element
+
+    type RootPart =
+        inherit ChildPart
+        /// Sets the connection state for `AsyncDirective`s contained within this root ChildPart.
+        ///
+        /// lit-html does not automatically monitor the connectedness of DOM rendered;
+        /// as such, it is the responsibility of the caller to `render` to ensure that
+        /// `part.setConnected(false)` is called before the part object is potentially
+        /// discarded, to ensure that `AsyncDirective`s have a chance to dispose of
+        /// any resources being held. If a `RootPart` that was prevously
+        /// disconnected is subsequently re-connected (and its `AsyncDirective`s should
+        /// re-connect), `setConnected(true)` should be called.
+        abstract setConnected : isConnected: bool -> unit
 
     type ElementPart =
         inherit Part
@@ -33,6 +49,56 @@ module Types =
     type CSSStyleSheet =
         abstract replace: css: string -> JS.Promise<unit>
         abstract replaceSync: css: string -> unit
+
+    type ReactiveController =
+        /// Called when the host is connected to the component tree. For custom element hosts, this corresponds to the connectedCallback() lifecycle, which is only called when the component is connected to the document.
+        abstract hostConnected: unit -> unit
+
+        /// Called when the host is disconnected from the component tree. For custom element hosts, this corresponds to the disconnectedCallback() lifecycle, which is called the host or an ancestor component is disconnected from the document.
+        abstract hostDisconnected: unit -> unit
+
+        /// Called during the client-side host update, just before the host calls its own update.
+        /// Code in update() can depend on the DOM as it is not called in server-side rendering.
+        abstract hostUpdate: unit -> unit
+
+        /// Called after a host update, just before the host calls firstUpdated and updated. It is not called in server-side rendering.
+        abstract hostUpdated: unit -> unit
+
+        /// Check whether method is defined before calling it
+        [<Emit("$0.hostConnected ? $0.hostConnected() : void 0", isStatement=true)>]
+        abstract safeHostConnected: unit -> unit
+
+        /// Check whether method is defined before calling it
+        [<Emit("$0.hostDisconnected ? $0.hostDisconnected() : void 0", isStatement=true)>]
+        abstract safeHostDisconnected: unit -> unit
+
+        /// Check whether method is defined before calling it
+        [<Emit("$0.hostUpdate ? $0.hostUpdate() : void 0", isStatement=true)>]
+        abstract safeHostUpdate: unit -> unit
+
+        /// Check whether method is defined before calling it
+        [<Emit("$0.hostUpdated ? $0.hostUpdated() : void 0", isStatement=true)>]
+        abstract safeHostUpdated: unit -> unit
+
+    type ReactiveControllerHost =
+        /// Returns a Promise that resolves when the host has completed updating. The Promise value is a boolean that is true
+        /// if the element completed the update without triggering another update. The Promise result is false if a property
+        /// was set inside updated(). If the Promise is rejected, an exception was thrown during the update.
+        abstract updateComplete: JS.Promise<bool>
+
+        /// Adds a controller to the host, which sets up the controller's lifecycle methods to be called with the host's lifecycle.
+        abstract addController: ReactiveController -> unit
+
+        /// Removes a controller from the host.
+        abstract removeController: ReactiveController -> unit
+
+        /// Requests a host update which is processed asynchronously. The update can be waited on via the updateComplete property.
+        abstract requestUpdate: unit -> unit
+
+        // This is not actually part of ReactiveControllerHost interface but lit-labs/motion requests it, so implement it for now
+
+        /// Indicates if host has updated at least one time
+        abstract hasUpdated: bool
 
 open Types
 
@@ -67,7 +133,7 @@ type LitBindings =
     /// <param name="el">The container to render into.</param>
     /// <param name="t">A <see cref="Lit.TemplateResult">TemplateResult</see> to be rendered.</param>
     [<ImportMember("lit-html")>]
-    static member render(t: TemplateResult, el: Element) : unit = jsNative
+    static member render(t: TemplateResult, el: Element) : RootPart = jsNative
 
     /// <summary>
     /// A sentinel value that signals a ChildPart to fully clear its content.
@@ -212,7 +278,7 @@ type Lit() =
     /// </summary>
     /// <param name="el">The container to render into.</param>
     /// <param name="t">A <see cref="Lit.TemplateResult">TemplateResult</see> to be rendered.</param>
-    static member render el t: unit = LitBindings.render (t, el)
+    static member render el t: unit = LitBindings.render (t, el) |> ignore
 
     /// <summary>
     /// Generates a single string that filters out false-y values from a tuple sequence.
@@ -221,6 +287,12 @@ type Lit() =
         classes
         |> Seq.choose (fun (s, b) -> if b then Some s else None)
         |> String.concat " "
+
+    /// <summary>
+    /// Generates a single string that filters out false-y values from a tuple sequence.
+    /// </summary>
+    static member classes(classes: (bool * string) seq): string =
+        classes |> Seq.map (fun (b, s) -> s, b) |> Lit.classes
 
     /// <summary>
     /// Generates a string from the string sequence provided
