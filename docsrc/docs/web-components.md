@@ -29,7 +29,7 @@ let Counter() =
     let _, props =
         LitElement.init(
             fun init ->
-                let props = {| initial = Prop.of(0, attribute = "initial") |}
+                let props = {| initial = Prop.Of(0, attribute = "initial") |}
                 init.props <- props)
 
     let counter, setCounter = Hook.useState props.initial.Value
