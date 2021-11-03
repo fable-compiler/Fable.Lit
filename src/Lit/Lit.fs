@@ -306,7 +306,7 @@ type Lit() =
         LitBindings.ref
             { new RefValue<'El option> with
                 member _.value with get() = r.Value
-                                and set(v) = r := v }
+                                and set(v) = r.Value <- v }
 
     /// <summary>
     /// When placed on an element in the template, the callback will be called each time the referenced element changes.

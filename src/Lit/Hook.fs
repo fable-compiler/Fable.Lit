@@ -249,11 +249,11 @@ module HookExtensions =
             ctx.useEffect(fun () ->
                 match prev.Value with
                 | None ->
-                    prev := Some(value, effect value)
+                    prev.Value <- Some(value, effect value)
                 | Some(prevValue, disp) ->
                     if prevValue <> value then
                         disp.Dispose()
-                        prev := Some(value, effect value)
+                        prev.Value <- Some(value, effect value)
             )
 
 [<AttachMembers; AbstractClass>]
