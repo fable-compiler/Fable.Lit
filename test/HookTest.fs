@@ -287,10 +287,10 @@ describe "Hook" <| fun () ->
         valuePar |> Expect.innerText "Value: 5"
         let incrButton = el.getButton("increment")
         let decrButton = el.getButton("decrement")
-        incrButton.click()
+        do! click el incrButton
         valuePar |> Expect.innerText "Value: 6"
-        decrButton.click()
-        decrButton.click()
+        do! click el decrButton
+        do! click el decrButton
         valuePar |> Expect.innerText "Value: 4"
     }
 
@@ -301,10 +301,10 @@ describe "Hook" <| fun () ->
         valuePar |> Expect.innerText "Value: 5"
         let incrButton = el.getButton("increment")
         let decrButton = el.getButton("decrement")
-        incrButton.click()
+        do! click el incrButton
         valuePar |> Expect.innerText "Value: 6"
-        decrButton.click()
-        decrButton.click()
+        do! click el decrButton
+        do! click el decrButton
         valuePar |> Expect.innerText "Value: 4"
     }
 
@@ -319,12 +319,12 @@ describe "Hook" <| fun () ->
         aRef.Value |> Expect.equal 9
 
         // Effect is not run again on rerenders
-        el.getButton("increment").click()
+        do! click el <| el.getButton("increment")
         el.getByText("value") |> Expect.innerText "Value: 6"
         aRef.Value |> Expect.equal 9
 
         // Cause the component to be dismounted
-        el.getButton("dispose").click()
+        do! click el <| el.getButton("dispose")
         // Effect has been disposed
 
         aRef.Value |> Expect.equal 19
@@ -334,6 +334,7 @@ describe "Hook" <| fun () ->
         let aRef = ref 8
         use! el = render_html $"<test-disposable-container .r={aRef} />"
         let el = el.El
+        assert false
         el.getByText("value") |> Expect.innerText "Value: 5"
 
         // Effect is run asynchronously after after render
@@ -341,12 +342,12 @@ describe "Hook" <| fun () ->
         aRef.Value |> Expect.equal 9
 
         // Effect is not run again on rerenders
-        el.getButton("increment").click()
+        do! click el <| el.getButton("increment")
         el.getByText("value") |> Expect.innerText "Value: 6"
         aRef.Value |> Expect.equal 9
 
         // Cause the component to be dismounted
-        el.getButton("dispose").click()
+        do! click el <| el.getButton("dispose")
         // Effect has been disposed
 
         aRef.Value |> Expect.equal 19
@@ -358,19 +359,19 @@ describe "Hook" <| fun () ->
         let state = el.getButton("state")
         let second = el.getButton("second")
 
-        state.click()
-        el.querySelector("#state") |> Expect.innerText "11"
+        do! click el state
+        el.getSelector("#state") |> Expect.innerText "11"
         // un-related re-renders shouldn't affect memoized value
-        el.querySelector("#memoized") |> Expect.innerText "1"
+        el.getSelector("#memoized") |> Expect.innerText "1"
         // change second value trice
-        second.click()
-        second.click()
-        second.click()
+        do! click el second
+        do! click el second
+        do! click el second
 
         // second should have changed
-        el.querySelector("#second") |> Expect.innerText "3"
+        el.getSelector("#second") |> Expect.innerText "3"
         // memoized value should have not changed
-        el.querySelector("#memoized") |> Expect.innerText "1"
+        el.getSelector("#memoized") |> Expect.innerText "1"
     }
 
     it "useMemo doesn't change without dependencies as LitElement" <| fun () -> promise {
@@ -379,19 +380,19 @@ describe "Hook" <| fun () ->
         let state = el.getButton("state")
         let second = el.getButton("second")
 
-        state.click()
-        el.querySelector("#state") |> Expect.innerText "11"
+        do! click el state
+        el.getSelector("#state") |> Expect.innerText "11"
         // un-related re-renders shouldn't affect memoized value
-        el.querySelector("#memoized") |> Expect.innerText "1"
+        el.getSelector("#memoized") |> Expect.innerText "1"
         // change second value trice
-        second.click()
-        second.click()
-        second.click()
+        do! click el second
+        do! click el second
+        do! click el second
 
         // second should have changed
-        el.querySelector("#second") |> Expect.innerText "3"
+        el.getSelector("#second") |> Expect.innerText "3"
         // memoized value should have not changed
-        el.querySelector("#memoized") |> Expect.innerText "1"
+        el.getSelector("#memoized") |> Expect.innerText "1"
     }
 
     it "useElmish dispatches messages correctly" <| fun () -> promise {
@@ -403,34 +404,34 @@ describe "Hook" <| fun () ->
         let delayedReset = el.getButton("delay")
 
         // normal dispatch works
-        el.querySelector("#count") |> Expect.innerText "0"
-        inc.click()
-        inc.click()
-        el.querySelector("#count") |> Expect.innerText "2"
+        el.getSelector("#count") |> Expect.innerText "0"
+        do! click el inc
+        do! click el inc
+        el.getSelector("#count") |> Expect.innerText "2"
 
         // Cmd works, see https://github.com/fable-compiler/fable-promise/issues/24#issuecomment-934328900
-        incAgain.click()
-        el.querySelector("#count") |> Expect.innerText "4"
+        do! click el incAgain
+        el.getSelector("#count") |> Expect.innerText "4"
 
         // normal dispatch works
-        decr.click()
-        decr.click()
-        decr.click()
-        decr.click()
-        el.querySelector("#count") |> Expect.innerText "0"
+        do! click el decr
+        do! click el decr
+        do! click el decr
+        do! click el decr
+        el.getSelector("#count") |> Expect.innerText "0"
 
         // normal dispatch works
-        decr.click()
-        decr.click()
-        el.querySelector("#count") |> Expect.innerText "-2"
+        do! click el decr
+        do! click el decr
+        el.getSelector("#count") |> Expect.innerText "-2"
 
-        delayedReset.click()
-        el.querySelector("#count") |> Expect.innerText "-2"
+        do! click el delayedReset
+        el.getSelector("#count") |> Expect.innerText "-2"
         let! _reset =
             Expect.retryUntil "reset text appears" (fun () ->
                 el.getSelector("#reset"))
         // dispatch with async cmd works
-        el.querySelector("#count") |> Expect.innerText "0"
+        el.getSelector("#count") |> Expect.innerText "0"
     }
 
     it "useElmish dispatches messages correctly as LitElement" <| fun () -> promise {
@@ -442,32 +443,32 @@ describe "Hook" <| fun () ->
         let delayedReset = el.getButton("delay")
 
         // normal dispatch works
-        el.querySelector("#count") |> Expect.innerText "0"
-        inc.click()
-        inc.click()
-        el.querySelector("#count") |> Expect.innerText "2"
+        el.getSelector("#count") |> Expect.innerText "0"
+        do! click el inc
+        do! click el inc
+        el.getSelector("#count") |> Expect.innerText "2"
 
         // Cmd works, see https://github.com/fable-compiler/fable-promise/issues/24#issuecomment-934328900
-        incAgain.click()
-        el.querySelector("#count") |> Expect.innerText "4"
+        do! click el incAgain
+        el.getSelector("#count") |> Expect.innerText "4"
 
         // normal dispatch works
-        decr.click()
-        decr.click()
-        decr.click()
-        decr.click()
-        el.querySelector("#count") |> Expect.innerText "0"
+        do! click el decr
+        do! click el decr
+        do! click el decr
+        do! click el decr
+        el.getSelector("#count") |> Expect.innerText "0"
 
         // normal dispatch works
-        decr.click()
-        decr.click()
-        el.querySelector("#count") |> Expect.innerText "-2"
+        do! click el decr
+        do! click el decr
+        el.getSelector("#count") |> Expect.innerText "-2"
 
-        delayedReset.click()
-        el.querySelector("#count") |> Expect.innerText "-2"
+        do! click el delayedReset
+        el.getSelector("#count") |> Expect.innerText "-2"
         let! _reset =
             Expect.retryUntil "reset text appears" (fun () ->
                 el.getSelector("#reset"))
         // dispatch with async cmd works
-        el.querySelector("#count") |> Expect.innerText "0"
+        el.getSelector("#count") |> Expect.innerText "0"
     }
