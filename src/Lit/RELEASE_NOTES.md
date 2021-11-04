@@ -1,3 +1,7 @@
+### 1.3.1
+
+* Fix `useEffectOnce` running twice on LitElements
+
 ### 1.3.0
 
 * Remove custom useElmish implementation
