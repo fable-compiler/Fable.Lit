@@ -194,9 +194,12 @@ type LitHookElement<'Props>(initProps: obj -> unit) =
         base.disconnectedCallback()
         _hooks.disconnect()
 
-    member _.connectedCallback() =
-        base.connectedCallback()
-        _hooks.runEffects (onConnected = true, onRender = false)
+    // The HookContext already renders the effects on first run so we don't need to do it from here
+    // TODO: Not sure if it's possible for the same LitElement instance to be reconnected to the DOM after being disconnected
+
+    // member _.connectedCallback() =
+    //     base.connectedCallback()
+    //     _hooks.runEffects (onConnected = true, onRender = false)
 
 #if DEBUG
     interface HMRSubscriber with

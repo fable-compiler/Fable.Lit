@@ -25,6 +25,11 @@ let elementUpdated (el: Element) =
             }"""
     )
 
+/// Clicks a button and awaits for the element to be updated
+let click (el: Element) (button: HTMLButtonElement) =
+    button.click()
+    elementUpdated el
+
 /// Creates a div container, puts it in `document.body`, renders the template onto it,
 /// waits until render is complete and returns first element child.
 /// When disposed, the container will be removed from `document.body`.

@@ -16,6 +16,6 @@
     <ProjectReference Include="..\Lit\Lit.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Expect" Version="1.1.0" />
+    <PackageReference Include="Fable.Expect" Version="1.1.1" />
   </ItemGroup>
 </Project>
