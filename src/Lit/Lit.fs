@@ -336,7 +336,7 @@ module DomHelpers =
         member this.Checked: bool = (this :?> HTMLInputElement).``checked``
 
     /// Wrapper for event handlers to help type checking.
-    let inline Ev (handler: Event -> unit): Event -> unit = handler
+    let inline Ev (handler: #Event -> unit): #Event -> unit = handler
 
     /// Wrapper for event handlers to help type checking.
     /// Extracts `event.target.value` and passes it to the handler.

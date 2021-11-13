@@ -1,7 +1,9 @@
 module Sample.App
 
 open Elmish
+open Elmish.HMR
 open Lit
+open Lit.Elmish
 open Components
 
 Clock.register()
@@ -32,9 +34,6 @@ let view model dispatch =
         {ClockDisplay model dispatch}
       </div>
     """
-
-open Lit.Elmish
-open Lit.Elmish.HMR
 
 Program.mkProgram init update view
 |> Program.withLit "app-container"

@@ -8,7 +8,7 @@ open Lit
 open Lit.Elmish
 
 module Helpers =
-    let hmr = HMR.createToken()
+    let hmr = HMR.createToken(true)
 
     type Time =
         | Hour of int

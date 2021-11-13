@@ -49,25 +49,23 @@ For production make sure to use `--run` so vite doesn't start bundling until Fab
 dotnet fable src -o build/client --run vite build
 ```
 
-## Non-bundling HMR
+## Elmish and Local HMR
 
-Lit.Elmish.HMR works with non-bundling development servers like Vite or Snowpack, but with a important caveat. These dev servers do "true" Hot-Module-Replacement in the sense they only replace the updated module (remember in JS "modules" is roughly the same as "file"). However, in Elmish apps the function that triggers rendering `Program.run` is usually located in the last file. When updating any other file, the render function won't be triggered and you won't see anything changing on screen.
+Lit.Elmish is compatible with [Elmish HMR](https://elmish.github.io/hmr/) (use Fable.Elmish.HMR >= 4.3 for Vite support).
 
-Solving this for Vite and Snowpack requires injecting special code in each module containing a component. This is usually done by plugins like [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react). Indeed you can already get a hyper-fast hot reloading experience out-of-the-box with Vite/Snowpack thanks to [Feliz ReactComponent](https://zaid-ajaj.github.io/Feliz/#/Feliz/React/StatelessComponents). At the time of writing, there is no such a plugin for Lit, instead Fable.Lit provides code helpers so you can control HMR at the component level.
-
-First thing you need to do is to instantiate a private _HMR token_ at the top of the file containing your components:
+Fable.Lit also provides some code helpers to enable HMR support for local component hooks, like `useState` or `useElmish` (only compatible with Vite at the time of writing). To this effect, the first thing you need to do is to instantiate a private _HMR token_ at the top of the file containing your components:
 
 ```fsharp
 open Lit
 
-let hmr = HMR.createToken()
+let hmr = HMR.createToken(active=true)
 ```
 
 One important thing to remember though, is that HMR in non-bundling dev servers doesn't just update the whole module (this wouldn't have any effect because other modules would still reference the old exports). In the case of Fable.Lit it will just update the render function of the component, so in order to avoid breaking dependent modules it's a good idea to put internal helpers (together with the HMR token) within a private inner module, and only expose the function components.
 
 ```fsharp
 module private Util =
-    let hmr = HMR.createToken()
+    let hmr = HMR.createToken(true)
     // Other utilities here
 
 open Util
@@ -75,10 +73,6 @@ open Util
 [<HookComponent>]
 let MyComponent() = ..
 ```
-
-:::info
-This limitation is the same as with React Fast Refresh. The main difference is with Fable.Lit you can have multiple components in the same file.
-:::
 
 Now the only thing left is to pass the HMR token, this has to be done for each component you want to enable HMR for, and can be done with the `useHmr` hook.
 
@@ -100,5 +94,3 @@ If for some reason you are getting unexpected behavior with HMR, you can disable
 ```fsharp
 let hmr = HMR.createToken(false)
 ```
-
-> After passing false, you need to save **twice** before the full refresh kicks in.

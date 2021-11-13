@@ -101,6 +101,9 @@ type HMR =
     /// Internal use. If you want to interact with HMR API, see https://webpack.js.org/api/hot-module-replacement/
     static member webpackHot: IWebpackHot = !!obj()
 
+    [<Emit("{{ $0 ? if (import.meta.hot) { import.meta.hot.accept($1) } : }}", isStatement=true)>]
+    static member activateToken(active: bool, accept: obj -> unit): unit = jsNative
+
     /// Call this in module/files you want to activate HMR for when using non-bundling dev servers like [Vite](https://vitejs.dev/) or [Snowpack](https://www.snowpack.dev/).
     ///
     /// The HMR token must be assigned to a **static private** value and shared with HookComponents with `Hook.useHmr`.
@@ -108,24 +111,14 @@ type HMR =
     ///
     /// > If you're having issues with HMR you can pass `active=false` to force page reload.
     /// > When compiling in non-debug mode, this has no effect.
-    static member inline createToken(?active: bool): IHMRToken =
+    static member inline createToken(active: bool): IHMRToken =
 #if !DEBUG
         unbox ()
 #else
         let mutable token = Unchecked.defaultof<_>
-        if HMR.hot.active then
+        try
             token <- HMRToken.Get(importMetaUrl)
-            HMR.hot.accept(fun newModule ->
-                if active = Some false then
-                    HMR.hot.invalidate()
-                else
-                    try
-                        // Snowpack passes a { module } object, but Vite passes the module directly
-                        let newModule = if jsIn "module" newModule then newModule.["module"] else newModule
-                        token.RequestUpdate(newModule)
-                    with e ->
-                        JS.console.warn("[HMR]", e)
-                        HMR.hot.invalidate()
-            )
+            HMR.activateToken(active, token.RequestUpdate)
+        with _ -> ()
         upcast token
 #endif

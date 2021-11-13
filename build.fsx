@@ -3,6 +3,8 @@
 open System
 open PublishUtils
 
+run "npm i && npm test"
+
 // ATTENTION: Packages must appear in dependency order
 let packages = [
     "ConstructStyleSheetsPolyfill"

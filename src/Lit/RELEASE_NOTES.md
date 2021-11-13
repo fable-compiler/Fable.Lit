@@ -1,3 +1,7 @@
+### 1.3.2
+
+* HMR improvements
+
 ### 1.3.1
 
 * Fix `useEffectOnce` running twice on LitElements
