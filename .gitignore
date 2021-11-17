@@ -3,6 +3,7 @@ build/test/*
 build/sample/*
 build/docs/*
 dist/
+*.fs.js
 
 .idea/
 

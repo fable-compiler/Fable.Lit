@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <PackageId>Fable.Lit</PackageId>
-    <Version>1.3.2</Version>
-    <PackageVersion>1.3.2</PackageVersion>
+    <Version>1.4.0</Version>
+    <PackageVersion>1.4.0-beta-001</PackageVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NpmDependencies>
@@ -20,8 +21,9 @@
     <Content Include="*.fsproj; *.fs; package.json" PackagePath="fable\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="5.0.0" />
+    <PackageReference Include="Fable.Core" Version="3.6.0-beta-001" />
     <PackageReference Include="Fable.Browser.Dom" Version="2.5.0" />
-    <PackageReference Include="Fable.Core" Version="3.3.1" />
     <PackageReference Include="Fable.Promise" Version="3.1.0" />
   </ItemGroup>
 </Project>

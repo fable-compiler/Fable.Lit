@@ -3,7 +3,7 @@ module Sample.Components
 open Browser.Types
 open Lit
 
-let private hmr = HMR.createToken(true)
+let private hmr = HMR.createToken()
 
 module ReactLib =
     open Feliz

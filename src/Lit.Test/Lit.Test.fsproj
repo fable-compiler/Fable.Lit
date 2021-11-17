@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <PackageId>Fable.Lit.Test</PackageId>
     <Version>1.3.1</Version>
     <PackageVersion>1.3.1</PackageVersion>

@@ -1,3 +1,7 @@
+### 1.4.0-beta-001
+
+* Make Hook.useHmr work with multiple components
+
 ### 1.3.2
 
 * HMR improvements

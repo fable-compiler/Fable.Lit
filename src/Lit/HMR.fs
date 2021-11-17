@@ -1,10 +1,10 @@
 namespace Lit
 
 open System
+open System.Runtime.InteropServices
 open System.Collections.Generic
 open Fable.Core
 open Fable.Core.JsInterop
-open Fable.Core.DynamicExtensions
 open Browser
 
 module HMRTypes =
@@ -63,6 +63,8 @@ module HMRTypes =
 
         interface IHMRToken
 
+        member val TriggeredByDependency = false with get, set
+
         member _.Subscribe(handler: HMRInfo -> unit) =
             let guid = Guid.NewGuid()
             listeners.Add(guid, handler)
@@ -86,6 +88,7 @@ module HMRTypes =
                 match moduleUrl.IndexOf("?") with
                 | -1 -> moduleUrl
                 | i -> moduleUrl.[..i-1]
+            // import.meta.hot.data only works with Vite so we use a global object
             let dic = getOrAdd window GLOBAL_KEY obj
             getOrAdd dic moduleUrl HMRToken
 
@@ -111,14 +114,24 @@ type HMR =
     ///
     /// > If you're having issues with HMR you can pass `active=false` to force page reload.
     /// > When compiling in non-debug mode, this has no effect.
-    static member inline createToken(active: bool): IHMRToken =
+    static member inline createToken([<Optional; DefaultParameterValue(true)>] active: bool): IHMRToken =
 #if !DEBUG
         unbox ()
 #else
         let mutable token = Unchecked.defaultof<_>
         try
             token <- HMRToken.Get(importMetaUrl)
-            HMR.activateToken(active, token.RequestUpdate)
+            // Because the code within import.meta.hot.accept(m => ...) is not updated immediately
+            // we need to set this outside, and use a reference (token) that is kept across hot updates
+            token.TriggeredByDependency <- Compiler.triggeredByDependency
+            HMR.activateToken(active, fun newModule ->
+                // If the file is recompiled not by a direct change but because of a dependency,
+                // we shouldn't request an update as this usually resets the components we want HMR for.
+                // See: https://github.com/fable-compiler/Fable/issues/2617
+                // It's important we **accept** the hot reload but **do nothing** in that case
+                // If we don't accept the hot reload, Vite will trigger a full reload
+                if not token.TriggeredByDependency then
+                    token.RequestUpdate newModule)
         with _ -> ()
         upcast token
 #endif

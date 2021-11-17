@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <PackageId>Fable.Lit.Elmish</PackageId>
     <Version>1.4.0</Version>
     <PackageVersion>1.4.0</PackageVersion>
