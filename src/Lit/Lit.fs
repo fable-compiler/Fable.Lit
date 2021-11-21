@@ -8,11 +8,11 @@ module Types =
     type RefValue<'T> =
         abstract value : 'T with get, set
 
-    [<ImportMember("lit-html/directive.js")>]
+    [<ImportMember("lit/directive.js")>]
     type Directive() =
         class end
 
-    [<ImportMember("lit-html/async-directive.js")>]
+    [<ImportMember("lit/async-directive.js")>]
     type AsyncDirective() =
         member _.isConnected: bool = jsNative
         member _.setValue(value: obj) : unit = jsNative
@@ -49,61 +49,61 @@ type LitBindings =
     /// <summary>
     /// Interprets a template literal as an HTML template that can efficiently render to and update a container.
     /// </summary>
-    [<ImportMember("lit-html")>]
+    [<ImportMember("lit")>]
     static member html: Template.JsTag<TemplateResult> = jsNative
 
     /// <summary>
     /// Interprets a template literal as an SVG template that can efficiently render to and update a container.
     /// </summary>
-    [<ImportMember("lit-html")>]
+    [<ImportMember("lit")>]
     static member svg: Template.JsTag<TemplateResult> = jsNative
 
     [<ImportMember("lit")>]
     static member css: Template.JsTag<CSSResult> = jsNative
 
     /// <summary>
-    /// Renders a value, usually a lit-html TemplateResult, to the container.
+    /// Renders a value, usually a Lit TemplateResult, to the container.
     /// </summary>
     /// <param name="el">The container to render into.</param>
     /// <param name="t">A <see cref="Lit.TemplateResult">TemplateResult</see> to be rendered.</param>
-    [<ImportMember("lit-html")>]
+    [<ImportMember("lit")>]
     static member render(t: TemplateResult, el: Element) : unit = jsNative
 
     /// <summary>
     /// A sentinel value that signals a ChildPart to fully clear its content.
     /// </summary>
-    [<ImportMember("lit-html")>]
+    [<ImportMember("lit")>]
     static member nothing: TemplateResult = jsNative
 
     /// <summary>
     /// A sentinel value that signals a ChildPart to fully clear its content.
     /// </summary>
-    [<ImportMember("lit-html")>]
+    [<ImportMember("lit")>]
     static member noChange: TemplateResult = jsNative
 
     /// <summary>
     /// Creates a user-facing directive function from a Directive class.
     /// This function has the same parameters as the directive's render() method.
     /// </summary>
-    [<ImportMember("lit-html/directive.js")>]
+    [<ImportMember("lit/directive.js")>]
     static member directive(cons: obj) : obj = jsNative
 
     /// <summary>
     /// A directive that applies CSS properties to an element.
     /// </summary>
-    [<ImportMember("lit-html/directives/style-map.js")>]
+    [<ImportMember("lit/directives/style-map.js")>]
     static member styleMap(styles: obj) : obj = jsNative
 
     /// <summary>
     /// A directive that applies dynamic CSS classes.
     /// </summary>
-    [<ImportMember("lit-html/directives/class-map.js")>]
+    [<ImportMember("lit/directives/class-map.js")>]
     static member classMap(classes: obj) : obj = jsNative
 
     /// <summary>
     /// Renders one of a series of values, including Promises, to a Part.
     /// </summary>
-    [<ImportMember("lit-html/directives/until.js")>]
+    [<ImportMember("lit/directives/until.js")>]
     static member until([<ParamArray>] values: obj []) : TemplateResult = jsNative
 
     /// <summary>
@@ -117,14 +117,14 @@ type LitBindings =
     /// <param name="items">An sequence of items to be repeated.</param>
     /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
     /// <param name="template">A template that will be rendered for each item in the iterable.</param>
-    [<ImportMember("lit-html/directives/repeat.js")>]
+    [<ImportMember("lit/directives/repeat.js")>]
     static member repeat<'T>(items: 'T seq, getId: 'T -> string, template: 'T -> int -> TemplateResult) : TemplateResult = jsNative
 
     /// <summary>
     /// Enables fast switching between multiple templates by caching the DOM nodes and TemplateInstances produced by the templates.
     /// </summary>
     /// <param name="template">A template to be rendered.</param>
-    [<ImportMember("lit-html/directives/cache.js")>]
+    [<ImportMember("lit/directives/cache.js")>]
     static member cache(template: TemplateResult) : TemplateResult = jsNative
 
     /// <summary>
@@ -132,7 +132,7 @@ type LitBindings =
     /// </summary>
     /// <param name="deps">A set of dependencies that will be trigger a re-render when any of them changes.</param>
     /// <param name="render">A render function.</param>
-    [<ImportMember("lit-html/directives/guard.js")>]
+    [<ImportMember("lit/directives/guard.js")>]
     static member guard(deps: obj array, render: unit -> TemplateResult) : TemplateResult = jsNative
 
     /// <summary>
@@ -142,24 +142,24 @@ type LitBindings =
     /// For other part types, this directive is a no-op.
     /// </remarks>
     /// <param name="value">A value to set the attribute to, or undefined to remove the attribute.</param>
-    [<ImportMember("lit-html/directives/if-defined.js")>]
+    [<ImportMember("lit/directives/if-defined.js")>]
     static member ifDefined(value: obj) : TemplateResult = jsNative
 
     /// <summary>
     /// Sets the value of a Ref object or calls a ref callback with the element it's bound to.
     /// </summary>
-    [<ImportMember("lit-html/directives/ref.js")>]
+    [<ImportMember("lit/directives/ref.js")>]
     static member ref(refOrCallback: obj) : TemplateResult = jsNative
 
     /// <summary>
     /// Creates a new Ref object, which is container for a reference to an element.
     /// </summary>
-    [<ImportMember("lit-html/directives/ref.js")>]
+    [<ImportMember("lit/directives/ref.js")>]
     static member createRef<'T>() : RefValue<'T> = jsNative
 
     /// Renders the argument as HTML, rather than text.
     /// Note, this is unsafe to use with any user-provided input that hasn't been sanitized or escaped, as it may lead to cross-site-scripting vulnerabilities.
-    [<ImportMember("lit-html/directives/unsafe-html.js")>]
+    [<ImportMember("lit/directives/unsafe-html.js")>]
     static member unsafeHTML(html: string) : TemplateResult = jsNative
 
 [<AutoOpen>]

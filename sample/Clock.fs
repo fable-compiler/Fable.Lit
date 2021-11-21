@@ -113,13 +113,13 @@ let clockHand (color: string) (time: Time) =
         {handTop color time}
     """
 
-let select options value dispatch =
+let select options selected dispatch =
     let option value =
-        html $"""<option value={value}>{value}</option>"""
+        html $"""<option ?selected={value = selected} value={value}>{value}</option>"""
 
     html $"""
         <div class="select mb-2">
-            <select value={value} @change={EvVal dispatch}>
+            <select @change={EvVal dispatch}>
                 {options |> List.map option}
             </select>
         </div>

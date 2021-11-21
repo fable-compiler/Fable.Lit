@@ -5,7 +5,7 @@
         "publish": "dotnet fsi build.fsx publish",
         "test": "dotnet fable test -o build/test --run web-test-runner build/test/*Test.js --node-resolve",
         "test:watch": "dotnet fable watch test -o build/test --run web-test-runner build/test/*Test.js --node-resolve --watch",
-        "start": "dotnet fable watch sample -o build/sample --runFast vite --open",
+        "start": "dotnet fable watch sample -o build/sample --run vite",
         "predocs": "shx rm -rf deploy",
         "docs": "nacara",
         "docs:watch": "nacara watch",

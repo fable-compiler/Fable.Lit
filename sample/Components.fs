@@ -109,6 +109,7 @@ let LocalNameInput() =
 
 [<HookComponent>]
 let ClockDisplay model dispatch =
+    Hook.useHmr(hmr)
     let transition =
         Hook.useTransition(
             ms = 800,

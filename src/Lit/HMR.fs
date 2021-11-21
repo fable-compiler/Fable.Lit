@@ -104,9 +104,6 @@ type HMR =
     /// Internal use. If you want to interact with HMR API, see https://webpack.js.org/api/hot-module-replacement/
     static member webpackHot: IWebpackHot = !!obj()
 
-    [<Emit("{{ $0 ? if (import.meta.hot) { import.meta.hot.accept($1) } : }}", isStatement=true)>]
-    static member activateToken(active: bool, accept: obj -> unit): unit = jsNative
-
     /// Call this in module/files you want to activate HMR for when using non-bundling dev servers like [Vite](https://vitejs.dev/) or [Snowpack](https://www.snowpack.dev/).
     ///
     /// The HMR token must be assigned to a **static private** value and shared with HookComponents with `Hook.useHmr`.
@@ -114,24 +111,28 @@ type HMR =
     ///
     /// > If you're having issues with HMR you can pass `active=false` to force page reload.
     /// > When compiling in non-debug mode, this has no effect.
-    static member inline createToken([<Optional; DefaultParameterValue(true)>] active: bool): IHMRToken =
+    static member inline createToken(?active: bool): IHMRToken =
 #if !DEBUG
         unbox ()
 #else
+        let active = defaultArg active true
         let mutable token = Unchecked.defaultof<_>
         try
             token <- HMRToken.Get(importMetaUrl)
             // Because the code within import.meta.hot.accept(m => ...) is not updated immediately
             // we need to set this outside, and use a reference (token) that is kept across hot updates
             token.TriggeredByDependency <- Compiler.triggeredByDependency
-            HMR.activateToken(active, fun newModule ->
-                // If the file is recompiled not by a direct change but because of a dependency,
-                // we shouldn't request an update as this usually resets the components we want HMR for.
-                // See: https://github.com/fable-compiler/Fable/issues/2617
-                // It's important we **accept** the hot reload but **do nothing** in that case
-                // If we don't accept the hot reload, Vite will trigger a full reload
-                if not token.TriggeredByDependency then
-                    token.RequestUpdate newModule)
+            if HMR.hot.active then
+                HMR.hot.accept(fun newModule ->
+                    if not active then
+                        HMR.hot.invalidate()
+                    // If the file is recompiled not by a direct change but because of a dependency,
+                    // we shouldn't request an update as this usually resets the components we want HMR for.
+                    // See: https://github.com/fable-compiler/Fable/issues/2617
+                    // It's important we **accept** the hot reload but **do nothing** in that case
+                    // If we don't accept the hot reload, Vite will trigger a full reload
+                    elif not token.TriggeredByDependency then
+                        token.RequestUpdate newModule)
         with _ -> ()
         upcast token
 #endif

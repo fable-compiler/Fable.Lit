@@ -334,7 +334,7 @@ type HookComponentAttribute() =
 /// A static class that contains react like hooks.
 /// </summary>
 /// <remarks>
-/// These hooks use directives under the hood
+/// These hooks use Lit directives under the hood
 /// and may not be 100% compatible with the react hooks.
 /// </remarks>
 type Hook() =
@@ -377,10 +377,16 @@ type Hook() =
     static member inline useState(init: unit -> 'Value) =
         Hook.getContext().useState (init)
 
+    /// <summary>
     /// Pass the HMR token created with `HMR.createToken()` in **this same file** to activate HMR for this component.
-    ///
-    /// > Currently, only compatible with HookComponent (not LitElement).
-    /// > When compiling in non-debug mode, this has no effect.
+    /// Only has effect when compiling in debug mode.
+    /// </summary>
+    /// <remarks>
+    /// Currently, only compatible with Vitejs
+    /// </remarks>
+    /// <param name="token">
+    /// Token created with `HMR.createToken()` in **this same file**.
+    /// </param>
     static member inline useHmr(token: IHMRToken): unit =
         Hook.useHmr(token, jsThis)
 

@@ -8,7 +8,7 @@ open Browser.Types
 open Lit
 
 /// <summary>
-/// Directive that allows a react component to be rendered inside a lit-html template.
+/// Directive that allows a react component to be rendered inside a Lit template.
 /// </summary>
 [<AttachMembers>]
 type ReactDirective() =
@@ -34,7 +34,7 @@ type ReactDirective() =
 
 type React =
     /// <summary>
-    /// Renders a React element into a lit-html template
+    /// Renders a React element into a Lit template
     /// </summary>
     /// <param name="reactComponent">The function that will be called to render the component.</param>
     /// <param name="className">The class name to apply to the rendered element.</param>
@@ -45,10 +45,10 @@ type React =
         |> LitBindings.directive :?> _
 
     /// <summary>
-    /// Renders a lit-html template into a React element
+    /// Renders a Lit template into a React element
     /// </summary>
-    /// <param name="template">A lit-html template result.</param>
-    /// <param name="tag">the name of the tag that will wrap the lit-html template result .</param>
+    /// <param name="template">A Lit template result.</param>
+    /// <param name="tag">the name of the tag that will wrap the Lit template result .</param>
     /// <param name="className">a class name for the wrapper element.</param>
     /// <returns>A ReactElement</returns>
     static member inline ofLit (template: TemplateResult, ?tag: string, ?className: string) =
