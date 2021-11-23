@@ -16,13 +16,19 @@ let init() =
 let update msg model =
     match msg with
     | ChangeValue v -> { model with Value = v }, Cmd.none
-    | ToggleClock -> { model with ShowClock = not model.ShowClock }, Cmd.none
-    | ToggleReact -> { model with ShowReact = not model.ShowReact }, Cmd.none
+    | ToggleClock v -> { model with ShowClock = v }, Cmd.none
+    | ToggleReact v -> { model with ShowReact = v }, Cmd.none
 
 let view model dispatch =
     html $"""
-      <div style={Styles.verticalContainer}>
-        {toggleVisible "React" model.ShowReact true (fun _ -> dispatch ToggleReact)}
+      <div class="vertical-container" style="margin-left: 2rem;">
+
+        <button class="button"
+            style="margin: 1rem 0"
+            @click={Ev(fun _ -> not model.ShowReact |> ToggleReact |> dispatch)}>
+            {if model.ShowReact then "Hide" else "Show"} React
+        </button>
+
         {if not model.ShowReact then Lit.nothing
          else ReactLitComponent model.ShowClock}
 

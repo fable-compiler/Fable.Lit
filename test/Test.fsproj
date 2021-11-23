@@ -8,6 +8,7 @@
     <Compile Include="DirectiveTest.fs" />
     <Compile Include="HookTest.fs" />
     <Compile Include="LitElementTest.fs" />
+    <Compile Include="ScopeCssTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\Lit.Elmish\Lit.Elmish.fsproj" />

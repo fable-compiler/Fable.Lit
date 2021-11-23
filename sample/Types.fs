@@ -7,5 +7,5 @@ type Model =
 
 type Msg =
     | ChangeValue of string
-    | ToggleClock
-    | ToggleReact
+    | ToggleClock of bool
+    | ToggleReact of bool

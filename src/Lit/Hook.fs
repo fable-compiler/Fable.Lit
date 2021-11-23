@@ -22,6 +22,17 @@ module internal HookUtil =
             }
         }"""
 
+    // From https://stackoverflow.com/a/6248722/17433542
+    let generateShortUid(): string =
+        emitJsStatement () """
+        const firstPart = (Math.random() * 46656) | 0;
+        const secondPart = (Math.random() * 46656) | 0;
+        const uid = ("000" + firstPart.toString(36)).slice(-3) + ("000" + secondPart.toString(36)).slice(-3);
+        return /^[0-9]/.test(uid) ? "_" + uid : uid;
+        """
+
+    let cssClasses = JS.Constructors.WeakMap.Create<obj, string>()
+
     let createDisposable(f: unit -> unit) =
         { new IDisposable with
             member _.Dispose() = f () }
@@ -50,31 +61,16 @@ open Types
 
 type TransitionState = HasLeft | AboutToEnter | Entering | HasEntered | Leaving
 
-type TransitionConfig(ms: int, ?cssBefore: string, ?cssIdle: string, ?cssAfter: string, ?onComplete: bool -> unit) =
-    member _.ms = ms
-    member _.cssBefore = defaultArg cssBefore ""
-    member _.cssIdle = defaultArg cssIdle ""
-    member _.cssAfter =
-        match cssAfter, cssBefore with
-        | Some v, _ | _, Some v -> v
-        | None, None -> ""
-    member _.onComplete(isIn: bool) = match onComplete with Some f -> f isIn | None -> ()
-
 type Transition =
+    /// Gives the class name for the current state: "transition-enter", "transition-leave" or empty string.
+    abstract className: string
     /// Indicates the current state of the state of the transition:
     /// `AboutToEnter | Entering | HasEntered | Leaving | HasLeft`
     abstract state: TransitionState
-    /// Indicates whether the transition is currently entering or leaving.
-    /// Useful to disable buttons, for example.
-    abstract isRunning: bool
-    /// Indicates whether the transition has already left.
-    /// Note the transition doesn't remove/hide the element by itself,
-    /// this has to be done in the `onComplete` event.
-    abstract hasLeft: bool
-    /// Gives the style string for the current state (before, idle or after).
-    abstract css: string
-    /// Trigger the enter `trigger(true)` or leave `trigger(false)` transition.
-    abstract trigger: enter: bool -> unit
+    /// Trigger the enter transition.
+    abstract triggerEnter: unit -> unit
+    /// Trigger the leave transition.
+    abstract triggerLeave: unit -> unit
 
 type HookContextHost =
     abstract renderFn: JS.Function
@@ -92,6 +88,8 @@ type HookContext(host: HookContextHost) =
     let _states = ResizeArray<obj>()
     let _effects = ResizeArray<Effect>()
     let _disposables = ResizeArray<IDisposable>()
+
+    member _.host: obj = host
 
     // TODO: Improve error message for each situation
     member _.fail() =
@@ -218,8 +216,20 @@ type IHookProvider =
 [<AutoOpen>]
 module HookExtensions =
     type Transition with
-        member this.triggerEnter() = this.trigger(true)
-        member this.triggerLeave() = this.trigger(false)
+        /// Indicates whether the transition has already left.
+        /// Note the transition doesn't remove/hide the element by itself,
+        /// this has to be done in the `onComplete` event.
+        member this.hasLeft =
+            match this.state with
+            | HasLeft -> true
+            | _ -> false
+
+        /// Indicates whether the transition is currently entering or leaving.
+        /// Useful to disable buttons, for example.
+        member this.isRunning =
+            match this.state with
+            | AboutToEnter | Entering | Leaving -> true
+            | HasEntered | HasLeft -> false
 
     type HookContext with
         member ctx.useState(v: 'T) =
@@ -255,6 +265,64 @@ module HookExtensions =
                         disp.Dispose()
                         prev.Value <- Some(value, effect value)
             )
+
+        member ctx.useTransition(ms: int, ?onEntered: unit -> unit, ?onLeft: unit -> unit): Transition =
+            let state, setState = ctx.useState(AboutToEnter)
+
+            let trigger isIn =
+                let middleState, finalState =
+                    if isIn then Entering, HasEntered
+                    else Leaving, HasLeft
+                delay ms (fun () ->
+                    setState finalState
+                    let f = if isIn then onEntered else onLeft
+                    f |> Option.iter (fun f -> f())
+                )
+                setState middleState
+
+            ctx.useEffectOnChange(state, function
+                | AboutToEnter -> trigger true
+                | _ -> ())
+
+            { new Transition with
+                member _.state = state
+                member _.className =
+                    match state with
+                    | HasLeft | AboutToEnter -> "transition-enter"
+                    | Entering | HasEntered -> ""
+                    | Leaving -> "transition-leave"
+                member _.triggerEnter() = setState AboutToEnter
+                member _.triggerLeave() = trigger false
+            }
+
+        member ctx.remove_css(): unit =
+            let proto = JS.Constructors.Object.getPrototypeOf(ctx.host)
+            let cssClass = cssClasses.get(proto)
+            if not(isNull cssClass) then
+                cssClasses.delete(proto) |> ignore
+                let doc = Browser.Dom.document
+                let headEl = doc.querySelector("head")
+                headEl.removeChild(doc.getElementById(cssClass)) |> ignore
+
+        member ctx.use_scoped_css(rules: string): string =
+            let proto = JS.Constructors.Object.getPrototypeOf(ctx.host)
+            let className = cssClasses.get(proto)
+            if isNull className then
+                // TODO: In debug, it'd be nice to prefix this with the name of the component
+                let className = generateShortUid()
+                let doc = Browser.Dom.document
+                let styleEl = doc.createElement("style")
+                styleEl.setAttribute("id", className)
+                rules
+                |> Parser.Css.scope className
+                |> doc.createTextNode
+                |> styleEl.appendChild
+                |> ignore
+                doc.querySelector("head").appendChild(styleEl) |> ignore
+                cssClasses.set(proto, className) |> ignore
+                className
+            else
+                className
 
 [<AttachMembers; AbstractClass>]
 type HookDirective() =
@@ -299,9 +367,10 @@ type HookDirective() =
             | None ->
                 _hmrSub <-
                     token.Subscribe(fun info ->
+                        _hooks.remove_css()
                         let updatedModule = info.NewModule
-                        this.renderFn <- updatedModule?(this.name)?renderFn)
-                    |> Some
+                        this.renderFn <- updatedModule?(this.name)?renderFn
+                    ) |> Some
 #endif
 
     interface IHookProvider with
@@ -474,50 +543,26 @@ type Hook() =
         Hook.getContext().useEffectOnChange(value, effect)
 
     /// <summary>
-    /// Helper to implement CSS transitions in your component.
+    /// Helper to implement CSS transitions in your component. It will give you the class name
+    /// corresponding to current state: `transition-enter`, `transition-leave` (or empty string).
+    /// It will also fire events when transitions complete.
     /// </summary>
+    /// <remarks>
+    /// You need to set `transition-duration` with the same length in your CSS.
+    /// </remarks>
     /// <param name="ms">The length of the transition in milliseconds.</param>
-    /// <param name="cssBefore">The style to be applied before the item has entered.</param>
-    /// <param name="cssIdle">The style to be applied after the item has entered (and before leaving).</param>
-    /// <param name="cssAfter">The style to be applied when the item is about to leave (if omitted, `cssBefore` will also be applied when leaving).</param>
-    /// <param name="onComplete">Event fired when the transition has completed. `true` is passed when the transition has entered, and `false` when it has left.</param>
-    static member inline useTransition(ms, ?cssBefore, ?cssIdle, ?cssAfter, ?onComplete): Transition =
-        Hook.useTransition(Hook.getContext(), TransitionConfig(ms, ?cssBefore=cssBefore, ?cssIdle=cssIdle, ?cssAfter=cssAfter, ?onComplete=onComplete))
+    /// <param name="onEntered">Event fired when the enter transition has completed.</param>
+    /// <param name="onLeft">Event fired when the leave transition has completed.</param>
+    static member inline useTransition(ms, ?onEntered, ?onLeft): Transition =
+        Hook.getContext().useTransition(ms, ?onEntered=onEntered, ?onLeft=onLeft)
 
-    static member useTransition(ctx: HookContext, transition: TransitionConfig): Transition =
-        let state, setState = ctx.useState(AboutToEnter)
-
-        let trigger isIn =
-            let middleState, finalState =
-                if isIn then Entering, HasEntered
-                else Leaving, HasLeft
-            delay transition.ms (fun () ->
-                setState finalState
-                transition.onComplete(isIn)
-            )
-            setState middleState
-
-        ctx.useEffectOnChange(state, function
-            | AboutToEnter -> trigger true
-            | _ -> ())
-
-        { new Transition with
-            member _.css =
-                $"transition-duration: {transition.ms}ms; " +
-                    match state with
-                    | HasLeft | AboutToEnter -> transition.cssBefore
-                    | Entering | HasEntered -> transition.cssIdle
-                    | Leaving -> transition.cssAfter
-            member _.state = state
-            member _.isRunning =
-                match state with
-                | AboutToEnter | Entering | Leaving -> true
-                | HasEntered | HasLeft -> false
-            member _.hasLeft =
-                match state with
-                | HasLeft -> true
-                | _ -> false
-            member _.trigger(isIn) =
-                if isIn then setState AboutToEnter
-                else trigger false
-        }
+    /// <summary>
+    /// Use scoped CSS when you cannot use shadow DOM. The hook will scope the rules
+    /// with a unique id and will attach the styles to the document's `head`.
+    /// **Returns a class name to be set in the root of your component.**
+    /// </summary>
+    /// <remarks>
+    /// You can use `:host` in your CSS. @keyframes names will also be scoped. Compatible with HMR.
+    /// </remarks>
+    static member inline use_scoped_css(rules: string): string =
+        Hook.getContext().use_scoped_css(rules)

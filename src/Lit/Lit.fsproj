@@ -11,6 +11,7 @@
     </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Parser.fs" />
     <Compile Include="Template.fs" />
     <Compile Include="Lit.fs" />
     <Compile Include="HMR.fs" />

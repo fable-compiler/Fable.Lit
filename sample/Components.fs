@@ -43,45 +43,13 @@ module ReactLib =
 let ReactLitComponent =
     React.toLit ReactLib.MyComponent
 
-module Styles =
-    let verticalContainer =
-        inline_css """.{
-            margin-left: 2rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }"""
-
-    let nameInput (color: string) =
-        inline_css $""".{{
-            color: {color};
-            background-color: lavender;
-            padding: 0.25rem;
-            font-size: 16px;
-            width: 250px;
-            margin-bottom: 0.5rem;
-        }}"""
-
-let toggleVisible (txt: string) (isVisible: bool) (isEnabled: bool) (onClick: Event -> unit) =
-    html $"""
-        <button class="button"
-                style="margin: 1rem 0"
-                @click={Ev onClick}
-                ?disabled={not isEnabled}>
-          {if isVisible then Lit.ofText $"Hide {txt}"
-           else html $"<strong>Show {txt}</strong>"}
-        </button>
-    """
-
 // This render function integrates with Elmish and doesn't keep local state
 let elmishNameInput value dispatch =
     html $"""
       <div class="content">
         <p>Elmish state: <i>Hello {value}!</i></p>
-        <input
+        <input class="name-input"
           value={value}
-          style={Styles.nameInput value}
           @keyup={EvVal dispatch}>
       </div>
     """
@@ -92,14 +60,18 @@ let LocalNameInput() =
     Hook.useHmr(hmr)
     let value, setValue = Hook.useState "Local"
     let inputRef = Hook.useRef<HTMLInputElement>()
+    let className = Hook.use_scoped_css """
+        input {
+            border-radius: 7.5px;
+        }
+        """
 
     html $"""
-      <div class="content">
+      <div class="{className} content">
         <p>Local state: <i>Hello {value}!</i></p>
-        <input
+        <input class="name-input"
           {Lit.refValue inputRef}
           value={value}
-          style={Styles.nameInput value}
           @keyup={EvVal setValue}
           @focus={Ev(fun _ ->
             inputRef.Value
@@ -109,36 +81,56 @@ let LocalNameInput() =
 
 [<HookComponent>]
 let ClockDisplay model dispatch =
-    Hook.useHmr(hmr)
+    Hook.useHmr (hmr)
+    let transitionMs = 800
+    let clasName = Hook.use_scoped_css $"""
+        .clock-container {{
+            transition-duration: {transitionMs}ms;
+        }}
+        .clock-container.transition-enter {{
+            opacity: 0;
+            transform: scale(2) rotate(1turn);
+        }}
+        .clock-container.transition-leave {{
+            opacity: 0;
+            transform: scale(0.1) rotate(-1.5turn);
+        }}
+
+        @keyframes move-side-by-side {{
+            from {{ margin-left: -50%%; }}
+            to {{ margin-left: 50%%; }}
+        }}
+        button {{
+            animation: 1.5s linear 1s infinite alternate move-side-by-side;
+        }}
+        """
+
     let transition =
         Hook.useTransition(
-            ms = 800,
-            cssBefore = inline_css $""".{{
-                opacity: 0;
-                transform: scale(2) rotate(1turn)
-            }}""",
-            cssAfter = inline_css $""".{{
-                opacity: 0;
-                transform: scale(0.1) rotate(-1.5turn)
-            }}""",
-            onComplete = fun isIn ->
-                if model.ShowClock <> isIn then dispatch ToggleClock
-        )
+            transitionMs,
+            onEntered = (fun () -> ToggleClock true |> dispatch),
+            onLeft = (fun () -> ToggleClock false |> dispatch))
 
     let clockContainer() =
         html $"""
-            <div style={transition.css}>
+            <div class="clock-container {transition.className}">
                 <my-clock
                     minute-colors="white, red, yellow, purple"
                     hour-color="yellow"></my-clock>
             </div>
         """
 
-    let isButtonEnabled = not transition.isRunning
     html $"""
-        <div style="{Styles.verticalContainer}">
-            {toggleVisible "Clock" model.ShowClock isButtonEnabled (fun _ ->
-                transition.trigger(not model.ShowClock))}
+        <div class="{clasName} vertical-container">
+
+            <button class="button"
+                style="margin: 1rem 0"
+                ?disabled={transition.isRunning}
+                @click={Ev(fun _ ->
+                    if model.ShowClock then transition.triggerLeave()
+                    else transition.triggerEnter())}>
+                {if model.ShowClock then "Hide" else "Show"} clock
+            </button>
 
             {if transition.hasLeft then Lit.nothing else clockContainer()}
         </div>

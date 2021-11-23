@@ -209,6 +209,7 @@ type LitHookElement<'Props>(initProps: obj -> unit) =
             | None ->
                 _hmrSub <-
                     token.Subscribe(fun info ->
+                        _hooks.remove_css()
                         let updatedModule = info.NewModule
                         let updatedExport = updatedModule?(this.name)
                         this.renderFn <- updatedExport?renderFn
