@@ -1,5 +1,7 @@
-### 1.4.0-beta-001
+### 1.4.1
 
+* Add Hook.use_scoped_css
+* Hook.useTransition now gives class name instead of css
 * Make Hook.useHmr work with multiple components
 
 ### 1.3.2

@@ -27,8 +27,7 @@ module internal HookUtil =
         emitJsStatement () """
         const firstPart = (Math.random() * 46656) | 0;
         const secondPart = (Math.random() * 46656) | 0;
-        const uid = ("000" + firstPart.toString(36)).slice(-3) + ("000" + secondPart.toString(36)).slice(-3);
-        return /^[0-9]/.test(uid) ? "_" + uid : uid;
+        return "_" + firstPart.toString(36) + secondPart.toString(36);
         """
 
     let cssClasses = JS.Constructors.WeakMap.Create<obj, string>()
@@ -89,7 +88,7 @@ type HookContext(host: HookContextHost) =
     let _effects = ResizeArray<Effect>()
     let _disposables = ResizeArray<IDisposable>()
 
-    member _.host: obj = host
+    member _.host: obj = upcast host
 
     // TODO: Improve error message for each situation
     member _.fail() =

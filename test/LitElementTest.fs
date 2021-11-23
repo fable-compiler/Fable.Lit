@@ -7,8 +7,11 @@ open Expect.Dom
 open WebTestRunner
 open Lit.Test
 
+let private hmr = HMR.createToken()
+
 [<LitElement("fable-element")>]
 let MyEl () =
+    Hook.useHmr(hmr)
     let _ = LitElement.init ()
 
     html
