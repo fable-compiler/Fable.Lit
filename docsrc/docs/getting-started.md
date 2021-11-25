@@ -5,7 +5,7 @@ layout: nacara-standard
 
 ## Requirements
 
-Fable.Lit packages require **fable 3.3** dotnet tool and **Lit 2** from npm.
+Fable.Lit packages require **fable 3.6** dotnet tool and **Lit 2** from npm.
 
 ## Installation
 

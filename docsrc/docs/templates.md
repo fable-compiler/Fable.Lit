@@ -193,33 +193,6 @@ You can access to the raw bindings via the `LitBindings` static class.
 Check the full list in the [lit docs](https://lit.dev/docs/api/directives/)
 :::
 
-## Styling
-
-For styling, just use global CSS rules or scoped CSS in [web components](./web-components.html). When not using web components, [CSS modules](https://css-tricks.com/css-modules-part-1-need/) are a great option, which are even compatible with the [TypedCssClasses](https://github.com/zanaptak/TypedCssClasses/blob/main/doc/configuration.md#fablecssmodule) provider.
-
-If you want to use inline styling, just pass a string to the `style` attribute. In the example below, note that we're wrapping the styles with `.{}`, this is just a trick to trigger autocompletion with the Highlight F# Templates extension (the braces will be removed by `inline_css`)
-
-```fsharp
-let style = transition.css + inline_css """.{
-    border: 2px solid lightgray;
-    border-radius: 10px;
-    margin: 5px 0;
-}"""
-```
-
-:::warning
-Don't use `css` function as this one is reserved for LitElements.
-:::
-
-If you want to use an F# interpolated string, you'll need to escape `{`, `}` and `%` characters by "doubling" them:
-
-```fsharp
-inline_css $""".{{
-    opacity: 0;
-    transform: scale({scale}%%) rotate({rotation}turn)
-}}"""
-```
-
 ## Elmish
 
 Fable.Lit.Elmish allows you to write a frontend app using the popular [Elmish](https://elmish.github.io/) library by [Eugene Tolmachev](https://github.com/et1975) with a view function returning `Lit.TemplateResult`. The package also includes support for Webpack's [Hot Module Replacement](https://webpack.js.org/concepts/hot-module-replacement/) out-of-the-box thanks to [Maxime Mangel](https://twitter.com/MangelMaxime) original work with Elmish.HMR.

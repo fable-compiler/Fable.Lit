@@ -1,5 +1,7 @@
 module HookTest
 
+open Fable.Core
+open Browser
 open Elmish
 open Lit
 open Lit.Elmish
@@ -7,6 +9,9 @@ open Expect
 open Expect.Dom
 open WebTestRunner
 open Lit.Test
+
+[<Emit("window.getComputedStyle($1).getPropertyValue($0)")>]
+let getComputedStyle (prop: string) (el: Browser.Types.Element): string = jsNative
 
 [<HookComponent>]
 let Counter () =
@@ -249,6 +254,20 @@ let ElmishComponentW () =
             </div>
           """
 
+[<HookComponent>]
+let ScopedCss () =
+    let className = Hook.use_scoped_css """
+        p {
+            color: rgb(35, 38, 41);
+        }
+    """
+    html
+        $"""
+        <div class={className}>
+            <p id="scoped">Hello</p>
+        </div>
+        """
+
 describe "Hook" <| fun () ->
     it "renders Counter" <| fun () -> promise {
         use! container = Counter() |> render
@@ -471,4 +490,24 @@ describe "Hook" <| fun () ->
                 el.getSelector("#reset"))
         // dispatch with async cmd works
         el.getSelector("#count") |> Expect.innerText "0"
+    }
+
+    it "Scoped CSS works" <| fun () -> promise {
+        use! _container =
+            html $"""
+            <p id="non-scoped">Hello</p>
+            {ScopedCss()}
+            """
+            |> render
+
+        let nonScopedColor =
+            document.getElementById("non-scoped")
+            |> getComputedStyle "color"
+
+        let scopedColor =
+            document.getElementById("scoped")
+            |> getComputedStyle "color"
+
+        Expect.equal "rgb(35, 38, 41)" scopedColor
+        Expect.notEqual nonScopedColor scopedColor
     }

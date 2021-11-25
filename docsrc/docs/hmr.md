@@ -53,28 +53,15 @@ dotnet fable src -o build/client --run vite build
 
 Lit.Elmish is compatible with [Elmish HMR](https://elmish.github.io/hmr/) (use Fable.Elmish.HMR >= 4.3 for Vite support).
 
-Fable.Lit also provides some code helpers to enable HMR support for local component hooks, like `useState` or `useElmish` (only compatible with Vite at the time of writing). To this effect, the first thing you need to do is to instantiate a private _HMR token_ at the top of the file containing your components:
+Fable.Lit also provides some code helpers to enable HMR support for local component hooks, like `useState` or `useElmish` (only compatible with Vite at the time of writing). To this effect, the first thing you need to do is to instantiate a private _HMR token_ at the top of each file containing Fable.Lit components:
 
 ```fsharp
 open Lit
 
-let hmr = HMR.createToken(active=true)
+let private hmr = HMR.createToken()
 ```
 
-One important thing to remember though, is that HMR in non-bundling dev servers doesn't just update the whole module (this wouldn't have any effect because other modules would still reference the old exports). In the case of Fable.Lit it will just update the render function of the component, so in order to avoid breaking dependent modules it's a good idea to put internal helpers (together with the HMR token) within a private inner module, and only expose the function components.
-
-```fsharp
-module private Util =
-    let hmr = HMR.createToken(true)
-    // Other utilities here
-
-open Util
-
-[<HookComponent>]
-let MyComponent() = ..
-```
-
-Now the only thing left is to pass the HMR token, this has to be done for each component you want to enable HMR for, and can be done with the `useHmr` hook.
+Now pass the HMR token to each component you want to enable HMR for with the `useHmr` hook.
 
 ```fsharp
 [<HookComponent>]
