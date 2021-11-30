@@ -135,3 +135,145 @@ let ClockDisplay model dispatch =
             {if transition.hasLeft then Lit.nothing else clockContainer()}
         </div>
     """
+
+type Components =
+    static member Button(text: string, onClick: unit->unit, ?enabled: bool) =
+        let enabled = defaultArg enabled true
+        html $"""
+        <button class="button"
+            @click={Ev(fun _ -> onClick())}
+            ?disabled={not enabled}>
+            {text}
+        </button>
+        """
+
+    [<HookComponent>]
+    static member ModalButton(text: string) =
+        let active, setActive = Hook.useState(false)
+        html $"""
+        <button class="button"
+            @click={Ev(fun _ -> setActive true)}
+            >
+            Open modal
+        </button>
+        <div class={Lit.classes ["modal", true;  "is-active", active]}>
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="notification">
+                    {text}
+                </div>
+            </div>
+            <button class="modal-close is-large"
+                @click={Ev(fun _ -> setActive(false))}
+                ></button>
+        </div>
+        """
+
+    [<HookComponent>]
+    static member ModalButtonStyled(text: string) =
+        Hook.useHmr(hmr)
+        let active, setActive = Hook.useState(false)
+        let className = Hook.use_scoped_css """
+            .modal-content > .notification {
+                margin: 0 auto;
+                max-width: 500px;
+            }
+        """
+
+        html $"""
+        <div class={className}>
+            <!-- button and modal -->
+            <button class="button"
+                @click={Ev(fun _ -> setActive true)}
+                >
+                Open modal
+            </button>
+            <div class={Lit.classes ["modal", true;  "is-active", active]}>
+                <div class="modal-background"></div>
+                <div class="modal-content">
+                    <div class="notification">
+                        {text}
+                    </div>
+                </div>
+                <button class="modal-close is-large"
+                    @click={Ev(fun _ -> setActive(false))}
+                    ></button>
+            </div>
+        </div>
+        """
+
+    [<LitElement("modal-button")>]
+    static member ModalButtonWebComponent() =
+        Hook.useHmr(hmr)
+        let _host, props = LitElement.init(fun config ->
+            config.useShadowDom <- false
+            config.props <- {| text = Prop.Of("I'm a modal") |}
+        )
+        let text = props.text.Value
+
+        let active, setActive = Hook.useState(false)
+        let className = Hook.use_scoped_css """
+            .modal-content > .notification {
+                margin: 0 auto;
+                max-width: 500px;
+            }
+        """
+
+        html $"""
+        <div class={className}>
+            <!-- button and modal -->
+            <button class="button"
+                @click={Ev(fun _ -> setActive true)}
+                >
+                Open modal
+            </button>
+            <div class={Lit.classes ["modal", true;  "is-active", active]}>
+                <div class="modal-background"></div>
+                <div class="modal-content">
+                    <div class="notification">
+                        {text}
+                    </div>
+                </div>
+                <button class="modal-close is-large"
+                    @click={Ev(fun _ -> setActive(false))}
+                    ></button>
+            </div>
+        </div>
+        """
+
+    [<LitElement("shadow-button")>]
+    static member ButtonShadowDom() =
+        Hook.useHmr(hmr)
+        let _host, props = LitElement.init(fun config ->
+            config.props <- {| text = Prop.Of("I'm a button") |}
+            config.styles <- [
+                css $"""
+                button {{
+                    user-select: none;
+                    cursor: pointer;
+                    font-family: Arial, Helvetica, sans-serif;
+                    font-size: medium;
+                    background-color: white;
+                    border-radius: 10px;
+                    padding: 10px;
+                    margin: 10px;
+                }}
+
+                button:hover {{
+                    background-color: ghostwhite;
+                }}
+
+                button:hover:active {{
+                    background-color: gainsboro;
+                }}
+                """
+            ]
+        )
+        let count, setCount = Hook.useState(0)
+        let text = $"{props.text.Value} ({count})"
+
+        html $"""
+        <button @click={Ev(fun _ -> count + 1 |> setCount)}>
+            {text}
+        </button>
+        """
