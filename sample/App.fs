@@ -1,10 +1,13 @@
 module Sample.App
 
+open Browser
 open Elmish
 open Elmish.HMR
 open Lit
 open Lit.Elmish
 open Components
+
+let private hmr = HMR.createToken()
 
 Clock.register()
 
@@ -41,6 +44,15 @@ let view model dispatch =
       </div>
     """
 
-Program.mkProgram init update view
-|> Program.withLit "app-container"
-|> Program.run
+// Program.mkProgram init update view
+// |> Program.withLit "app-container"
+// |> Program.run
+
+[<LitElement("sample-app")>]
+let App() =
+    Hook.useHmr(hmr)
+    let _ = LitElement.init(fun config ->
+        config.useShadowDom <- false
+    )
+    let model, dispatch = Hook.useElmish(init, update)
+    view model dispatch
