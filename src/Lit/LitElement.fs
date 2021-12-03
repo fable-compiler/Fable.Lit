@@ -20,6 +20,18 @@ type LitElement() =
     member _.requestUpdate(): unit = jsNative
     /// Returns a promise that will resolve when the element has finished updating.
     member _.updateComplete: JS.Promise<unit> = jsNative
+    member _.addController(controller: ReactiveController): unit = jsNative
+    member _.removeController(controller: ReactiveController): unit = jsNative
+
+// Compiler trick: we use a different generic type, but they both
+// refer to the same imported type
+
+[<Import("LitElement", "lit")>]
+type LitElement<'Props, 'Ctrls>() =
+    inherit LitElement()
+    [<Emit("$0")>]
+    member _.props: 'Props = jsNative
+    member _.controllers: 'Ctrls = jsNative
 
 module private LitElementUtil =
     module Types =
@@ -128,8 +140,21 @@ and Prop<'T> internal (defaultValue: 'T, options: obj) =
     [<Emit("$0{{ = $1}}")>]
     member _.Value with get() = defaultValue and set(_: 'T) = ()
 
+type Controller internal (init: LitElement -> ReactiveController) =
+    let mutable value = Unchecked.defaultof<ReactiveController>
+    member _.Init(host) = value <- init host
+    member _.Value = value
+
+    static member Of<'T when 'T :> ReactiveController>(init: LitElement -> 'T) =
+        Controller<'T>(init)
+
+and Controller<'T when 'T :> ReactiveController> (init) =
+    inherit Controller(fun host -> upcast init host)
+    member _.Value = base.Value :?> 'T
+
 /// Configuration values for the LitElement instances
-type LitConfig<'Props> =
+type LitConfig<'Props, 'Ctrls> =
+    abstract controllers: 'Ctrls with get, set
     ///<summary>
     /// An object containing the reactive properties definitions for the web components to react to changes
     /// </summary>
@@ -151,23 +176,25 @@ type LitConfig<'Props> =
     /// Whether the element should render to shadow or light DOM (defaults to true).
     abstract useShadowDom: bool with get, set
 
-type ILitElementInit<'Props> =
-    abstract init: initFn: (LitConfig<'Props> -> JS.Promise<unit>) -> LitElement * 'Props
+type ILitElementInit<'Props, 'Ctrls> =
+    abstract init: initFn: (LitConfig<'Props, 'Ctrls> -> JS.Promise<unit>) -> LitElement<'Props, 'Ctrls>
 
-type LitElementInit<'Props>() =
+type LitElementInit<'Props, 'Ctrls>() =
     let mutable _initPromise: JS.Promise<unit> = null
     let mutable _useShadowDom = true
+    let mutable _ctrls = Unchecked.defaultof<'Ctrls>
     let mutable _props = Unchecked.defaultof<'Props>
     let mutable _styles = Unchecked.defaultof<CSSResult list>
 
     member _.InitPromise = _initPromise
 
-    interface LitConfig<'Props> with
+    interface LitConfig<'Props, 'Ctrls> with
+        member _.controllers with get() = _ctrls and set v = _ctrls <- v
         member _.props with get() = _props and set v = _props <- v
         member _.styles with get() = _styles and set v = _styles <- v
         member _.useShadowDom with get() = _useShadowDom and set v = _useShadowDom <- v
 
-    interface ILitElementInit<'Props> with
+    interface ILitElementInit<'Props, 'Ctrls> with
         member this.init initFn =
             _initPromise <- initFn this
             Unchecked.defaultof<_>
@@ -176,13 +203,13 @@ type LitElementInit<'Props>() =
         member _.hooks = failInit()
 
 [<AbstractClass; AttachMembers>]
-type LitHookElement<'Props>(initProps: obj -> unit) =
-    inherit LitElement()
+type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
+    inherit LitElement<'Props, 'Ctrls>()
     let _hooks = HookContext(jsThis)
 #if DEBUG
     let mutable _hmrSub: IDisposable option = None
 #endif
-    do initProps(jsThis)
+    do init(jsThis)
 
     abstract renderFn: JS.Function with get, set
     abstract name: string
@@ -218,8 +245,8 @@ type LitHookElement<'Props>(initProps: obj -> unit) =
                     |> Some
 #endif
 
-    interface ILitElementInit<'Props> with
-        member this.init(_) = this :> LitElement, box this :?> 'Props
+    interface ILitElementInit<'Props, 'Ctrls> with
+        member this.init(_) = this :> LitElement<'Props, 'Ctrls>
 
     interface IHookProvider with
         member _.hooks = _hooks
@@ -245,7 +272,7 @@ type LitElementAttribute(name: string) =
 
         config.InitPromise
         |> Promise.iter (fun _ ->
-            let config = config :> LitConfig<obj>
+            let config = config :> LitConfig<obj, obj>
 
             let styles =
                 if isNotNull config.styles then List.toArray config.styles |> Some
@@ -278,14 +305,28 @@ type LitElementAttribute(name: string) =
                 else
                     None, fun _ -> ()
 
+            let initCtrls =
+                if isNotNull config.controllers then
+                    fun (host: LitElement) ->
+                        JS.Constructors.Object.values(config.controllers)
+                        |> Seq.iter (function
+                            | :? Controller as ctrl -> ctrl.Init(host)
+                            | _ -> ())
+                        host?controllers <- config.controllers
+                else fun _ -> ()
+
+            let init host =
+                initProps host
+                initCtrls host
+
             let classExpr =
-                let baseClass = jsConstructor<LitHookElement<obj>>
+                let baseClass = jsConstructor<LitHookElement<obj, obj>>
 #if !DEBUG
-                emitJsExpr (baseClass, renderFn, initProps) HookUtil.RENDER_FN_CLASS_EXPR
+                emitJsExpr (baseClass, renderFn, init) HookUtil.RENDER_FN_CLASS_EXPR
 #else
                 let renderRef = LitBindings.createRef()
                 renderRef.value <- renderFn
-                emitJsExpr (baseClass, renderRef, mi.Name, initProps) HookUtil.HMR_CLASS_EXPR
+                emitJsExpr (baseClass, renderRef, mi.Name, init) HookUtil.HMR_CLASS_EXPR
 #endif
 
             propsOptions |> Option.iter (fun props -> defineGetter(classExpr, "properties", fun () -> props))
@@ -370,16 +411,16 @@ module LitElementExtensions =
         /// Initializes the LitElement instance and registers the element in the custom elements registry
         /// </summary>
         static member inline init(): LitElement =
-            jsThis<ILitElementInit<unit>>.init(fun _ -> Promise.lift ()) |> fst
+            upcast jsThis<ILitElementInit<unit, unit>>.init(fun _ -> Promise.lift ())
 
         /// <summary>
         /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
         /// </summary>
-        static member inline init(initFn: LitConfig<'Props> -> unit): LitElement * 'Props =
-            jsThis<ILitElementInit<'Props>>.init(initFn >> Promise.lift)
+        static member inline init(initFn: LitConfig<'Props, 'Ctrls> -> unit): LitElement<'Props, 'Ctrls> =
+            jsThis<ILitElementInit<'Props, 'Ctrls>>.init(initFn >> Promise.lift)
 
         /// <summary>
         /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
         /// </summary>
-        static member inline initAsync(initFn: LitConfig<'Props> -> JS.Promise<unit>): LitElement * 'Props =
-            jsThis<ILitElementInit<'Props>>.init(initFn)
+        static member inline initAsync(initFn: LitConfig<'Props, 'Ctrls> -> JS.Promise<unit>): LitElement<'Props, 'Ctrls> =
+            jsThis<ILitElementInit<'Props, 'Ctrls>>.init(initFn)

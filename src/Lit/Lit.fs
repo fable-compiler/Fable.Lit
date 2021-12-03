@@ -45,6 +45,20 @@ type CSSResult =
     abstract cssText: string
     abstract styleSheet: CSSStyleSheet
 
+// https://lit.dev/docs/api/controllers/#ReactiveController
+type ReactiveController =
+    abstract hostConnected: unit -> unit
+    abstract hostDisconnected: unit -> unit
+    abstract hostUpdate: unit -> unit
+    abstract hostUpdated: unit -> unit
+
+// https://lit.dev/docs/api/controllers/#ReactiveControllerHost
+type ReactiveControllerHost =
+    abstract updateComplete: JS.Promise<bool>
+    abstract addController: ReactiveController -> unit
+    abstract removeController: ReactiveController -> unit
+    abstract requestUpdate: unit -> unit
+
 type LitBindings =
     /// <summary>
     /// Interprets a template literal as an HTML template that can efficiently render to and update a container.
