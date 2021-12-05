@@ -44,11 +44,32 @@ module Program =
 
         withLitOnElement el program
 
-    // TODO: A helper like this should likely belong to Elmish
-    let withTerminationHandler (handler: 'model -> unit) (program: Program<'arg, 'model, 'msg, 'view>): Program<'arg, 'model, 'msg, 'view> =
+    /// Adds a cumulative termination handler, doesn't affect the termination criteria
+    let addTerminationHandler (handler: 'model -> unit) (program: Program<'arg, 'model, 'msg, 'view>): Program<'arg, 'model, 'msg, 'view> =
         program
-        |> Program.map id id id id id (fun (criteria, handler2) ->
-            criteria, fun model -> handler model; handler2 model)
+        |> Program.mapTermination (fun (criteria, handler') ->
+            criteria, fun model -> handler' model; handler model)
+
+    /// Adds a cumulative subscription
+    let addSubscription (subscribe: 'model -> Cmd<'msg>) (program: Program<'arg, 'model, 'msg, 'view>): Program<'arg, 'model, 'msg, 'view> =
+        program
+        |> Program.mapSubscription (fun subscribe' model ->
+            Cmd.batch [
+                subscribe' model
+                subscribe model
+            ])
+
+    /// Adds a cumulative subscription that will be disposed on termination
+    let addDisposableSubscription (subscribe: 'model -> Dispatch<'msg> -> IDisposable) (program: Program<'arg, 'model, 'msg, 'view>): Program<'arg, 'model, 'msg, 'view> =
+        let mutable disp: IDisposable option = None
+        program
+        |> addSubscription (fun model ->
+            Cmd.ofSub (fun dispatch ->
+                disp <- subscribe model dispatch |> Some
+            )
+        )
+        |> addTerminationHandler (fun _ ->
+            disp |> Option.iter (fun d -> d.Dispose()))
 
 [<AutoOpen>]
 module LitElmishExtensions =

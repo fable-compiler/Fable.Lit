@@ -255,12 +255,8 @@ let ElmishComponentW () =
 let ElmishTermination (disp: System.IDisposable) =
     let _ = Hook.useElmish(fun () ->
         Program.mkHidden init update
-        |> Program.withTerminationHandler (fun _ -> disp.Dispose())
+        |> Program.addTerminationHandler (fun _ -> disp.Dispose())
     )
-    // Hook.useEffectOnce(fun () -> Hook.createDisposable(fun () ->
-    //     printfn "Terminating ElmishTermination"
-    //     disp.Dispose()
-    // ))
 
     html $"<p>Waiting for termination...</p>"
 

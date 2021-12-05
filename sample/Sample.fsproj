@@ -15,7 +15,7 @@
   <ItemGroup>
     <!-- <PackageReference Include="Fable.Lit.Elmish" Version="1.0.0-rc-001" /> -->
     <!-- <PackageReference Include="Fable.Lit.React" Version="1.0.0-rc-001" /> -->
-    <PackageReference Include="Fable.Elmish.HMR" Version="4.3.1" />
+    <!-- <PackageReference Include="Fable.Elmish.HMR" Version="4.3.1" /> -->
     <PackageReference Include="Feliz" Version="1.52.0" />
   </ItemGroup>
 </Project>
