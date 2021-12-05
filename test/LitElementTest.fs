@@ -21,22 +21,22 @@ let MyEl () =
 
 [<LitElement("fel-attribute-changes")>]
 let AttributeChanges () =
-    let _, props =
+    let host =
         LitElement.init (fun config -> config.props <- {| fName = Prop.Of("default", attribute = "f-name") |})
 
     html
         $"""
-        <p id="value">{props.fName.Value}</p>
+        <p id="value">{host.props.fName.Value}</p>
     """
 
 [<LitElement("fel-attribute-doesnt-change")>]
 let AttributeDoesntChange () =
-    let _, props =
+    let host =
         LitElement.init (fun config -> config.props <- {| fName = Prop.Of("default", attribute = "") |})
 
     html
         $"""
-        <p id="value">{props.fName.Value}</p>
+        <p id="value">{host.props.fName.Value}</p>
     """
 
 let reverse (str: string) =
@@ -44,7 +44,7 @@ let reverse (str: string) =
 
 [<LitElement("fel-attribute-reflects")>]
 let AttributeReflects () =
-    let _, props =
+    let host =
         LitElement.init (fun config ->
             config.props <-
                 {|
@@ -54,8 +54,8 @@ let AttributeReflects () =
 
     html
         $"""
-        <p id="f-value">{props.fName.Value}</p>
-        <p id="rev-value">{props.revName.Value |> Array.map string |> String.concat "-"}</p>
+        <p id="f-value">{host.props.fName.Value}</p>
+        <p id="rev-value">{host.props.revName.Value |> Array.map string |> String.concat "-"}</p>
     """
 
 [<LitElement("fel-dispatch-events")>]

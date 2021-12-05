@@ -142,9 +142,10 @@ and Prop<'T> internal (defaultValue: 'T, options: obj) =
 
 type Controller internal (init: LitElement -> ReactiveController) =
     let mutable value = Unchecked.defaultof<ReactiveController>
-    member _.Init(host) = value <- init host
+    member internal _.Init(host) = value <- init host
     member _.Value = value
 
+    /// Creates a controller out of an initialization function
     static member Of<'T when 'T :> ReactiveController>(init: LitElement -> 'T) =
         Controller<'T>(init)
 

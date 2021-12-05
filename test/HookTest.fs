@@ -110,10 +110,10 @@ let DisposableContainer (r: ref<int>) =
 
 [<LitElement("test-disposable")>]
 let DisposableW () =
-    let _, props = LitElement.init(fun cfg ->
+    let host = LitElement.init(fun cfg ->
         cfg.props <- {| r = Prop.Of(ref 0, attribute="") |}
     )
-    let r = props.r.Value
+    let r = host.props.r.Value
     let value, setValue = Hook.useState 5
 
     Hook.useEffectOnce
@@ -132,10 +132,10 @@ let DisposableW () =
 
 [<LitElement("test-disposable-container")>]
 let DisposableContainerW () =
-    let _, props = LitElement.init(fun cfg ->
+    let host = LitElement.init(fun cfg ->
         cfg.props <- {| r = Prop.Of(ref 0, attribute="") |}
     )
-    let r = props.r.Value
+    let r = host.props.r.Value
     let disposed, setDisposed = Hook.useState false
 
     let body =
