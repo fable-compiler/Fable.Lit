@@ -228,6 +228,41 @@ type Lit() =
     static member classes(classes: string seq): string = classes |> String.concat " "
 
     /// <summary>
+    /// Generates inline styles in an efficient way for the browser to apply
+    /// </summary>
+    /// <example>
+    /// <code lang="fsharp">
+    ///    let styles = {| backgroundColor = "rebeccapurple"; color = "white" |}
+    ///    html $"&lt;div style={Lit.styles styles}&gt;This is my Content&gt;/div&gt;
+    /// </code>
+    /// </example>
+    static member styles(styles: obj) = LitBindings.styleMap styles
+
+    /// <summary>
+    /// Generates inline styles in an efficient way for the browser to apply
+    /// </summary>
+    /// <example>
+    /// <code lang="fsharp">
+    ///    let styles = [ "backgroundColor","rebeccapurple"; "color", "white" ]
+    ///    html $"&lt;div style={Lit.styles styles}&gt;This is my Content&gt;/div&gt;
+    /// </code>
+    /// </example>
+    static member styles(styles: (string * obj) seq) =
+        JsInterop.createObj styles |> Lit.styles
+        
+    /// <summary>
+    /// Generates inline styles in an efficient way for the browser to apply
+    /// </summary>
+    /// <example>
+    /// <code lang="fsharp">
+    ///    let styles = dict ([ "backgroundColor","rebeccapurple"; "color", "white" ])
+    ///    html $"&lt;div style={Lit.styles styles}&gt;This is my Content&gt;/div&gt;
+    /// </code>
+    /// </example>
+    static member styles(styles: Map<string, obj>) =
+        styles |> Map.toSeq |> LitBindings.styleMap
+
+    /// <summary>
     /// Give a unique id to items in a list. This can improve performance in lists that will be sorted, filtered or re-ordered.
     /// </summary>
     /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
