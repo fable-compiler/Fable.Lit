@@ -6,6 +6,7 @@ open Fable.Core.JsInterop
 open Browser
 open Browser.Types
 open HMRTypes
+open Lit
 
 // LitElement should inherit HTMLElement but HTMLElement
 // is still implemented as interface in Fable.Browser
@@ -20,8 +21,8 @@ type LitElement() =
     member _.requestUpdate(): unit = jsNative
     /// Returns a promise that will resolve when the element has finished updating.
     member _.updateComplete: JS.Promise<unit> = jsNative
-    member _.addController(controller: ReactiveController): unit = jsNative
-    member _.removeController(controller: ReactiveController): unit = jsNative
+    member _.addController(controller: ReactiveControllerBase): unit = jsNative
+    member _.removeController(controller: ReactiveControllerBase): unit = jsNative
 
 // Compiler trick: we use a different generic type, but they both
 // refer to the same imported type
@@ -140,16 +141,16 @@ and Prop<'T> internal (defaultValue: 'T, options: obj) =
     [<Emit("$0{{ = $1}}")>]
     member _.Value with get() = defaultValue and set(_: 'T) = ()
 
-type Controller internal (init: LitElement -> ReactiveController) =
-    let mutable value = Unchecked.defaultof<ReactiveController>
+type Controller internal (init: LitElement -> ReactiveControllerBase) =
+    let mutable value = Unchecked.defaultof<ReactiveControllerBase>
     member internal _.Init(host) = value <- init host
     member _.Value = value
 
     /// Creates a controller out of an initialization function
-    static member Of<'T when 'T :> ReactiveController>(init: LitElement -> 'T) =
+    static member Of<'T when 'T :> ReactiveControllerBase>(init: LitElement -> 'T) =
         Controller<'T>(init)
 
-and Controller<'T when 'T :> ReactiveController> (init) =
+and Controller<'T when 'T :> ReactiveControllerBase> (init) =
     inherit Controller(fun host -> upcast init host)
     member _.Value = base.Value :?> 'T
 
