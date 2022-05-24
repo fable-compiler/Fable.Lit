@@ -10,6 +10,14 @@ open Lit.Elmish
 module Helpers =
     let hmr = HMR.createToken()
 
+    type MouseController =
+        inherit ReactiveController
+        abstract x: float
+        abstract y: float
+
+    [<Import("MouseController", from="./controllers.js"); Emit("new $0($1)")>]
+    let createMouseController (host: LitElement): MouseController = jsNative
+
     type Time =
         | Hour of int
         | Minute of int
@@ -125,9 +133,11 @@ let select options selected dispatch =
         </div>
     """
 
-let initEl (config: LitConfig<_>) =
+let initEl (config: LitConfig<_,_>) =
     let split (str: string) =
         str.Split(',') |> Array.map (fun x -> x.Trim()) |> Array.toList
+
+    config.controllers <- {| mouse = Controller.Of(createMouseController) |}
 
     config.props <-
         {|
@@ -176,13 +186,14 @@ let initEl (config: LitConfig<_>) =
 
 [<LitElement("my-clock")>]
 let Clock() =
-    let host, props = LitElement.init initEl
-    let hourColor = props.hourColor.Value
-    let colors = props.minuteColors.Value
+    let host = LitElement.init initEl
+    let hourColor = host.props.hourColor.Value
+    let colors = host.props.minuteColors.Value
 
     Hook.useHmr(hmr)
     let model, dispatch = Hook.useElmish(init, update)
     let time = model.CurrentTime
+    let mouse = host.controllers.mouse.Value
 
     html $"""
         <svg viewBox="0 0 100 100"
@@ -208,12 +219,12 @@ let Clock() =
         </svg>
 
         <div class="container">
-            <p id="message">This is a clock</p>
+            <p id="message">This is a clock: {mouse.x}, {mouse.y}</p>
             {select colors model.MinuteHandColor (fun color ->
                 host.renderRoot.querySelector("#message").textContent <- "Color selected"
                 List.tryFindIndex ((=) color) colors
                 |> Option.iter (fun i ->
-                    props.evenColor.Value <- (i + 1) % 2 = 0)
+                    host.props.evenColor.Value <- (i + 1) % 2 = 0)
                 MinuteHandColor color |> dispatch)}
         </div>
     """

@@ -3,6 +3,7 @@ namespace Lit
 open System
 open Browser.Types
 open Fable.Core
+open Lit
 
 module Types =
     type RefValue<'T> =
@@ -44,6 +45,78 @@ type TemplateResult =
 type CSSResult =
     abstract cssText: string
     abstract styleSheet: CSSStyleSheet
+    
+// https://lit.dev/docs/api/controllers/#ReactiveController
+// make an empty interface, all of the
+// reactive controller methods are optional anyways
+// and make each method implement the base
+/// Common interface for Reactive Controller Methods
+type ReactiveControllerBase = interface end
+
+type ReactiveHostConnected =
+    inherit ReactiveControllerBase
+    
+    /// <summary>
+    /// Called when the host is connected to the component tree. For custom
+    /// element hosts, this corresponds to the `connectedCallback()` lifecycle,
+    /// which is only called when the component is connected to the document.
+    /// </summary>
+    abstract hostConnected: unit -> unit
+
+type ReactiveHostDisconnected =
+    inherit ReactiveControllerBase
+    /// <summary>
+    /// Called when the host is disconnected from the component tree. For custom
+    /// element hosts, this corresponds to the `disconnectedCallback()` lifecycle,
+    /// which is called the host or an ancestor component is disconnected from the
+    /// document.
+    /// </summary>
+    abstract hostDisconnected: unit -> unit
+
+type ReactiveHostUpdate =
+    inherit ReactiveControllerBase
+    
+    /// <summary>
+    /// Called during the client-side host update, just before the host calls
+    /// its own update.
+    ///
+    /// Code in `update()` can depend on the DOM as it is not called in
+    /// server-side rendering.
+    /// </summary>
+    abstract hostUpdate: unit -> unit
+
+type ReactiveHostUpdated =
+    inherit ReactiveControllerBase
+    
+    /// <summary>
+    /// Called after a host update, just before the host calls firstUpdated and
+    /// updated. It is not called in server-side rendering.
+    /// </summary>
+    abstract hostUpdated: unit -> unit
+
+/// <summary>
+/// A Reactive Controller is an object that enables sub-component code
+/// organization and reuse by aggregating the state, behavior, and lifecycle
+/// hooks related to a single feature.
+///
+/// Controllers are added to a host component, or other object that implements
+/// the `ReactiveControllerHost` interface, via the `addController()` method.
+/// They can hook their host components's lifecycle by implementing one or more
+/// of the lifecycle callbacks, or initiate an update of the host component by
+/// calling `requestUpdate()` on the host.
+/// </summary>
+type ReactiveController =
+    inherit ReactiveHostConnected
+    inherit ReactiveHostDisconnected
+    inherit ReactiveHostUpdate
+    inherit ReactiveHostUpdated
+
+// https://lit.dev/docs/api/controllers/#ReactiveControllerHost
+type ReactiveControllerHost =
+    abstract updateComplete: JS.Promise<bool>
+    abstract addController: ReactiveControllerBase -> unit
+    abstract removeController: ReactiveControllerBase -> unit
+    abstract requestUpdate: unit -> unit
 
 type LitBindings =
     /// <summary>
