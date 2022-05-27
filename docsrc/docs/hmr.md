@@ -33,22 +33,6 @@ npx vite build      # Build your site for production
 
 That's it, now you have an extremely fast development server and an optimized build with zero config (built files will be put in `dist` folder by default). If you need to edit some settings, you can still use a [config file](https://vitejs.dev/config/) or the CLI options (check them with `npx vite --help`).
 
-## Fable --runFast
-
-If you use `--runFast` option with Fable instead of `--run`, Vite will be started right away instead of waiting until first Fable compilation. When developing you usually already have the compiled files from the previous day, so this way you can get a development server up and running in under 200 milliseconds!
-
-```
-dotnet fable watch src -o build/client --runFast vite --open
-```
-
-> When Fable compilation finishes Vite will just reload with the updated code.
-
-For production make sure to use `--run` so vite doesn't start bundling until Fable has finished compilation.
-
-```
-dotnet fable src -o build/client --run vite build
-```
-
 ## Elmish and Local HMR
 
 Lit.Elmish is compatible with [Elmish HMR](https://elmish.github.io/hmr/) (use Fable.Elmish.HMR >= 4.3 for Vite support).
