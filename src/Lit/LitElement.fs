@@ -185,7 +185,7 @@ type LitHookElement<'Props>(initProps: obj -> unit) =
     do initProps(jsThis)
 
     abstract renderFn: JS.Function with get, set
-    abstract name: string
+    abstract __name: string
 
     member _.render() =
         _hooks.render()
@@ -211,7 +211,7 @@ type LitHookElement<'Props>(initProps: obj -> unit) =
                     token.Subscribe(fun info ->
                         _hooks.remove_css()
                         let updatedModule = info.NewModule
-                        let updatedExport = updatedModule?(this.name)
+                        let updatedExport = updatedModule?(this.__name)
                         this.renderFn <- updatedExport?renderFn
                         updateStyleSheets info.Data this (updatedExport?styles)
                     )
@@ -244,7 +244,7 @@ type LitElementAttribute(name: string) =
             failInit()
 
         config.InitPromise
-        |> Promise.iter (fun _ ->
+        |> Promise.map (fun _ ->
             let config = config :> LitConfig<obj>
 
             let styles =
@@ -316,6 +316,10 @@ type LitElementAttribute(name: string) =
             styles |> Option.iter (fun styles -> dummyFn?styles <- styles)
 #endif
         )
+        |> Promise.catchEnd (fun er ->
+            console.error(er)
+        )
+
         box dummyFn :?> _
 
 [<AutoOpen>]
