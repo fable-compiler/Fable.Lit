@@ -7,22 +7,63 @@ open Browser
 open Browser.Types
 open HMRTypes
 open Lit
+type Converter =
+    abstract fromAttribute: JS.Function with get, set
+    abstract toAttribute: JS.Function with get, set
+
+type PropConfig =
+    abstract ``type``: obj with get, set
+    abstract attribute: U2<string, bool> with get, set
+    abstract state: bool with get, set
+    abstract reflect: bool with get, set
+    abstract noAccessor: bool with get, set
+    abstract converter: Converter with get, set
+    abstract hasChanged: JS.Function with get, set
 
 // LitElement should inherit HTMLElement but HTMLElement
 // is still implemented as interface in Fable.Browser
 [<Import("LitElement", "lit")>]
 type LitElement() =
+    member _.hasUpdated with get() : bool = jsNative
+    member _.isUpdatePending with get() : bool = jsNative
+    /// Returns a promise that will resolve when the element has finished updating.
+    member _.updateComplete with get(): JS.Promise<bool> = jsNative
     /// Node or ShadowRoot into which element DOM should be rendered. Defaults to an open shadowRoot.
     member _.renderRoot: HTMLElement = jsNative
     member _.shadowRoot: ShadowRoot = jsNative
     member _.isConnected: bool = jsNative
     member _.connectedCallback(): unit = jsNative
     member _.disconnectedCallback(): unit = jsNative
-    member _.requestUpdate(): unit = jsNative
-    /// Returns a promise that will resolve when the element has finished updating.
-    member _.updateComplete: JS.Promise<unit> = jsNative
+    member _.attributeChangedCallback(name: string, oldValue: string, newValue: string): unit = jsNative
+    member _.requestUpdate(?name: string, ?oldValue: obj, ?options: PropConfig): unit = jsNative
     member _.addController(controller: ReactiveControllerBase): unit = jsNative
     member _.removeController(controller: ReactiveControllerBase): unit = jsNative
+    member _.createRenderRoot(): unit = jsNative
+    member _.enableUpdating(requestedUpdate: bool): unit = jsNative
+    member _.getUpdateComplete(): JS.Promise<bool> = jsNative
+    member _.firstUpdated(updated: JS.Map<string, string>): unit = jsNative
+    member _.shouldUpdate(updated: JS.Map<string, string>): unit = jsNative
+    member _.update(updated: JS.Map<string, string>): unit = jsNative
+    member _.updated(updated: JS.Map<string, string>): unit = jsNative
+    member _.willUpdate(updated: JS.Map<string, string>): unit = jsNative
+    member _.performUpdate(): JS.Promise<unit> = jsNative
+    member _.scheduleUpdate(): JS.Promise<unit> = jsNative
+    abstract render: unit -> TemplateResult
+    override _.render() = jsNative
+
+    static member observedAttributes with get(): bool = jsNative
+    static member finalized with get(): bool = jsNative
+    static member elementProperties with get(): JS.Map<string, PropConfig> = jsNative
+    static member shadowRootOptions with get(): ShadowRootInit = jsNative
+    static member elementStyles: CSSResult array = jsNative
+    
+    static member properties with get(): JS.Map<string, PropConfig> = jsNative
+    static member styles with get(): CSSResult array = jsNative
+    static member getPropertyOptions(name): PropConfig = jsNative
+    static member addInitializer(instance: LitElement): unit = jsNative
+    static member finalize(): unit = jsNative
+    static member finalizeStyles(styles: CSSResult array): unit = jsNative
+    static member createProperty(name: string, config: PropConfig): unit = jsNative
 
 // Compiler trick: we use a different generic type, but they both
 // refer to the same imported type
@@ -41,19 +82,6 @@ module private LitElementUtil =
         let [<Global>] Boolean = obj()
         let [<Global>] Array = obj()
         let [<Global>] Object = obj()
-
-    type Converter =
-        abstract fromAttribute: JS.Function with get, set
-        abstract toAttribute: JS.Function with get, set
-
-    type PropConfig =
-        abstract ``type``: obj with get, set
-        abstract attribute: U2<string, bool> with get, set
-        abstract state: bool with get, set
-        abstract reflect: bool with get, set
-        abstract noAccessor: bool with get, set
-        abstract converter: Converter with get, set
-        abstract hasChanged: JS.Function with get, set
 
     let isNotNull (x: obj) = not(isNull x)
     let isNotReferenceEquals (x: obj) (y: obj) = not(obj.ReferenceEquals(x, y))
@@ -216,7 +244,7 @@ type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
     abstract renderFn: JS.Function with get, set
     abstract name: string
 
-    member _.render() =
+    override _.render() =
         _hooks.render()
 
     member _.disconnectedCallback() =
