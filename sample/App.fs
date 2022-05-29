@@ -1,6 +1,7 @@
 module Sample.App
 
 open Browser
+open Fable.Core
 open Elmish
 open Elmish.HMR
 open Lit
@@ -41,6 +42,10 @@ let view model dispatch =
         {LocalNameInput()}
 
         {ClockDisplay model dispatch}
+
+        <user-profile .name={model.Value} age="25"></user-profile>
+
+        <element-with-controller><element-with-controller>
       </div>
     """
 
@@ -56,3 +61,23 @@ let App() =
     )
     let model, dispatch = Hook.useElmish(init, update)
     view model dispatch
+
+[<Fable.Core.Emit("String")>]
+let StringCtor: obj = jsNative
+
+registerElement "user-profile" Fable.Core.JsInterop.jsConstructor<ClassComponents.UserProfile> {
+    property "name" {
+        use_attribute
+        use_type StringCtor
+    }
+    property "age" {
+        use_attribute
+        use_type Fable.Core.JS.Constructors.Number
+    }
+    css $"p {{ color: red; }}"
+}
+
+registerElement "element-with-controller" Fable.Core.JsInterop.jsConstructor<ClassComponents.ElementWithController> {
+    css $"p {{ color: red; }}"
+    css $"li {{ color: rebeccapurple; }}"
+}
