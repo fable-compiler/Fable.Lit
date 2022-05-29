@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <PackageId>Fable.Lit</PackageId>
@@ -17,6 +17,7 @@
     <Compile Include="HMR.fs" />
     <Compile Include="Hook.fs" />
     <Compile Include="LitElement.fs" />
+    <Compile Include="LitElementCE.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs; package.json" PackagePath="fable\" />
