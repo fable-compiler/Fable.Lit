@@ -41,6 +41,12 @@ type PropConfig =
 // is still implemented as interface in Fable.Browser
 [<Import("LitElement", "lit")>]
 type LitElement() =
+    interface ReactiveControllerHost with
+        member this.addController(arg1: ReactiveController) : unit = this.addController (arg1)
+        member this.removeController(arg1: ReactiveController) : unit = this.removeController (arg1)
+        member this.requestUpdate() : unit = this.requestUpdate ()
+        member this.updateComplete: JS.Promise<bool> = this.updateComplete
+
     member _.hasUpdated: bool = jsNative
     member _.isUpdatePending: bool = jsNative
     /// Returns a promise that will resolve when the element has finished updating.
@@ -53,8 +59,8 @@ type LitElement() =
     member _.disconnectedCallback() : unit = jsNative
     member _.attributeChangedCallback(name: string, oldValue: string, newValue: string) : unit = jsNative
     member _.requestUpdate(?name: string, ?oldValue: obj, ?options: PropConfig) : unit = jsNative
-    member _.addController(controller: ReactiveControllerBase) : unit = jsNative
-    member _.removeController(controller: ReactiveControllerBase) : unit = jsNative
+    member _.addController(controller: ReactiveController) : unit = jsNative
+    member _.removeController(controller: ReactiveController) : unit = jsNative
     member _.createRenderRoot() : unit = jsNative
     member _.enableUpdating(requestedUpdate: bool) : unit = jsNative
     member _.getUpdateComplete() : JS.Promise<bool> = jsNative
@@ -81,6 +87,7 @@ type LitElement() =
     static member finalize() : unit = jsNative
     static member finalizeStyles(styles: CSSResult array) : unit = jsNative
     static member createProperty(name: string, config: PropConfig) : unit = jsNative
+
 
 // Compiler trick: we use a different generic type, but they both
 // refer to the same imported type
@@ -214,15 +221,15 @@ and Prop<'T> internal (defaultValue: 'T, options: obj) =
         with get () = defaultValue
         and set (_: 'T) = ()
 
-type Controller internal (init: LitElement -> ReactiveControllerBase) =
-    let mutable value = Unchecked.defaultof<ReactiveControllerBase>
+type Controller internal (init: LitElement -> ReactiveController) =
+    let mutable value = Unchecked.defaultof<ReactiveController>
     member internal _.Init(host) = value <- init host
     member _.Value = value
 
     /// Creates a controller out of an initialization function
-    static member Of<'T when 'T :> ReactiveControllerBase>(init: LitElement -> 'T) = Controller<'T>(init)
+    static member Of<'T when 'T :> ReactiveController>(init: LitElement -> 'T) = Controller<'T>(init)
 
-and Controller<'T when 'T :> ReactiveControllerBase>(init) =
+and Controller<'T when 'T :> ReactiveController>(init) =
     inherit Controller(fun host -> upcast init host)
     member _.Value = base.Value :?> 'T
 

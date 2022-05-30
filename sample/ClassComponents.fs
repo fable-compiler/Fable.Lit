@@ -5,8 +5,9 @@ open Fable.Core
 open Fetch
 open Fable.Core.JsInterop
 
-type MouseController =
-    inherit ReactiveController
+[<ImportMember("./controllers.js")>]
+type MouseController(host) =
+    inherit ReactiveController(host)
     abstract x: float
     abstract y: float
 
@@ -16,11 +17,8 @@ type Post =
        title: string
        body: string |}
 
-[<Import("MouseController", from = "./controllers.js"); Emit("new $0($1)")>]
-let private createMouseController (host: LitElement) : MouseController = jsNative
-
 type ApiController(host: LitElement) =
-    do host.addController (jsThis)
+    inherit ReactiveController(host)
 
     member val Posts: Post array = Array.empty with get, set
     member val Page: int = 1 with get, set
@@ -50,8 +48,7 @@ type ApiController(host: LitElement) =
         this.Page <- this.Page + 1
         this.FetchUsers() |> Promise.start
 
-    interface ReactiveHostConnected with
-        member this.hostConnected() : unit = this.FetchUsers() |> Promise.start
+    override this.hostConnected() : unit = this.FetchUsers() |> Promise.start
 
 type UserProfile() =
     inherit LitElement()
@@ -64,7 +61,7 @@ type UserProfile() =
 type ElementWithController() =
     inherit LitElement()
 
-    let mouse = createMouseController jsThis
+    let mouse = MouseController jsThis
     let api = ApiController jsThis
 
     let posts (post: Post) = html $"<li>{post.title}</li>"
