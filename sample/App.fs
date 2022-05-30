@@ -47,6 +47,8 @@ let view model dispatch =
 
         {elmishNameInput model.Value (ChangeValue >> dispatch)}
         {LocalNameInput()}
+        <hello-there></hello-there>
+        <hello-there-2></hello-there-2>
 
         {ClockDisplay model dispatch}
 
@@ -67,24 +69,24 @@ let App () =
     let model, dispatch = Hook.useElmish (init, update)
     view model dispatch
 
-[<Emit("String")>]
-let StringCtor: obj = jsNative
+// registerFuncElement ("hello-there", Sample) { css $"p {{ color: blue; }}" }
+// registerFuncElement ("hello-there-2", Sample2) { css $"p {{ color: blue; }}" }
 
-registerElement "user-profile" JsInterop.jsConstructor<ClassComponents.UserProfile> {
+registerElement<ClassComponents.UserProfile> "user-profile" {
     property "name" {
         use_attribute
-        use_type StringCtor
+        use_type PropType.String
     }
 
     property "age" {
         use_attribute
-        use_type JS.Constructors.Number
+        use_type PropType.Number
     }
 
     css $"p {{ color: red; }}"
 }
 
-registerElement "element-with-controller" JsInterop.jsConstructor<ClassComponents.ElementWithController> {
+registerElement<ClassComponents.ElementWithController> "element-with-controller" {
     css $"p {{ color: red; }}"
     css $"li {{ color: rebeccapurple; }}"
 }
