@@ -7,12 +7,29 @@ open Browser
 open Browser.Types
 open HMRTypes
 open Lit
+
+type PropType =
+    [<Global>]
+    static member String: PropType = jsNative
+
+    [<Global>]
+    static member Number: PropType = jsNative
+
+    [<Global>]
+    static member Boolean: PropType = jsNative
+
+    [<Global>]
+    static member Array: PropType = jsNative
+
+    [<Global>]
+    static member Object: PropType = jsNative
+
 type Converter =
     abstract fromAttribute: JS.Function with get, set
     abstract toAttribute: JS.Function with get, set
 
 type PropConfig =
-    abstract ``type``: obj with get, set
+    abstract ``type``: PropType with get, set
     abstract attribute: U2<string, bool> with get, set
     abstract state: bool with get, set
     abstract reflect: bool with get, set
@@ -24,46 +41,46 @@ type PropConfig =
 // is still implemented as interface in Fable.Browser
 [<Import("LitElement", "lit")>]
 type LitElement() =
-    member _.hasUpdated with get() : bool = jsNative
-    member _.isUpdatePending with get() : bool = jsNative
+    member _.hasUpdated: bool = jsNative
+    member _.isUpdatePending: bool = jsNative
     /// Returns a promise that will resolve when the element has finished updating.
-    member _.updateComplete with get(): JS.Promise<bool> = jsNative
+    member _.updateComplete: JS.Promise<bool> = jsNative
     /// Node or ShadowRoot into which element DOM should be rendered. Defaults to an open shadowRoot.
     member _.renderRoot: HTMLElement = jsNative
     member _.shadowRoot: ShadowRoot = jsNative
     member _.isConnected: bool = jsNative
-    member _.connectedCallback(): unit = jsNative
-    member _.disconnectedCallback(): unit = jsNative
-    member _.attributeChangedCallback(name: string, oldValue: string, newValue: string): unit = jsNative
-    member _.requestUpdate(?name: string, ?oldValue: obj, ?options: PropConfig): unit = jsNative
-    member _.addController(controller: ReactiveControllerBase): unit = jsNative
-    member _.removeController(controller: ReactiveControllerBase): unit = jsNative
-    member _.createRenderRoot(): unit = jsNative
-    member _.enableUpdating(requestedUpdate: bool): unit = jsNative
-    member _.getUpdateComplete(): JS.Promise<bool> = jsNative
-    member _.firstUpdated(updated: JS.Map<string, string>): unit = jsNative
-    member _.shouldUpdate(updated: JS.Map<string, string>): unit = jsNative
-    member _.update(updated: JS.Map<string, string>): unit = jsNative
-    member _.updated(updated: JS.Map<string, string>): unit = jsNative
-    member _.willUpdate(updated: JS.Map<string, string>): unit = jsNative
-    member _.performUpdate(): JS.Promise<unit> = jsNative
-    member _.scheduleUpdate(): JS.Promise<unit> = jsNative
+    member _.connectedCallback() : unit = jsNative
+    member _.disconnectedCallback() : unit = jsNative
+    member _.attributeChangedCallback(name: string, oldValue: string, newValue: string) : unit = jsNative
+    member _.requestUpdate(?name: string, ?oldValue: obj, ?options: PropConfig) : unit = jsNative
+    member _.addController(controller: ReactiveControllerBase) : unit = jsNative
+    member _.removeController(controller: ReactiveControllerBase) : unit = jsNative
+    member _.createRenderRoot() : unit = jsNative
+    member _.enableUpdating(requestedUpdate: bool) : unit = jsNative
+    member _.getUpdateComplete() : JS.Promise<bool> = jsNative
+    member _.firstUpdated(updated: JS.Map<string, string>) : unit = jsNative
+    member _.shouldUpdate(updated: JS.Map<string, string>) : unit = jsNative
+    member _.update(updated: JS.Map<string, string>) : unit = jsNative
+    member _.updated(updated: JS.Map<string, string>) : unit = jsNative
+    member _.willUpdate(updated: JS.Map<string, string>) : unit = jsNative
+    member _.performUpdate() : JS.Promise<unit> = jsNative
+    member _.scheduleUpdate() : JS.Promise<unit> = jsNative
     abstract render: unit -> TemplateResult
     override _.render() = jsNative
 
-    static member observedAttributes with get(): bool = jsNative
-    static member finalized with get(): bool = jsNative
-    static member elementProperties with get(): JS.Map<string, PropConfig> = jsNative
-    static member shadowRootOptions with get(): ShadowRootInit = jsNative
+    static member observedAttributes: bool = jsNative
+    static member finalized: bool = jsNative
+    static member elementProperties: JS.Map<string, PropConfig> = jsNative
+    static member shadowRootOptions: ShadowRootInit = jsNative
     static member elementStyles: CSSResult array = jsNative
-    
-    static member properties with get(): JS.Map<string, PropConfig> = jsNative
-    static member styles with get(): CSSResult array = jsNative
-    static member getPropertyOptions(name): PropConfig = jsNative
-    static member addInitializer(instance: LitElement): unit = jsNative
-    static member finalize(): unit = jsNative
-    static member finalizeStyles(styles: CSSResult array): unit = jsNative
-    static member createProperty(name: string, config: PropConfig): unit = jsNative
+
+    static member properties: JS.Map<string, PropConfig> = jsNative
+    static member styles: CSSResult array = jsNative
+    static member getPropertyOptions(name) : PropConfig = jsNative
+    static member addInitializer(instance: LitElement) : unit = jsNative
+    static member finalize() : unit = jsNative
+    static member finalizeStyles(styles: CSSResult array) : unit = jsNative
+    static member createProperty(name: string, config: PropConfig) : unit = jsNative
 
 // Compiler trick: we use a different generic type, but they both
 // refer to the same imported type
@@ -71,43 +88,55 @@ type LitElement() =
 [<Import("LitElement", "lit")>]
 type LitElement<'Props, 'Ctrls>() =
     inherit LitElement()
+
     [<Emit("$0")>]
     member _.props: 'Props = jsNative
+
     member _.controllers: 'Ctrls = jsNative
 
 module private LitElementUtil =
-    module Types =
-        let [<Global>] String = obj()
-        let [<Global>] Number = obj()
-        let [<Global>] Boolean = obj()
-        let [<Global>] Array = obj()
-        let [<Global>] Object = obj()
 
-    let isNotNull (x: obj) = not(isNull x)
-    let isNotReferenceEquals (x: obj) (y: obj) = not(obj.ReferenceEquals(x, y))
-    let failInit() = failwith "LitElement.init must be called on top of the render function"
-    let failProps(key: string) = failwith $"'{key}' field in `props` record is not of Prop<'T> type"
+    let isNotNull (x: obj) = not (isNull x)
+    let isNotReferenceEquals (x: obj) (y: obj) = not (obj.ReferenceEquals(x, y))
+
+    let failInit () =
+        failwith "LitElement.init must be called on top of the render function"
+
+    let failProps (key: string) =
+        failwith $"'{key}' field in `props` record is not of Prop<'T> type"
 
     [<Emit("customElements.define($0, $1)")>]
     let defineCustomElement (name: string, cons: obj) = ()
 
     [<Emit("Object.defineProperty($0, $1, { get: $2 })")>]
-    let defineGetter(target: obj, name: string, f: unit -> 'V) = ()
+    let defineGetter (target: obj, name: string, f: unit -> 'V) = ()
 
 #if DEBUG
     let definedElements = Collections.Generic.HashSet<string>()
 
     let updateStyleSheets (data: obj) (litEl: LitElement) (newCSSResults: CSSResult[]) =
-        if isNotNull litEl.shadowRoot && isNotNull litEl.shadowRoot.adoptedStyleSheets && isNotNull newCSSResults then
+        if isNotNull litEl.shadowRoot
+           && isNotNull litEl.shadowRoot.adoptedStyleSheets
+           && isNotNull newCSSResults then
             let oldSheets = litEl.shadowRoot.adoptedStyleSheets
-            let updatedSheets = getOrAdd data "updatedSheets" (fun _ -> JS.Constructors.Set.Create())
+
+            let updatedSheets =
+                getOrAdd data "updatedSheets" (fun _ -> JS.Constructors.Set.Create())
+
             if oldSheets.Length = newCSSResults.Length then
                 Array.zip oldSheets newCSSResults
                 |> Array.iter (fun (oldSheet, newCSSResult) ->
                     let newSheet = newCSSResult.styleSheet
-                    if isNotNull newCSSResult.cssText && isNotReferenceEquals oldSheet newSheet && not(updatedSheets.has(newSheet)) then
-                        oldSheet.replace(newCSSResult.cssText) |> Promise.start
-                        updatedSheets.add(newSheet) |> ignore)
+
+                    if
+                        isNotNull newCSSResult.cssText
+                        && isNotReferenceEquals oldSheet newSheet
+                        && not (updatedSheets.has (newSheet))
+                    then
+                        oldSheet.replace (newCSSResult.cssText)
+                        |> Promise.start
+
+                        updatedSheets.add (newSheet) |> ignore)
 #endif
 
 open LitElementUtil
@@ -137,37 +166,53 @@ type Prop internal (defaultValue: obj, options: obj) =
             ?toAttribute: 'T -> string,
             ?reflect: bool
         ) =
-        let options = jsOptions<PropConfig>(fun o ->
-            let typ =
-                match box defaultValue with
-                | :? string -> Some Types.String
-                | :? int | :? float -> Some Types.Number
-                | :? bool -> Some Types.Boolean
-                // TODO: Detect if it's an array of primitives or a record and use Array/Object
-                | _ -> None
-            typ |> Option.iter (fun v -> o.``type`` <- v)
-            reflect |> Option.iter (fun v -> o.reflect <- v)
-            hasChanged |> Option.iter (fun v -> o.hasChanged <- unbox v)
-            attribute |> Option.iter (fun att ->
-                match att.Trim() with
-                // Let's use empty string to sign no attribute,
-                // although we may need to be more explicit later
-                | null | "" -> o.attribute <- !^false
-                | att -> o.attribute <- !^att)
-            match fromAttribute, toAttribute with
-            | Some _, _ | _, Some _ ->
-                o.converter <- jsOptions<Converter>(fun o ->
-                    fromAttribute |> Option.iter (fun v -> o.fromAttribute <- unbox v)
-                    toAttribute |> Option.iter (fun v -> o.toAttribute <- unbox v)
-                )
-            | _ -> ()
-        )
+        let options =
+            jsOptions<PropConfig> (fun o ->
+                let typ =
+                    match box defaultValue with
+                    | :? string -> Some PropType.String
+                    | :? int
+                    | :? float -> Some PropType.Number
+                    | :? bool -> Some PropType.Boolean
+                    // TODO: Detect if it's an array of primitives or a record and use Array/Object
+                    | _ -> None
+
+                typ |> Option.iter (fun v -> o.``type`` <- v)
+                reflect |> Option.iter (fun v -> o.reflect <- v)
+
+                hasChanged
+                |> Option.iter (fun v -> o.hasChanged <- unbox v)
+
+                attribute
+                |> Option.iter (fun att ->
+                    match att.Trim() with
+                    // Let's use empty string to sign no attribute,
+                    // although we may need to be more explicit later
+                    | null
+                    | "" -> o.attribute <- !^ false
+                    | att -> o.attribute <- !^att)
+
+                match fromAttribute, toAttribute with
+                | Some _, _
+                | _, Some _ ->
+                    o.converter <-
+                        jsOptions<Converter> (fun o ->
+                            fromAttribute
+                            |> Option.iter (fun v -> o.fromAttribute <- unbox v)
+
+                            toAttribute
+                            |> Option.iter (fun v -> o.toAttribute <- unbox v))
+                | _ -> ())
+
         Prop<'T>(defaultValue, options)
 
 and Prop<'T> internal (defaultValue: 'T, options: obj) =
     inherit Prop(defaultValue, options)
+
     [<Emit("$0{{ = $1}}")>]
-    member _.Value with get() = defaultValue and set(_: 'T) = ()
+    member _.Value
+        with get () = defaultValue
+        and set (_: 'T) = ()
 
 type Controller internal (init: LitElement -> ReactiveControllerBase) =
     let mutable value = Unchecked.defaultof<ReactiveControllerBase>
@@ -175,16 +220,16 @@ type Controller internal (init: LitElement -> ReactiveControllerBase) =
     member _.Value = value
 
     /// Creates a controller out of an initialization function
-    static member Of<'T when 'T :> ReactiveControllerBase>(init: LitElement -> 'T) =
-        Controller<'T>(init)
+    static member Of<'T when 'T :> ReactiveControllerBase>(init: LitElement -> 'T) = Controller<'T>(init)
 
-and Controller<'T when 'T :> ReactiveControllerBase> (init) =
+and Controller<'T when 'T :> ReactiveControllerBase>(init) =
     inherit Controller(fun host -> upcast init host)
     member _.Value = base.Value :?> 'T
 
 /// Configuration values for the LitElement instances
 type LitConfig<'Props, 'Ctrls> =
     abstract controllers: 'Ctrls with get, set
+
     ///<summary>
     /// An object containing the reactive properties definitions for the web components to react to changes
     /// </summary>
@@ -193,6 +238,7 @@ type LitConfig<'Props, 'Ctrls> =
     ///        size = Prop.Of(100, attribute = "size") |}
     /// </example>
     abstract props: 'Props with get, set
+
     ///<summary>
     /// A list of CSS Styles that will be added to the LitElement's styles static property
     /// </summary>
@@ -203,6 +249,7 @@ type LitConfig<'Props, 'Ctrls> =
     ///       """]
     /// </example>
     abstract styles: CSSResult list with get, set
+
     /// Whether the element should render to shadow or light DOM (defaults to true).
     abstract useShadowDom: bool with get, set
 
@@ -219,10 +266,21 @@ type LitElementInit<'Props, 'Ctrls>() =
     member _.InitPromise = _initPromise
 
     interface LitConfig<'Props, 'Ctrls> with
-        member _.controllers with get() = _ctrls and set v = _ctrls <- v
-        member _.props with get() = _props and set v = _props <- v
-        member _.styles with get() = _styles and set v = _styles <- v
-        member _.useShadowDom with get() = _useShadowDom and set v = _useShadowDom <- v
+        member _.controllers
+            with get () = _ctrls
+            and set v = _ctrls <- v
+
+        member _.props
+            with get () = _props
+            and set v = _props <- v
+
+        member _.styles
+            with get () = _styles
+            and set v = _styles <- v
+
+        member _.useShadowDom
+            with get () = _useShadowDom
+            and set v = _useShadowDom <- v
 
     interface ILitElementInit<'Props, 'Ctrls> with
         member this.init initFn =
@@ -230,7 +288,7 @@ type LitElementInit<'Props, 'Ctrls>() =
             Unchecked.defaultof<_>
 
     interface IHookProvider with
-        member _.hooks = failInit()
+        member _.hooks = failInit ()
 
 [<AbstractClass; AttachMembers>]
 type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
@@ -239,17 +297,16 @@ type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
 #if DEBUG
     let mutable _hmrSub: IDisposable option = None
 #endif
-    do init(jsThis)
+    do init (jsThis)
 
     abstract renderFn: JS.Function with get, set
     abstract name: string
 
-    override _.render() =
-        _hooks.render()
+    override _.render() = _hooks.render ()
 
     member _.disconnectedCallback() =
-        base.disconnectedCallback()
-        _hooks.disconnect()
+        base.disconnectedCallback ()
+        _hooks.disconnect ()
 
     // The HookContext already renders the effects on first run so we don't need to do it from here
     // TODO: Not sure if it's possible for the same LitElement instance to be reconnected to the DOM after being disconnected
@@ -260,19 +317,20 @@ type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
 
 #if DEBUG
     interface HMRSubscriber with
-        member this.subscribeHmr = Some <| fun token ->
-            match _hmrSub with
-            | Some _ -> ()
-            | None ->
-                _hmrSub <-
-                    token.Subscribe(fun info ->
-                        _hooks.remove_css()
-                        let updatedModule = info.NewModule
-                        let updatedExport = updatedModule?(this.name)
-                        this.renderFn <- updatedExport?renderFn
-                        updateStyleSheets info.Data this (updatedExport?styles)
-                    )
-                    |> Some
+        member this.subscribeHmr =
+            Some
+            <| fun token ->
+                match _hmrSub with
+                | Some _ -> ()
+                | None ->
+                    _hmrSub <-
+                        token.Subscribe(fun info ->
+                            _hooks.remove_css ()
+                            let updatedModule = info.NewModule
+                            let updatedExport = updatedModule?(this.name)
+                            this.renderFn <- updatedExport?renderFn
+                            updateStyleSheets info.Data this (updatedExport?styles))
+                        |> Some
 #endif
 
     interface ILitElementInit<'Props, 'Ctrls> with
@@ -284,37 +342,45 @@ type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
 type LitElementAttribute(name: string) =
 #if !DEBUG
     inherit JS.DecoratorAttribute()
+
     override this.Decorate(renderFn) =
 #else
     inherit JS.ReflectedDecoratorAttribute()
+
     override _.Decorate(renderFn, mi) =
 #endif
         let config = LitElementInit()
-        let dummyFn() = failwith $"{name} is not immediately callable, it must be created in HTML"
+
+        let dummyFn () =
+            failwith $"{name} is not immediately callable, it must be created in HTML"
+
         if renderFn.length > 0 then
             failwith "Render function for LitElement cannot take arguments"
+
         try
-            renderFn.apply(config, [||]) |> ignore
-        with _ -> ()
+            renderFn.apply (config, [||]) |> ignore
+        with _ ->
+            ()
 
         if isNull config.InitPromise then
-            failInit()
+            failInit ()
 
         config.InitPromise
         |> Promise.iter (fun _ ->
             let config = config :> LitConfig<obj, obj>
 
             let styles =
-                if isNotNull config.styles then List.toArray config.styles |> Some
-                else None
+                if isNotNull config.styles then
+                    List.toArray config.styles |> Some
+                else
+                    None
 
             let propsOptions, initProps =
                 if isNotNull config.props then
                     let propsValues = ResizeArray()
-                    let propsOptions = obj()
+                    let propsOptions = obj ()
 
-                    (JS.Constructors.Object.keys(config.props),
-                     JS.Constructors.Object.values(config.props))
+                    (JS.Constructors.Object.keys (config.props), JS.Constructors.Object.values (config.props))
                     ||> Seq.zip
                     |> Seq.iter (fun (k, v) ->
                         let defVal, options =
@@ -322,28 +388,32 @@ type LitElementAttribute(name: string) =
                             | :? Prop as v -> v.ToConfig()
                             // We could return `v, obj()` here but let's make devs used to
                             // initialize Props, which should make the code more consistent
-                            | _ -> failProps(k)
+                            | _ -> failProps (k)
+
                         propsOptions?(k) <- options
-                        if not(isNull defVal) then
+
+                        if not (isNull defVal) then
                             propsValues.Add(k, defVal))
 
                     let initProps (this: obj) =
-                        propsValues |> Seq.iter(fun (k, v) ->
-                            this?(k) <- v)
+                        propsValues
+                        |> Seq.iter (fun (k, v) -> this?(k) <- v)
 
                     Some propsOptions, initProps
                 else
-                    None, fun _ -> ()
+                    None, (fun _ -> ())
 
             let initCtrls =
                 if isNotNull config.controllers then
                     fun (host: LitElement) ->
-                        JS.Constructors.Object.values(config.controllers)
+                        JS.Constructors.Object.values (config.controllers)
                         |> Seq.iter (function
                             | :? Controller as ctrl -> ctrl.Init(host)
                             | _ -> ())
+
                         host?controllers <- config.controllers
-                else fun _ -> ()
+                else
+                    fun _ -> ()
 
             let init host =
                 initProps host
@@ -354,21 +424,26 @@ type LitElementAttribute(name: string) =
 #if !DEBUG
                 emitJsExpr (baseClass, renderFn, init) HookUtil.RENDER_FN_CLASS_EXPR
 #else
-                let renderRef = LitBindings.createRef()
+                let renderRef = LitBindings.createRef ()
                 renderRef.value <- renderFn
                 emitJsExpr (baseClass, renderRef, mi.Name, init) HookUtil.HMR_CLASS_EXPR
 #endif
 
-            propsOptions |> Option.iter (fun props -> defineGetter(classExpr, "properties", fun () -> props))
-            styles |> Option.iter (fun styles -> defineGetter(classExpr, "styles", fun () -> styles))
+            propsOptions
+            |> Option.iter (fun props -> defineGetter (classExpr, "properties", (fun () -> props)))
+
+            styles
+            |> Option.iter (fun styles -> defineGetter (classExpr, "styles", (fun () -> styles)))
 
             if not config.useShadowDom then
-                emitJsStatement classExpr """$0.prototype.createRenderRoot = function() {
+                emitJsStatement
+                    classExpr
+                    """$0.prototype.createRenderRoot = function() {
                     return this;
                 }"""
 
 #if !DEBUG
-            defineCustomElement(name, classExpr)
+            defineCustomElement (name, classExpr)
 #else
             // Build a key to avoid registering the element twice when hot reloading
             // We use the element name, the function name and the property names to minimize the chances of a false negative
@@ -376,27 +451,36 @@ type LitElementAttribute(name: string) =
             let cacheName =
                 match propsOptions with
                 | None -> mi.Name + "::" + name
-                | Some props -> mi.Name + "::" + name + "::" + (JS.Constructors.Object.keys(props) |> String.concat ", ")
+                | Some props ->
+                    mi.Name
+                    + "::"
+                    + name
+                    + "::"
+                    + (JS.Constructors.Object.keys (props)
+                       |> String.concat ", ")
 
-            if not(definedElements.Contains(cacheName)) then
-                defineCustomElement(name, classExpr)
+            if not (definedElements.Contains(cacheName)) then
+                defineCustomElement (name, classExpr)
                 definedElements.Add(cacheName) |> ignore
 
             // This lets us access the updated render function when accepting new modules in HMR
             dummyFn?renderFn <- renderFn
-            styles |> Option.iter (fun styles -> dummyFn?styles <- styles)
+
+            styles
+            |> Option.iter (fun styles -> dummyFn?styles <- styles)
 #endif
         )
+
         box dummyFn :?> _
 
 [<AutoOpen>]
 module LitElementExtensions =
     // TODO: Fix event constructors in Fable.Browser.Event
     [<Emit("new Event($0, $1)")>]
-    let private createEvent (name: string) (opts: EventInit): Event = jsNative
+    let private createEvent (name: string) (opts: EventInit) : Event = jsNative
 
     [<Emit("new CustomEvent($0, $1)")>]
-    let private createCustomEvent (name: string) (opts: CustomEventInit<'T>): CustomEvent<'T> = jsNative
+    let private createCustomEvent (name: string) (opts: CustomEventInit<'T>) : CustomEvent<'T> = jsNative
 
     type LitElement with
         /// <summary>
@@ -406,12 +490,11 @@ module LitElementExtensions =
         /// <param name="bubbles">Allow the event to go through the bubling phase (default true)</param>
         /// <param name="composed">Allow the event to go through the shadow DOM boundary (default true)</param>
         /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`) (default true)</param>
-        member this.dispatchEvent(name: string, ?bubbles: bool, ?composed: bool, ?cancelable: bool): unit =
-            jsOptions<EventInit>(fun o ->
+        member this.dispatchEvent(name: string, ?bubbles: bool, ?composed: bool, ?cancelable: bool) : unit =
+            jsOptions<EventInit> (fun o ->
                 o.bubbles <- defaultArg bubbles true
                 o.composed <- defaultArg composed true
-                o.cancelable <- defaultArg cancelable true
-            )
+                o.cancelable <- defaultArg cancelable true)
             |> createEvent name
             |> this.renderRoot.dispatchEvent
             |> ignore
@@ -424,15 +507,21 @@ module LitElementExtensions =
         /// <param name="bubbles">Allow the event to go through the bubling phase (default true)</param>
         /// <param name="composed">Allow the event to go through the shadow DOM boundary (default true)</param>
         /// <param name="cancelable">Allow the event to be cancelled (e.g. `event.preventDefault()`) (default true)</param>
-        member this.dispatchCustomEvent(name: string, ?detail: 'T, ?bubbles: bool, ?composed: bool, ?cancelable: bool): unit =
-            jsOptions<CustomEventInit<'T>>(fun o ->
+        member this.dispatchCustomEvent
+            (
+                name: string,
+                ?detail: 'T,
+                ?bubbles: bool,
+                ?composed: bool,
+                ?cancelable: bool
+            ) : unit =
+            jsOptions<CustomEventInit<'T>> (fun o ->
                 // Be careful if `detail` is not option, Fable may wrap it with `Some()`
                 // as it's a generic and o.detail expects an option
                 o.detail <- detail
                 o.bubbles <- defaultArg bubbles true
                 o.composed <- defaultArg composed true
-                o.cancelable <- defaultArg cancelable true
-            )
+                o.cancelable <- defaultArg cancelable true)
             |> createCustomEvent name
             |> this.renderRoot.dispatchEvent
             |> ignore
@@ -440,17 +529,19 @@ module LitElementExtensions =
         /// <summary>
         /// Initializes the LitElement instance and registers the element in the custom elements registry
         /// </summary>
-        static member inline init(): LitElement =
-            upcast jsThis<ILitElementInit<unit, unit>>.init(fun _ -> Promise.lift ())
+        static member inline init() : LitElement =
+            upcast jsThis<ILitElementInit<unit, unit>>.init (fun _ -> Promise.lift ())
 
         /// <summary>
         /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
         /// </summary>
-        static member inline init(initFn: LitConfig<'Props, 'Ctrls> -> unit): LitElement<'Props, 'Ctrls> =
-            jsThis<ILitElementInit<'Props, 'Ctrls>>.init(initFn >> Promise.lift)
+        static member inline init(initFn: LitConfig<'Props, 'Ctrls> -> unit) : LitElement<'Props, 'Ctrls> =
+            jsThis<ILitElementInit<'Props, 'Ctrls>>.init (initFn >> Promise.lift)
 
         /// <summary>
         /// Initializes the LitElement instance, reactive properties and registers the element in the custom elements registry
         /// </summary>
-        static member inline initAsync(initFn: LitConfig<'Props, 'Ctrls> -> JS.Promise<unit>): LitElement<'Props, 'Ctrls> =
-            jsThis<ILitElementInit<'Props, 'Ctrls>>.init(initFn)
+        static member inline initAsync
+            (initFn: LitConfig<'Props, 'Ctrls> -> JS.Promise<unit>)
+            : LitElement<'Props, 'Ctrls> =
+            jsThis<ILitElementInit<'Props, 'Ctrls>>.init (initFn)

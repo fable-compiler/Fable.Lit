@@ -24,7 +24,7 @@ module LitElementCE =
         inherit ConverterTo
 
     type ReactivePropertyData =
-        | Type of obj
+        | Type of PropType
         | NamedAttribute of string
         | State
         | Attribute
@@ -56,40 +56,41 @@ module LitElementCE =
 
     type PropBuilder(propName: string) =
 
-        member _.Yield _ = List.empty<ReactivePropertyData>
+        member inline _.Yield _ = List.empty<ReactivePropertyData>
 
         [<CustomOperation "use_type">]
-        member _.AddType(state: ReactivePropertyData list, constructor: obj) = Type constructor :: state
+        member inline _.AddType(state: ReactivePropertyData list, typeCtor: PropType) = Type typeCtor :: state
 
         [<CustomOperation "use_state">]
-        member _.AddState(state: ReactivePropertyData list) = State :: state
+        member inline _.AddState(state: ReactivePropertyData list) = State :: state
 
         [<CustomOperation "use_named_attribute">]
-        member _.AddAttribute(state: ReactivePropertyData list, attributeName: string) =
+        member inline _.AddAttribute(state: ReactivePropertyData list, attributeName: string) =
             NamedAttribute attributeName :: state
 
 
         [<CustomOperation "use_attribute">]
-        member _.AddAttribute(state: ReactivePropertyData list) = Attribute :: state
+        member inline _.AddAttribute(state: ReactivePropertyData list) = Attribute :: state
 
         [<CustomOperation "use_reflect">]
-        member _.AddReflect(state: ReactivePropertyData list) = Reflect :: state
+        member inline _.AddReflect(state: ReactivePropertyData list) = Reflect :: state
 
         [<CustomOperation "use_no_accessor">]
-        member _.AddNoAccessor(state: ReactivePropertyData list) = NoAccessor :: state
+        member inline _.AddNoAccessor(state: ReactivePropertyData list) = NoAccessor :: state
 
         [<CustomOperation "use_converter">]
-        member _.AddConverter(state: ReactivePropertyData list, converter: Converter) = Converter converter :: state
+        member inline _.AddConverter(state: ReactivePropertyData list, converter: Converter) =
+            Converter converter :: state
 
         [<CustomOperation "use_has_changed">]
-        member _.AddHasChanged(state: ReactivePropertyData list, hasChanged: JS.Function) =
+        member inline _.AddHasChanged(state: ReactivePropertyData list, hasChanged: JS.Function) =
             HasChanged hasChanged :: state
 
         member _.Run state : ReactiveProperty =
             let opts =
                 [ for value in state do
                       match value with
-                      | Type value -> "type", value
+                      | Type value -> "type", value :> obj
                       | NamedAttribute value -> "attribute", value :> obj
                       | State -> "state", true :> obj
                       | Attribute -> "attribute", true :> obj
@@ -101,7 +102,7 @@ module LitElementCE =
 
             propName, PropBuilderResult opts
 
-    let defineElement (definition: ElementDefinition) =
+    let inline defineElement (definition: ElementDefinition) =
         definition.elementConstructor?styles <- definition.styles |> List.toArray
 
         definition.elementConstructor?properties <-
@@ -127,33 +128,40 @@ module LitElementCE =
 
     type LitElementBuilder(name, elementConstructor) =
 
-        member _.Yield(property: ReactiveProperty) = [ Property property ]
-        member _.Yield(style: CSSResult) = [ Style style ]
+        member inline _.Yield(property: ReactiveProperty) = [ Property property ]
+        member inline _.Yield(style: CSSResult) = [ Style style ]
 
-        member _.Combine(c1: (LitStaticConfiguration) list, c2: (LitStaticConfiguration) list) = c1 @ c2
+        member inline _.Combine(c1: (LitStaticConfiguration) list, c2: (LitStaticConfiguration) list) = c1 @ c2
 
-        member _.Delay(delay) = delay ()
+        member inline _.Delay(delay) = delay ()
 
-        member _.Zero() = ()
+        member inline _.Zero() = ()
 
         member _.Run(state: LitStaticConfiguration list) =
             stateToElementDef name elementConstructor state
 
     type LitElementBuilderAuto(name, elementConstructor) =
 
-        member _.Yield(property: ReactiveProperty) = [ Property property ]
-        member _.Yield(style: CSSResult) = [ Style style ]
+        member inline _.Yield(property: ReactiveProperty) = [ Property property ]
+        member inline _.Yield(style: CSSResult) = [ Style style ]
 
-        member _.Combine(c1: LitStaticConfiguration list, c2: LitStaticConfiguration list) = c1 @ c2
+        member inline _.Combine(c1: LitStaticConfiguration list, c2: LitStaticConfiguration list) = c1 @ c2
 
-        member _.Delay(delay) = delay ()
+        member inline _.Delay(delay) = delay ()
 
-        member _.Zero() = ()
+        member inline _.Zero() = ()
 
         member _.Run state =
             stateToElementDef name elementConstructor state
             |> defineElement
 
     let property propName = PropBuilder(propName)
-    let delayedElement name ctor = LitElementBuilder(name, ctor)
-    let registerElement name ctor = LitElementBuilderAuto(name, ctor)
+
+    let inline delayedElement<'T> name =
+        LitElementBuilder(name, jsConstructor<'T>)
+
+    let inline registerElement<'T> name =
+        LitElementBuilderAuto(name, jsConstructor<'T>)
+
+    let inline delayedFuncElement (name, func) = LitElementBuilder(name, func)
+    let inline registerFuncElement (name, func) = LitElementBuilderAuto(name, func)
