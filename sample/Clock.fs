@@ -10,13 +10,11 @@ open Lit.Elmish
 module Helpers =
     let hmr = HMR.createToken()
 
-    type MouseController =
-        inherit ReactiveController
+    [<ImportMember("./controllers.js")>]
+    type MouseController(host) =
+        inherit ReactiveController(host)
         abstract x: float
         abstract y: float
-
-    [<Import("MouseController", from="./controllers.js"); Emit("new $0($1)")>]
-    let createMouseController (host: LitElement): MouseController = jsNative
 
     type Time =
         | Hour of int
@@ -137,7 +135,7 @@ let initEl (config: LitConfig<_,_>) =
     let split (str: string) =
         str.Split(',') |> Array.map (fun x -> x.Trim()) |> Array.toList
 
-    config.controllers <- {| mouse = Controller.Of(createMouseController) |}
+    config.controllers <- {| mouse = Controller.Of(MouseController) |}
 
     config.props <-
         {|
