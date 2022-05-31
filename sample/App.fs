@@ -47,7 +47,7 @@ let view model dispatch =
 
         {elmishNameInput model.Value (ChangeValue >> dispatch)}
         {LocalNameInput()}
-        <hello-there></hello-there>
+        <hello-there .name={model.Value}></hello-there>
         <hello-there-2></hello-there-2>
 
         {ClockDisplay model dispatch}
@@ -69,7 +69,35 @@ let App () =
     let model, dispatch = Hook.useElmish (init, update)
     view model dispatch
 
-// registerFuncElement ("hello-there", Sample) { css $"p {{ color: blue; }}" }
+open Experimental
+
+[<LitElementExperimental(true)>]
+let Sample () =
+    let name = Controllers.GetProperty("name", "Peter")
+
+    let state: StateController<int> =
+        Controllers.GetController<StateController<int>>(10)
+
+    let twoArgs = Controllers.GetController<TwoArgsCtrl>(10, 20)
+
+
+    let inline updateValues _ =
+        state.SetState(state.Value + 1)
+        let (initial, secondial) = twoArgs.Values
+        twoArgs.updateValues ((initial + 1, secondial + 2))
+
+
+    html $"<p>{state.Value}, {twoArgs.Values}, {name}</p> <button @click={updateValues}>Increment</button>"
+
+
+registerFuncElement ("hello-there", Sample) {
+    css $"p {{ color: blue; }}"
+
+    property "name" {
+        use_attribute
+        use_type PropType.String
+    }
+}
 // registerFuncElement ("hello-there-2", Sample2) { css $"p {{ color: blue; }}" }
 
 registerElement<ClassComponents.UserProfile> "user-profile" {
