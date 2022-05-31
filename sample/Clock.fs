@@ -13,8 +13,8 @@ module Helpers =
     [<ImportMember("./controllers.js")>]
     type MouseController(host) =
         inherit ReactiveController(host)
-        abstract x: float
-        abstract y: float
+        member _.x: float = jsNative
+        member _.y: float = jsNative
 
     type Time =
         | Hour of int
@@ -121,12 +121,12 @@ let clockHand (color: string) (time: Time) =
 
 let select options selected dispatch =
     let option value =
-        html $"""<option ?selected={value = selected} value={value}>{value}</option>"""
+        html $"""<option ?selected={value = selected} .value={value}>{value}</option>"""
 
     html $"""
         <div class="select mb-2">
             <select @change={EvVal dispatch}>
-                {options |> List.map option}
+                {Lit.mapUnique id option options}
             </select>
         </div>
     """

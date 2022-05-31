@@ -8,8 +8,8 @@ open Fable.Core.JsInterop
 [<ImportMember("./controllers.js")>]
 type MouseController(host) =
     inherit ReactiveController(host)
-    abstract x: float
-    abstract y: float
+    member _.x: float = jsNative
+    member _.y: float = jsNative
 
 type Post =
     {| usedId: int
