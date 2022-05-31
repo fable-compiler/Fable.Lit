@@ -9,27 +9,121 @@ module Types =
     type RefValue<'T> =
         abstract value: 'T with get, set
 
-    [<ImportMember("lit/directive.js")>]
-    type Directive() =
-        class
-        end
+    type ChildPartInfo =
+        abstract ``type``: int
 
-    [<ImportMember("lit/async-directive.js")>]
-    type AsyncDirective() =
+    type AttributePartInfo =
+        abstract name: string
+        abstract strings: string array option
+        abstract tagName: string
+        abstract ``type``: int
+
+    type ElementPartInfo =
+        abstract ``type``: int
+
+    [<Erase>]
+    type PartInfo =
+        | ChildPartInfo of ChildPartInfo
+        | AttributePartInfo of AttributePartInfo
+        | ElementPartInfo of ElementPartInfo
+
+    [<ImportMember("lit"); AbstractClass>]
+    type RenderOptions() =
+        member _.creationScope: {| importNode: (Node -> bool option) -> Node |} = jsNative
+        member _.host: obj = jsNative
+        member _.isConnected: bool = jsNative
+        member _.renderBefore: ChildNode option = jsNative
+
+    [<ImportMember("lit")>]
+    let noChange: obj = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type ChildPart(startNode: ChildNode, ?endNode: ChildNode, ?parent: ChildPart, ?options: RenderOptions) =
+        member _.options: RenderOptions option = jsNative
+        member _.``type``: int = jsNative
+        member _.endNode: Node option = jsNative
+        member _.startNode: Node option = jsNative
+        member _.parentNode: Node = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type AttributePart
+        (
+            element: HTMLElement,
+            name: string,
+            ?strings: string array,
+            ?parent: obj,
+            ?options: RenderOptions
+        ) =
+        member _.element: HTMLElement = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.``type``: int = jsNative
+        member _.name: string = jsNative
+        member _.strings: string array option = jsNative
+        member _.tagName: string = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type BooleanAttributePart
+        (
+            element: HTMLElement,
+            name: string,
+            ?strings: string array,
+            ?parent: obj,
+            ?options: RenderOptions
+        ) =
+        member _.element: HTMLElement = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.``type``: int = jsNative
+        member _.name: string = jsNative
+        member _.strings: string array option = jsNative
+        member _.tagName: string = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type PropertyPart(element: HTMLElement, strings: string array, parent: obj, ?options: RenderOptions) =
+        member _.element: HTMLElement = jsNative
+        member _.name: string = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.strings: string array option = jsNative
+        member _.``type``: int = jsNative
+        member _.tagName: string = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type ElementPart(element: HTMLElement, parent: obj, ?options: RenderOptions) =
+        member _.options: RenderOptions option = jsNative
+        member _.element: HTMLElement = jsNative
+        member _.``type``: int = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type EventPart(element: HTMLElement, strings: string array, parent: obj, ?options: RenderOptions) =
+        member _.element: HTMLElement = jsNative
+        member _.name: string = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.strings: string array option = jsNative
+        member _.``type``: int = jsNative
+        member _.tagName: string = jsNative
+        member _.handleEvent(event: Browser.Types.Event) : unit = jsNative
+
+    [<Erase>]
+    type Part =
+        | ChildPart of ChildPart
+        | AttributePart of AttributePart
+        | PropertyPart of PropertyPart
+        | BooleanAttributePart of BooleanAttributePart
+        | ElementPart of ElementPart
+        | EventPart of EventPart
+
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type Directive(?_partInfo: PartInfo) =
+        member _.render(props: obj array) : obj = jsNative
+        member _.update(?_part: Part, ?props: obj array) : obj = jsNative
+
+    [<ImportMember("lit/async-directive.js"); AbstractClass>]
+    type AsyncDirective(?_partInfo: PartInfo) =
+        inherit Directive(?_partInfo = _partInfo)
         member _.isConnected: bool = jsNative
         member _.setValue(value: obj) : unit = jsNative
-
-    type Part =
-        interface
-        end
-
-    type ChildPart =
-        inherit Part
-        abstract parentNode: Element
-
-    type ElementPart =
-        inherit Part
-        abstract element: Element
+        member _.disconnected() : unit = jsNative
+        member _.reconnected() : unit = jsNative
 
     // This type should come from Fable.Browser.Css but add it here
     // for now to avoid the dependency
