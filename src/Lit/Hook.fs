@@ -9,6 +9,13 @@ module internal HookUtil =
         """class extends $0 {
             constructor() { super($2...) }
             get renderFn() { return $1 }
+
+            getOrAddController(controller, args) {
+                if(!this[controller.name]) {
+                    return this[controller.name] = new controller(this, ...args)
+                }
+                return this[controller.name];
+            }
         }"""
 
     let [<Literal>] HMR_CLASS_EXPR =
@@ -19,6 +26,13 @@ module internal HookUtil =
             set renderFn(v) {
                 $1.value = v;
                 this.hooks.requestUpdate();
+            }
+
+            getOrAddController(controller, args) {
+                if(!this[controller.name]) {
+                    return this[controller.name] = new controller(this, ...args)
+                }
+                return this[controller.name];
             }
         }"""
 
@@ -485,6 +499,13 @@ type Hook() =
     static member inline useRef(v: 'Value): ref<'Value> =
         Hook.getContext().useRef(fun () -> v)
 
+    static member inline useRefU(v: 'Value): ref<'Value> * ('Value -> unit) =
+        let ref = Hook.getContext().useRef(fun () -> v)
+        let update v = 
+            ref.Value <- v
+            jsThis?requestUpdate()
+        ref, update
+
     /// <summary>
     /// Create a memoized state value. Only reruns the function when dependent values have changed.
     /// </summary>
@@ -565,3 +586,6 @@ type Hook() =
     /// </remarks>
     static member inline use_scoped_css(rules: string): string =
         Hook.getContext().use_scoped_css(rules)
+
+    static member inline GetController<'T>([<ParamArray>] args: obj array) : 'T =
+        jsThis?getOrAddController (jsConstructor<'T>, args)
