@@ -1,9 +1,11 @@
 ﻿module ClassComponents
 
+open Elmish
 open Lit
 open Fable.Core
 open Fetch
 open Fable.Core.JsInterop
+open Lit.Elmish
 
 [<ImportMember("./controllers.js")>]
 type MouseController(host) =
@@ -58,11 +60,23 @@ type UserProfile() =
 
     override _.render() = html $"<p>{name} - {age}</p>"
 
+type SampleState = { counter: int }
+type SampleMsg =
+    | Increment
+    | Decrement
+let sampleInit () = { counter = 0 }, Cmd.none
+
+let sampleUpdate msg state =
+    match msg with
+    | Increment -> { state with counter = state.counter + 1 }, Cmd.none
+    | Decrement -> { state with counter = state.counter - 1 }, Cmd.none
+    
 type ElementWithController() =
     inherit LitElement()
 
     let mouse = MouseController jsThis
     let api = ApiController jsThis
+    let elmish = ElmishController(jsThis, sampleInit, sampleUpdate)
 
     let posts (post: Post) = html $"<li>{post.title}</li>"
 
@@ -70,6 +84,9 @@ type ElementWithController() =
         html
             $"""
             <p>{mouse.x} - {mouse.y}</p>
+            <p>Elmish Controller Counter: {elmish.state.counter} </p>
+            <button @click={fun _ -> elmish.dispatch Increment}>Increment</button>
+            <button @click={fun _ -> elmish.dispatch Decrement}>Decrement</button>
             <p>Page: {api.Page}</p>
             <button @click={fun _ -> api.NextPage()}>Next Page</button>
             <ul>{Lit.mapUnique (fun (p: Post) -> $"{p.id}") posts api.Posts}</li>
