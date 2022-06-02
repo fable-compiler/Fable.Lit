@@ -24,6 +24,8 @@ let update msg model =
     | ToggleClock v -> { model with ShowClock = v }, Cmd.none
     | ToggleReact v -> { model with ShowReact = v }, Cmd.none
 
+let lifecycle = html $"<life-cycle-controller></life-cycle-controller>"
+
 let view model dispatch =
     html
         $"""
@@ -42,6 +44,10 @@ let view model dispatch =
              Lit.nothing
          else
              ReactLitComponent model.ShowClock}
+        {if not model.ShowReact then
+             Lit.nothing
+         else
+             lifecycle}
 
         <br />
 
@@ -65,40 +71,54 @@ let view model dispatch =
 [<LitElement("sample-app")>]
 let App () =
     Hook.useHmr (hmr)
-    let _ = LitElement.init (fun config -> config.useShadowDom <- false)
+
+    let _ =
+        LitElement.init (fun config -> config.useShadowDom <- false
+        // Technically it works
+        // config.controllers <- {| elmish = Controller.Of(fun host -> ElmishController(host, init, update)) |}
+        )
+
     let model, dispatch = Hook.useElmish (init, update)
+
     view model dispatch
 
 open Experimental
+open Fable.Core.JsInterop
 
-[<LitElementExperimental(true)>]
-let Sample () =
-    let name = Controllers.GetProperty("name", "Peter")
+[<LitElement("life-cycle-controller")>]
+let LifeCycleController () =
+    Hook.useHmr (hmr)
+    let _ = LitElement.init ()
+    let state, setState = Hook.useRefU false
+    let txt, setTxt = Hook.useState ""
 
-    let state: StateController<int> =
-        Controllers.GetController<StateController<int>>(10)
+    Hook.GetController<EffectController>(
+        (fun host ->
+            JS.console.log (sprintf "Connected!")
+            Callback),
+        (fun host ->
+            JS.console.log (sprintf "Update! %A" state.Value)
+            Callback),
+        (fun host ->
+            JS.console.log (sprintf "Updated! %A" state.Value)
+            Callback),
+        (fun host ->
+            JS.console.log (sprintf "Disconnected!")
+            Callback)
+    )
+    |> ignore
 
-    let twoArgs = Controllers.GetController<TwoArgsCtrl>(10, 20)
-
-
-    let inline updateValues _ =
-        state.SetState(state.Value + 1)
-        let (initial, secondial) = twoArgs.Values
-        twoArgs.updateValues ((initial + 1, secondial + 2))
-
-
-    html $"<p>{state.Value}, {twoArgs.Values}, {name}</p> <button @click={updateValues}>Increment</button>"
-
-
-registerFuncElement ("hello-there", Sample) {
-    css $"p {{ color: blue; }}"
-
-    property "name" {
-        use_attribute
-        use_type PropType.String
-    }
-}
-// registerFuncElement ("hello-there-2", Sample2) { css $"p {{ color: blue; }}" }
+    html
+        $"""
+        <label for="">
+            Checked:
+            <input type="checkbox" @change={fun _ -> setState (state.Value |> not)} >
+        </label>
+        <label for="">
+            Text: {txt}
+            <input type="text" @input={EvVal(setTxt)} >
+        </label>
+    """
 
 registerElement<ClassComponents.UserProfile> "user-profile" {
     property "name" {
