@@ -3,8 +3,8 @@ module Lit.Experimental
 
 
 open Fable.Core
-open Fable.Core.JsInterop
 open Lit
+open System
 
 [<AttachMembers>]
 type StateController<'T>(host, initial: 'T) =
@@ -17,60 +17,52 @@ type StateController<'T>(host, initial: 'T) =
         state <- value
         host.requestUpdate ()
 
+type EffectKind =
+    | Callback
+    | Disposable of IDisposable
+
 [<AttachMembers>]
-type TwoArgsCtrl(host, initial: int, secondial: int) =
+type EffectController
+    (
+        host,
+        ?onConnected: LitElement -> EffectKind,
+        ?onUpdate: LitElement -> EffectKind,
+        ?onUpdated: LitElement -> EffectKind,
+        ?onDisconnected: LitElement -> EffectKind
+    ) =
     inherit ReactiveController(host)
+    let disposables = ResizeArray<IDisposable>()
 
-    member val Values = (initial, secondial) with get, set
+    override _.hostConnected() =
+        match onConnected with
+        | Some onConnected ->
+            match onConnected host with
+            | Disposable disposable -> disposables.Add disposable
+            | _ -> ()
+        | _ -> ()
 
-    member this.updateValues(initial, secondial) =
-        this.Values <- (initial, secondial)
-        host.requestUpdate ()
+    override _.hostUpdate() =
+        match onUpdate with
+        | Some onUpdate ->
+            match onUpdate host with
+            | Disposable disposable -> disposables.Add disposable
+            | _ -> ()
+        | _ -> ()
 
+    override _.hostUpdated() =
+        match onUpdated with
+        | Some onUpdated ->
+            match onUpdated host with
+            | Disposable disposable -> disposables.Add disposable
+            | _ -> ()
+        | _ -> ()
 
-type Controllers =
+    override _.hostDisconnected() =
+        match onDisconnected with
+        | Some onDisconnected ->
+            match onDisconnected host with
+            | Disposable disposable -> disposables.Add disposable
+            | _ -> ()
+        | _ -> ()
 
-    static member inline GetController<'T>([<System.ParamArray>] args: obj array) : 'T =
-        jsThis?getOrAddController (jsConstructor<'T>, args)
-
-    static member inline GetProperty(propName: string, ?initial: 'T) : Types.RefValue<'T> =
-        jsThis?getOrAddProperty (propName, initial)
-
-[<Literal>]
-let CLS_EXPR =
-    """class extends $0 {
-        constructor() {
-            super();
-            this.renderFn = $1
-        }
-
-        render() {
-            return this.renderFn.value.apply(this, [])
-        }
-
-        getOrAddController(controller, args) {
-            if(!this[controller.name]) {
-                return this[controller.name] = new controller(this, ...args)
-            }
-            return this[controller.name];
-        }
-
-        getOrAddProperty(propname, initial) {
-            if(!this[propname]) {
-                this[propname] = initial;
-                return this[propname];
-            }
-            return this[propname];
-        }
-    }
-    """
-
-type LitElementExperimental(useShadowDom: bool) =
-    inherit JS.DecoratorAttribute()
-
-    override this.Decorate(fn: JS.Function) : JS.Function =
-        let renderRef = LitBindings.createRef ()
-        renderRef.value <- fn
-        let baseClass = emitJsExpr (jsConstructor<LitElement>, renderRef) (CLS_EXPR)
-
-        baseClass
+        disposables |> Seq.iter (fun d -> d.Dispose())
