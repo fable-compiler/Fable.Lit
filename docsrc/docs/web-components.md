@@ -73,7 +73,7 @@ let MyComponent() = ...
 
 MyComponent.register()
 
-html $"<my-component />"
+html $"<my-component> </my-component>"
 ```
 
 ## Properties and attributes
@@ -109,7 +109,7 @@ LitElement.init(fun config ->
 Remember that Lit templates allow you to pass values to properties using a dot. Like this you can pass values that are not strings.
 
 ```fsharp
-html $"<my-element .onlyProperty={ {| foo = 4 |} } />"
+html $"<my-element .onlyProperty={ {| foo = 4 |} }></my-element>"
 ```
 
 ## Events
