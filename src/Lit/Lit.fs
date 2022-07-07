@@ -270,6 +270,15 @@ type Lit() =
     /// <param name="items">A sequence of items to be rendered.</param>
     static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq): TemplateResult =
         LitBindings.repeat (items, getId, (fun x _ -> template x))
+    
+    /// <summary>
+    /// Give a unique id to items in a list and retrieve the current index . This can improve performance in lists that will be sorted, filtered or re-ordered.
+    /// </summary>
+    /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
+    /// <param name="template">A rendering function based on the items of the sequence that also supplies the current index.</param>
+    /// <param name="items">A sequence of items to be rendered.</param>
+    static member mapiUnique (getId: 'T -> string) (template: int -> 'T -> TemplateResult) (items: 'T seq): TemplateResult =
+        LitBindings.repeat (items, getId, (fun x i -> template i x))
 
     /// Shows the placeholder until the promise is resolved
     static member ofPromise(template: JS.Promise<TemplateResult>, ?placeholder: TemplateResult): TemplateResult =
