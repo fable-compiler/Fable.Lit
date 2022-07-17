@@ -94,17 +94,14 @@ let Disposable (r: ref<int>) =
     """
 
 [<HookComponent>]
-let DisposableContainer (r: ref<int>) =
+let DisposableContainer (inner: 'arg -> TemplateResult, arg: 'arg) =
     let disposed, setDisposed = Hook.useState false
 
     html
         $"""
       <div>
-        <button @click={Ev(fun _ -> setDisposed true)}>Dispose!</button>
-        {if not disposed then
-             Disposable(r)
-         else
-             Lit.nothing}
+        <button id="dispose-btn" @click={Ev(fun _ -> setDisposed true)}>Dispose!</button>
+        {if not disposed then inner(arg) else Lit.nothing}
       </div>
     """
 
@@ -255,6 +252,15 @@ let ElmishComponentW () =
           """
 
 [<HookComponent>]
+let ElmishTermination (disp: System.IDisposable) =
+    let _ = Hook.useElmish(fun () ->
+        Program.mkHidden init update
+        |> Program.addTerminationHandler (fun _ -> disp.Dispose())
+    )
+
+    html $"<p>Waiting for termination...</p>"
+
+[<HookComponent>]
 let ScopedCss () =
     let className = Hook.use_scoped_css """
         p {
@@ -329,7 +335,7 @@ describe "Hook" <| fun () ->
 
     it "useEffectOnce runs on mount/dismount" <| fun () -> promise {
         let aRef = ref 8
-        use! el = DisposableContainer(aRef) |> render
+        use! el = DisposableContainer(Disposable, aRef) |> render
         let el = el.El
         el.getByText("value") |> Expect.innerText "Value: 5"
 
@@ -490,6 +496,19 @@ describe "Hook" <| fun () ->
                 el.getSelector("#reset"))
         // dispatch with async cmd works
         el.getSelector("#count") |> Expect.innerText "0"
+    }
+
+    it "useElmish is terminated" <| fun () -> promise {
+        let mutable terminated = false
+        let disp = Hook.createDisposable(fun () -> terminated <- true)
+        use! el = DisposableContainer(ElmishTermination, disp) |> render
+        let el = el.El
+        // Not sure why but if we remove this line the test fails sometimes
+        // (even if Lit.Test.render already awaits for the update)
+        do! elementUpdated el
+        terminated |> Expect.equal false
+        do! click el <| el.querySelector("#dispose-btn").asButton
+        terminated |> Expect.equal true
     }
 
     it "Scoped CSS works" <| fun () -> promise {
