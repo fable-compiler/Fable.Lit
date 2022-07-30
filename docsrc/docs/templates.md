@@ -124,7 +124,7 @@ html $"""<button class={classes}>Click me</button>"""
 
 ### mapUnique
 
-You can pass any iterable (including F# lists) to Lit, but when it's important to identify items in a list (e.g. when the list can be sorted, filtered or included item transitions), use `Lit.mapUnique` to five each item a unique id.
+You can pass any iterable (including F# lists) to Lit, but when it's important to identify items in a list (e.g. when the list can be sorted, filtered or included item transitions), use `Lit.mapUnique` to give each item a unique id.
 
 ```fsharp
 let getItemTemplate item =
