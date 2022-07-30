@@ -209,7 +209,6 @@ let update msg model = ..
 let view model dispatch = ..
 
 open Lit.Elmish
-open Lit.Elmish.HMR
 
 Program.mkProgram initialState update view
 |> Program.withLit "app-container"

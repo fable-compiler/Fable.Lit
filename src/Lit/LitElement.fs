@@ -307,7 +307,7 @@ type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
     do init (jsThis)
 
     abstract renderFn: JS.Function with get, set
-    abstract name: string
+    abstract __name: string
 
     override _.render() = _hooks.render ()
 
@@ -324,20 +324,19 @@ type LitHookElement<'Props, 'Ctrls>(init: obj -> unit) =
 
 #if DEBUG
     interface HMRSubscriber with
-        member this.subscribeHmr =
-            Some
-            <| fun token ->
-                match _hmrSub with
-                | Some _ -> ()
-                | None ->
-                    _hmrSub <-
-                        token.Subscribe(fun info ->
-                            _hooks.remove_css ()
-                            let updatedModule = info.NewModule
-                            let updatedExport = updatedModule?(this.name)
-                            this.renderFn <- updatedExport?renderFn
-                            updateStyleSheets info.Data this (updatedExport?styles))
-                        |> Some
+        member this.subscribeHmr = Some <| fun token ->
+            match _hmrSub with
+            | Some _ -> ()
+            | None ->
+                _hmrSub <-
+                    token.Subscribe(fun info ->
+                        _hooks.remove_css()
+                        let updatedModule = info.NewModule
+                        let updatedExport = updatedModule?(this.__name)
+                        this.renderFn <- updatedExport?renderFn
+                        updateStyleSheets info.Data this (updatedExport?styles)
+                    )
+                    |> Some
 #endif
 
     interface ILitElementInit<'Props, 'Ctrls> with
@@ -476,6 +475,9 @@ type LitElementAttribute(name: string) =
             styles
             |> Option.iter (fun styles -> dummyFn?styles <- styles)
 #endif
+        )
+        |> Promise.catchEnd (fun er ->
+            console.error(er)
         )
 
         box dummyFn :?> _

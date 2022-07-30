@@ -21,7 +21,7 @@ module internal HookUtil =
     let [<Literal>] HMR_CLASS_EXPR =
         """class extends $0 {
             constructor() { super($3...) }
-            get name() { return $2; }
+            get __name() { return $2; }
             get renderFn() { return $1.value; }
             set renderFn(v) {
                 $1.value = v;
@@ -346,7 +346,7 @@ type HookDirective() =
 #endif
 
     abstract renderFn: JS.Function with get, set
-    abstract name: string
+    abstract __name: string
 
     member this.requestUpdate() =
         this.setValue(_hooks.render())
@@ -382,7 +382,7 @@ type HookDirective() =
                     token.Subscribe(fun info ->
                         _hooks.remove_css()
                         let updatedModule = info.NewModule
-                        this.renderFn <- updatedModule?(this.name)?renderFn
+                        this.renderFn <- updatedModule?(this.__name)?renderFn
                     ) |> Some
 #endif
 
