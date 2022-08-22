@@ -8,7 +8,7 @@
 <span class=grvsc-line><span class=grvsc-source><span class=mtk1>    html $</span><span class=mtk10>"""</span></span></span>
 <span class=grvsc-line><span class=grvsc-source><span class=mtk10>      &#60div class="content"></span></span></span>
 <span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60p>Hello {value}!&#60/p></span></span></span>
-<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60input {Ref inputRef}</span></span></span>
+<span class=grvsc-line><span class=grvsc-source><span class=mtk10>        &#60input {Lit.refValue inputRef}</span></span></span>
 <span class=grvsc-line><span class=grvsc-source><span class=mtk10>          value={value}</span></span></span>
 <span class=grvsc-line><span class=grvsc-source><span class=mtk10>          @keyup={EvVal setValue}</span></span></span>
 <span class=grvsc-line><span class=grvsc-source><span class=mtk10>          @focus={Ev(fun _ -> inputRef.Value |> Option.iter (fun el -> el.select()))}></span></span></span>
