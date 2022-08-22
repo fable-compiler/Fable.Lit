@@ -16,7 +16,7 @@ let NameInput() =
     html $"""
       <div class="content">
         <p>Hello {value}!</p>
-        <input {Ref inputRef}
+        <input {Lit.refValue inputRef}
           value={value}
           @keyup={EvVal setValue}
           @focus={Ev(fun _ -> inputRef.Value |> Option.iter (fun el -> el.select()))}>
