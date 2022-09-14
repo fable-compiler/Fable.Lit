@@ -587,5 +587,5 @@ type Hook() =
     static member inline use_scoped_css(rules: string): string =
         Hook.getContext().use_scoped_css(rules)
 
-    static member inline GetController<'T>([<ParamArray>] args: obj array) : 'T =
+    static member inline useController<'T>([<ParamArray>] args: obj array) : 'T =
         jsThis?getOrAddController (jsConstructor<'T>, args)
