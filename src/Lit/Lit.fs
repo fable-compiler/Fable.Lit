@@ -7,27 +7,123 @@ open Lit
 
 module Types =
     type RefValue<'T> =
-        abstract value : 'T with get, set
+        abstract value: 'T with get, set
 
-    [<ImportMember("lit/directive.js")>]
-    type Directive() =
-        class end
+    type ChildPartInfo =
+        abstract ``type``: int
 
-    [<ImportMember("lit/async-directive.js")>]
-    type AsyncDirective() =
+    type AttributePartInfo =
+        abstract name: string
+        abstract strings: string array option
+        abstract tagName: string
+        abstract ``type``: int
+
+    type ElementPartInfo =
+        abstract ``type``: int
+
+    [<Erase>]
+    type PartInfo =
+        | ChildPartInfo of ChildPartInfo
+        | AttributePartInfo of AttributePartInfo
+        | ElementPartInfo of ElementPartInfo
+
+    [<ImportMember("lit"); AbstractClass>]
+    type RenderOptions() =
+        member _.creationScope: {| importNode: (Node -> bool option) -> Node |} = jsNative
+        member _.host: obj = jsNative
+        member _.isConnected: bool = jsNative
+        member _.renderBefore: ChildNode option = jsNative
+
+    [<ImportMember("lit")>]
+    let noChange: obj = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type ChildPart(startNode: ChildNode, ?endNode: ChildNode, ?parent: ChildPart, ?options: RenderOptions) =
+        member _.options: RenderOptions option = jsNative
+        member _.``type``: int = jsNative
+        member _.endNode: Node option = jsNative
+        member _.startNode: Node option = jsNative
+        member _.parentNode: Node = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type AttributePart
+        (
+            element: HTMLElement,
+            name: string,
+            ?strings: string array,
+            ?parent: obj,
+            ?options: RenderOptions
+        ) =
+        member _.element: HTMLElement = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.``type``: int = jsNative
+        member _.name: string = jsNative
+        member _.strings: string array option = jsNative
+        member _.tagName: string = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type BooleanAttributePart
+        (
+            element: HTMLElement,
+            name: string,
+            ?strings: string array,
+            ?parent: obj,
+            ?options: RenderOptions
+        ) =
+        member _.element: HTMLElement = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.``type``: int = jsNative
+        member _.name: string = jsNative
+        member _.strings: string array option = jsNative
+        member _.tagName: string = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type PropertyPart(element: HTMLElement, strings: string array, parent: obj, ?options: RenderOptions) =
+        member _.element: HTMLElement = jsNative
+        member _.name: string = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.strings: string array option = jsNative
+        member _.``type``: int = jsNative
+        member _.tagName: string = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type ElementPart(element: HTMLElement, parent: obj, ?options: RenderOptions) =
+        member _.options: RenderOptions option = jsNative
+        member _.element: HTMLElement = jsNative
+        member _.``type``: int = jsNative
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type EventPart(element: HTMLElement, strings: string array, parent: obj, ?options: RenderOptions) =
+        member _.element: HTMLElement = jsNative
+        member _.name: string = jsNative
+        member _.options: RenderOptions option = jsNative
+        member _.strings: string array option = jsNative
+        member _.``type``: int = jsNative
+        member _.tagName: string = jsNative
+        member _.handleEvent(event: Browser.Types.Event) : unit = jsNative
+
+    [<Erase>]
+    type Part =
+        | ChildPart of ChildPart
+        | AttributePart of AttributePart
+        | PropertyPart of PropertyPart
+        | BooleanAttributePart of BooleanAttributePart
+        | ElementPart of ElementPart
+        | EventPart of EventPart
+
+
+    [<ImportMember("lit/directive.js"); AbstractClass>]
+    type Directive(?_partInfo: PartInfo) =
+        member _.render(props: obj array) : obj = jsNative
+        member _.update(?_part: Part, ?props: obj array) : obj = jsNative
+
+    [<ImportMember("lit/async-directive.js"); AbstractClass>]
+    type AsyncDirective(?_partInfo: PartInfo) =
+        inherit Directive(?_partInfo = _partInfo)
         member _.isConnected: bool = jsNative
         member _.setValue(value: obj) : unit = jsNative
-
-    type Part =
-        interface end
-
-    type ChildPart =
-        inherit Part
-        abstract parentNode : Element
-
-    type ElementPart =
-        inherit Part
-        abstract element : Element
+        member _.disconnected() : unit = jsNative
+        member _.reconnected() : unit = jsNative
 
     // This type should come from Fable.Browser.Css but add it here
     // for now to avoid the dependency
@@ -39,60 +135,20 @@ open Types
 
 /// The return type of the template tag functions.
 type TemplateResult =
-    interface end
+    interface
+    end
 
 /// The return type of the style tag functions.
 type CSSResult =
     abstract cssText: string
     abstract styleSheet: CSSStyleSheet
-    
-// https://lit.dev/docs/api/controllers/#ReactiveController
-// make an empty interface, all of the
-// reactive controller methods are optional anyways
-// and make each method implement the base
-/// Common interface for Reactive Controller Methods
-type ReactiveControllerBase = interface end
 
-type ReactiveHostConnected =
-    inherit ReactiveControllerBase
-    
-    /// <summary>
-    /// Called when the host is connected to the component tree. For custom
-    /// element hosts, this corresponds to the `connectedCallback()` lifecycle,
-    /// which is only called when the component is connected to the document.
-    /// </summary>
-    abstract hostConnected: unit -> unit
-
-type ReactiveHostDisconnected =
-    inherit ReactiveControllerBase
-    /// <summary>
-    /// Called when the host is disconnected from the component tree. For custom
-    /// element hosts, this corresponds to the `disconnectedCallback()` lifecycle,
-    /// which is called the host or an ancestor component is disconnected from the
-    /// document.
-    /// </summary>
-    abstract hostDisconnected: unit -> unit
-
-type ReactiveHostUpdate =
-    inherit ReactiveControllerBase
-    
-    /// <summary>
-    /// Called during the client-side host update, just before the host calls
-    /// its own update.
-    ///
-    /// Code in `update()` can depend on the DOM as it is not called in
-    /// server-side rendering.
-    /// </summary>
-    abstract hostUpdate: unit -> unit
-
-type ReactiveHostUpdated =
-    inherit ReactiveControllerBase
-    
-    /// <summary>
-    /// Called after a host update, just before the host calls firstUpdated and
-    /// updated. It is not called in server-side rendering.
-    /// </summary>
-    abstract hostUpdated: unit -> unit
+// https://lit.dev/docs/api/controllers/#ReactiveControllerHost
+type ReactiveControllerHost =
+    abstract updateComplete: JS.Promise<bool>
+    abstract addController: ReactiveController -> unit
+    abstract removeController: ReactiveController -> unit
+    abstract requestUpdate: unit -> unit
 
 /// <summary>
 /// A Reactive Controller is an object that enables sub-component code
@@ -105,18 +161,46 @@ type ReactiveHostUpdated =
 /// of the lifecycle callbacks, or initiate an update of the host component by
 /// calling `requestUpdate()` on the host.
 /// </summary>
-type ReactiveController =
-    inherit ReactiveHostConnected
-    inherit ReactiveHostDisconnected
-    inherit ReactiveHostUpdate
-    inherit ReactiveHostUpdated
+and [<AbstractClass; AttachMembers>] ReactiveController(host: ReactiveControllerHost) =
+    do host.addController (JsInterop.jsThis)
 
-// https://lit.dev/docs/api/controllers/#ReactiveControllerHost
-type ReactiveControllerHost =
-    abstract updateComplete: JS.Promise<bool>
-    abstract addController: ReactiveControllerBase -> unit
-    abstract removeController: ReactiveControllerBase -> unit
-    abstract requestUpdate: unit -> unit
+    /// <summary>
+    /// Called when the host is connected to the component tree. For custom
+    /// element hosts, this corresponds to the `connectedCallback()` lifecycle,
+    /// which is only called when the component is connected to the document.
+    /// </summary>
+    abstract hostConnected: unit -> unit
+
+    default _.hostConnected() = ()
+
+    /// <summary>
+    /// Called when the host is disconnected from the component tree. For custom
+    /// element hosts, this corresponds to the `disconnectedCallback()` lifecycle,
+    /// which is called the host or an ancestor component is disconnected from the
+    /// document.
+    /// </summary>
+    abstract hostDisconnected: unit -> unit
+
+    default _.hostDisconnected() = ()
+
+    /// <summary>
+    /// Called during the client-side host update, just before the host calls
+    /// its own update.
+    ///
+    /// Code in `update()` can depend on the DOM as it is not called in
+    /// server-side rendering.
+    /// </summary>
+    abstract hostUpdate: unit -> unit
+
+    default _.hostUpdate() = ()
+
+    /// <summary>
+    /// Called after a host update, just before the host calls firstUpdated and
+    /// updated. It is not called in server-side rendering.
+    /// </summary>
+    abstract hostUpdated: unit -> unit
+
+    default _.hostUpdated() = ()
 
 type LitBindings =
     /// <summary>
@@ -177,7 +261,7 @@ type LitBindings =
     /// Renders one of a series of values, including Promises, to a Part.
     /// </summary>
     [<ImportMember("lit/directives/until.js")>]
-    static member until([<ParamArray>] values: obj []) : TemplateResult = jsNative
+    static member until([<ParamArray>] values: obj[]) : TemplateResult = jsNative
 
     /// <summary>
     /// A directive that repeats a series of values (usually TemplateResults) generated from an iterable,
@@ -191,7 +275,13 @@ type LitBindings =
     /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
     /// <param name="template">A template that will be rendered for each item in the iterable.</param>
     [<ImportMember("lit/directives/repeat.js")>]
-    static member repeat<'T>(items: 'T seq, getId: 'T -> string, template: 'T -> int -> TemplateResult) : TemplateResult = jsNative
+    static member repeat<'T>
+        (
+            items: 'T seq,
+            getId: 'T -> string,
+            template: 'T -> int -> TemplateResult
+        ) : TemplateResult =
+        jsNative
 
     /// <summary>
     /// Enables fast switching between multiple templates by caching the DOM nodes and TemplateInstances produced by the templates.
@@ -257,7 +347,7 @@ module LitHelpers =
         | -1 -> css
         | i ->
             match css.LastIndexOf("}") with
-            | i2 when i2 > i -> css.[i+1..i2-1]
+            | i2 when i2 > i -> css.[i + 1 .. i2 - 1]
             | _ -> css
 
 type Lit() =
@@ -285,12 +375,12 @@ type Lit() =
     /// </summary>
     /// <param name="el">The container to render into.</param>
     /// <param name="t">A <see cref="Lit.TemplateResult">TemplateResult</see> to be rendered.</param>
-    static member render el t: unit = LitBindings.render (t, el)
+    static member render el t : unit = LitBindings.render (t, el)
 
     /// <summary>
     /// Generates a single string that filters out false-y values from a tuple sequence.
     /// </summary>
-    static member classes(classes: (string * bool) seq): string =
+    static member classes(classes: (string * bool) seq) : string =
         classes
         |> Seq.choose (fun (s, b) -> if b then Some s else None)
         |> String.concat " "
@@ -298,7 +388,42 @@ type Lit() =
     /// <summary>
     /// Generates a string from the string sequence provided
     /// </summary>
-    static member classes(classes: string seq): string = classes |> String.concat " "
+    static member classes(classes: string seq) : string = classes |> String.concat " "
+
+    /// <summary>
+    /// Generates inline styles in an efficient way for the browser to apply
+    /// </summary>
+    /// <example>
+    /// <code lang="fsharp">
+    ///    let styles = {| backgroundColor = "rebeccapurple"; color = "white" |}
+    ///    html $"&lt;div style={Lit.styles styles}&gt;This is my Content&gt;/div&gt;
+    /// </code>
+    /// </example>
+    static member styles(styles: obj) = LitBindings.styleMap styles
+
+    /// <summary>
+    /// Generates inline styles in an efficient way for the browser to apply
+    /// </summary>
+    /// <example>
+    /// <code lang="fsharp">
+    ///    let styles = [ "backgroundColor","rebeccapurple"; "color", "white" ]
+    ///    html $"&lt;div style={Lit.styles styles}&gt;This is my Content&gt;/div&gt;
+    /// </code>
+    /// </example>
+    static member styles(styles: (string * obj) seq) =
+        JsInterop.createObj styles |> Lit.styles
+        
+    /// <summary>
+    /// Generates inline styles in an efficient way for the browser to apply
+    /// </summary>
+    /// <example>
+    /// <code lang="fsharp">
+    ///    let styles = dict ([ "backgroundColor","rebeccapurple"; "color", "white" ])
+    ///    html $"&lt;div style={Lit.styles styles}&gt;This is my Content&gt;/div&gt;
+    /// </code>
+    /// </example>
+    static member styles(styles: Map<string, obj>) =
+        styles |> Map.toSeq |> LitBindings.styleMap
 
     /// <summary>
     /// Give a unique id to items in a list. This can improve performance in lists that will be sorted, filtered or re-ordered.
@@ -306,12 +431,21 @@ type Lit() =
     /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
     /// <param name="template">A rendering function based on the items of the sequence.</param>
     /// <param name="items">A sequence of items to be rendered.</param>
-    static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq): TemplateResult =
+    static member mapUnique (getId: 'T -> string) (template: 'T -> TemplateResult) (items: 'T seq) : TemplateResult =
         LitBindings.repeat (items, getId, (fun x _ -> template x))
+    
+    /// <summary>
+    /// Give a unique id to items in a list and retrieve the current index . This can improve performance in lists that will be sorted, filtered or re-ordered.
+    /// </summary>
+    /// <param name="getId">A function that maps an item in the sequence to a unique string key.</param>
+    /// <param name="template">A rendering function based on the items of the sequence that also supplies the current index.</param>
+    /// <param name="items">A sequence of items to be rendered.</param>
+    static member mapiUnique (getId: 'T -> string) (template: int -> 'T -> TemplateResult) (items: 'T seq): TemplateResult =
+        LitBindings.repeat (items, getId, (fun x i -> template i x))
 
     /// Shows the placeholder until the promise is resolved
-    static member ofPromise(template: JS.Promise<TemplateResult>, ?placeholder: TemplateResult): TemplateResult =
-        LitBindings.until(template, defaultArg placeholder Lit.nothing)
+    static member ofPromise(template: JS.Promise<TemplateResult>, ?placeholder: TemplateResult) : TemplateResult =
+        LitBindings.until (template, defaultArg placeholder Lit.nothing)
 
     /// <summary>
     /// Lazily import a register or render function from another module, this helps JS bundlers to split the code and optimize loading times.
@@ -323,25 +457,68 @@ type Lit() =
     /// <example>
     ///     Lit.ofImport(MyWebComponent.register, fun _ -> html $"<my-web-component></my-web-component>")
     /// </example>
-    static member inline ofImport(registerOrRenderFunction: 'Fn, template: 'Fn -> TemplateResult, ?placeholder: TemplateResult): TemplateResult =
-        LitBindings.until((JsInterop.importValueDynamic registerOrRenderFunction).``then``(fun fn -> template fn), defaultArg placeholder Lit.nothing)
+    static member inline ofImport
+        (
+            registerOrRenderFunction: 'Fn,
+            template: 'Fn -> TemplateResult,
+            ?placeholder: TemplateResult
+        ) : TemplateResult =
+        LitBindings.until (
+            (JsInterop.importValueDynamic registerOrRenderFunction)
+                .``then`` (fun fn -> template fn),
+            defaultArg placeholder Lit.nothing
+        )
 
     /// Only re-render the template if one of the dependencies changes.
-    static member onChange(dependency: 'T, template: 'T -> TemplateResult): TemplateResult =
-        let dependencies = if JS.Constructors.Array.isArray dependency then unbox dependency else [| box dependency |]
-        LitBindings.guard(dependencies, fun () -> template dependency)
+    static member onChange(dependency: 'T, template: 'T -> TemplateResult) : TemplateResult =
+        let dependencies =
+            if JS.Constructors.Array.isArray dependency then
+                unbox dependency
+            else
+                [| box dependency |]
+
+        LitBindings.guard (dependencies, (fun () -> template dependency))
 
     /// Only re-render the template if one of the dependencies changes.
-    static member onChange(dependency1: 'T1, dependency2: 'T2, template: 'T1 -> 'T2 -> TemplateResult): TemplateResult =
-        LitBindings.guard([|dependency1; dependency2|], fun () -> template dependency1 dependency2)
+    static member onChange
+        (
+            dependency1: 'T1,
+            dependency2: 'T2,
+            template: 'T1 -> 'T2 -> TemplateResult
+        ) : TemplateResult =
+        LitBindings.guard ([| dependency1; dependency2 |], (fun () -> template dependency1 dependency2))
 
     /// Only re-render the template if one of the dependencies changes.
-    static member onChange(dependency1: 'T1, dependency2: 'T2, dependency3: 'T3, template: 'T1 -> 'T2 -> 'T3 -> TemplateResult): TemplateResult =
-        LitBindings.guard([|dependency1; dependency2; dependency3|], fun () -> template dependency1 dependency2 dependency3)
+    static member onChange
+        (
+            dependency1: 'T1,
+            dependency2: 'T2,
+            dependency3: 'T3,
+            template: 'T1 -> 'T2 -> 'T3 -> TemplateResult
+        ) : TemplateResult =
+        LitBindings.guard (
+            [| dependency1
+               dependency2
+               dependency3 |],
+            fun () -> template dependency1 dependency2 dependency3
+        )
 
     /// Only re-render the template if one of the dependencies changes.
-    static member onChange(dependency1: 'T1, dependency2: 'T2, dependency3: 'T3, dependency4: 'T4, template: 'T1 -> 'T2 -> 'T3 -> 'T4 -> TemplateResult): TemplateResult =
-        LitBindings.guard([|dependency1; dependency2; dependency3; dependency4|], fun () -> template dependency1 dependency2 dependency3 dependency4)
+    static member onChange
+        (
+            dependency1: 'T1,
+            dependency2: 'T2,
+            dependency3: 'T3,
+            dependency4: 'T4,
+            template: 'T1 -> 'T2 -> 'T3 -> 'T4 -> TemplateResult
+        ) : TemplateResult =
+        LitBindings.guard (
+            [| dependency1
+               dependency2
+               dependency3
+               dependency4 |],
+            fun () -> template dependency1 dependency2 dependency3 dependency4
+        )
 
     /// To respect list item identities when sorting, inserting, removing... use `mapUnique`
     static member inline ofSeq(items: TemplateResult seq) : TemplateResult = unbox items
@@ -375,11 +552,12 @@ type Lit() =
     /// <example>
     ///     &lt;input {Lit.refValue inputRef}&gt;
     /// </example>
-    static member refValue<'El when 'El :> Element>(r: ref<'El option>): TemplateResult =
+    static member refValue<'El when 'El :> Element>(r: ref<'El option>) : TemplateResult =
         LitBindings.ref
             { new RefValue<'El option> with
-                member _.value with get() = r.Value
-                                and set(v) = r.Value <- v }
+                member _.value
+                    with get () = r.Value
+                    and set (v) = r.Value <- v }
 
     /// <summary>
     /// When placed on an element in the template, the callback will be called each time the referenced element changes.
@@ -389,7 +567,7 @@ type Lit() =
     /// <example>
     ///     &lt;input {Lit.refCallback inputFn}&gt;
     /// </example>
-    static member refCallback<'El when 'El :> Element>(fn: 'El option -> unit): TemplateResult = LitBindings.ref fn
+    static member refCallback<'El when 'El :> Element>(fn: 'El option -> unit) : TemplateResult = LitBindings.ref fn
 
     /// Used when building custom directives. [More info](https://lit.dev/docs/templates/custom-directives/).
     static member inline directive<'Class, 'Arg>() : 'Arg -> TemplateResult =
@@ -409,9 +587,9 @@ module DomHelpers =
         member this.Checked: bool = (this :?> HTMLInputElement).``checked``
 
     /// Wrapper for event handlers to help type checking.
-    let inline Ev (handler: #Event -> unit): #Event -> unit = handler
+    let inline Ev (handler: #Event -> unit) : #Event -> unit = handler
 
     /// Wrapper for event handlers to help type checking.
     /// Extracts `event.target.value` and passes it to the handler.
-    let inline EvVal (handler: string -> unit): Event -> unit =
+    let inline EvVal (handler: string -> unit) : Event -> unit =
         fun (ev: Event) -> handler ev.target.Value

@@ -10,13 +10,11 @@ open Lit.Elmish
 module Helpers =
     let hmr = HMR.createToken()
 
-    type MouseController =
-        inherit ReactiveController
-        abstract x: float
-        abstract y: float
-
-    [<Import("MouseController", from="./controllers.js"); Emit("new $0($1)")>]
-    let createMouseController (host: LitElement): MouseController = jsNative
+    [<ImportMember("./controllers.js")>]
+    type MouseController(host) =
+        inherit ReactiveController(host)
+        member _.x: float = jsNative
+        member _.y: float = jsNative
 
     type Time =
         | Hour of int
@@ -123,12 +121,12 @@ let clockHand (color: string) (time: Time) =
 
 let select options selected dispatch =
     let option value =
-        html $"""<option ?selected={value = selected} value={value}>{value}</option>"""
+        html $"""<option ?selected={value = selected} .value={value}>{value}</option>"""
 
     html $"""
         <div class="select mb-2">
             <select @change={EvVal dispatch}>
-                {options |> List.map option}
+                {Lit.mapUnique id option options}
             </select>
         </div>
     """
@@ -137,7 +135,7 @@ let initEl (config: LitConfig<_,_>) =
     let split (str: string) =
         str.Split(',') |> Array.map (fun x -> x.Trim()) |> Array.toList
 
-    config.controllers <- {| mouse = Controller.Of(createMouseController) |}
+    config.controllers <- {| mouse = Controller.Of(MouseController) |}
 
     config.props <-
         {|

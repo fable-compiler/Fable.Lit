@@ -2,12 +2,12 @@
   <PropertyGroup>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <PackageId>Fable.Lit</PackageId>
-    <Version>1.4.1</Version>
-    <PackageVersion>1.4.1</PackageVersion>
+    <Version>1.4.2</Version>
+    <PackageVersion>1.4.2</PackageVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NpmDependencies>
-      <NpmPackage Name="lit" Version="gte 2.0.0" ResolutionStrategy="Max" />
+      <NpmPackage Name="lit" Version="gte 2.2.5" ResolutionStrategy="Max" />
     </NpmDependencies>
   </PropertyGroup>
   <ItemGroup>
@@ -17,6 +17,8 @@
     <Compile Include="HMR.fs" />
     <Compile Include="Hook.fs" />
     <Compile Include="LitElement.fs" />
+    <Compile Include="LitElementCE.fs" />
+    <Compile Include="Experimental.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs; package.json" PackagePath="fable\" />

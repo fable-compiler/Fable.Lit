@@ -1,3 +1,10 @@
+### 1.4.2
+
+* `Lit.mapiUnique` @leolorenzoluis
+* `styles` binding @AngelMunoz
+* Fix #39: Better error message for unsafe CSS
+* Fix #31: Conflict with `name` attribute
+
 ### 1.4.1
 
 * Add Hook.use_scoped_css

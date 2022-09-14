@@ -9,16 +9,30 @@ module internal HookUtil =
         """class extends $0 {
             constructor() { super($2...) }
             get renderFn() { return $1 }
+
+            getOrAddController(controller, args) {
+                if(!this[controller.name]) {
+                    return this[controller.name] = new controller(this, ...args)
+                }
+                return this[controller.name];
+            }
         }"""
 
     let [<Literal>] HMR_CLASS_EXPR =
         """class extends $0 {
             constructor() { super($3...) }
-            get name() { return $2; }
+            get __name() { return $2; }
             get renderFn() { return $1.value; }
             set renderFn(v) {
                 $1.value = v;
                 this.hooks.requestUpdate();
+            }
+
+            getOrAddController(controller, args) {
+                if(!this[controller.name]) {
+                    return this[controller.name] = new controller(this, ...args)
+                }
+                return this[controller.name];
             }
         }"""
 
@@ -332,7 +346,7 @@ type HookDirective() =
 #endif
 
     abstract renderFn: JS.Function with get, set
-    abstract name: string
+    abstract __name: string
 
     member this.requestUpdate() =
         this.setValue(_hooks.render())
@@ -368,7 +382,7 @@ type HookDirective() =
                     token.Subscribe(fun info ->
                         _hooks.remove_css()
                         let updatedModule = info.NewModule
-                        this.renderFn <- updatedModule?(this.name)?renderFn
+                        this.renderFn <- updatedModule?(this.__name)?renderFn
                     ) |> Some
 #endif
 
@@ -485,6 +499,13 @@ type Hook() =
     static member inline useRef(v: 'Value): ref<'Value> =
         Hook.getContext().useRef(fun () -> v)
 
+    static member inline useRefU(v: 'Value): ref<'Value> * ('Value -> unit) =
+        let ref = Hook.getContext().useRef(fun () -> v)
+        let update v = 
+            ref.Value <- v
+            jsThis?requestUpdate()
+        ref, update
+
     /// <summary>
     /// Create a memoized state value. Only reruns the function when dependent values have changed.
     /// </summary>
@@ -565,3 +586,6 @@ type Hook() =
     /// </remarks>
     static member inline use_scoped_css(rules: string): string =
         Hook.getContext().use_scoped_css(rules)
+
+    static member inline useController<'T>([<ParamArray>] args: obj array) : 'T =
+        jsThis?getOrAddController (jsConstructor<'T>, args)

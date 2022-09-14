@@ -62,6 +62,34 @@ module LitElmishExtensions =
             | Some _ -> ()
             | None -> listener <- Some f
 
+    [<Fable.Core.AttachMembers>]
+    type ElmishController<'State, 'Msg>(host, init, update) as this =
+        inherit ReactiveController(host)
+        let obs: ElmishObservable<'State, 'Msg> = ElmishObservable()
+
+        member val state = unbox obs.Value with get, set
+
+        member _.dispatch = obs.Dispatch
+
+        override _.hostConnected() =
+            Program.mkHidden init update
+            |> Program.withSetState obs.SetState
+            |> Program.run
+
+            match obs.Value with
+            | None -> failwith "Not Started"
+            | Some value -> this.state <- value
+
+            obs.Subscribe(fun state ->
+                this.state <- state
+                host.requestUpdate ())
+
+        override _.hostDisconnected() =
+            match box obs.Value with
+            | :? System.IDisposable as disp -> disp.Dispose()
+            | _ -> ()
+
+
     let useElmish(ctx: HookContext, program: unit -> Program<unit, 'State, 'Msg, unit>) =
         let obs = ctx.useMemo(fun () -> ElmishObservable())
 
