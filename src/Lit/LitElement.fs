@@ -372,7 +372,7 @@ type LitElementAttribute(name: string) =
             failInit ()
 
         config.InitPromise
-        |> Promise.iter (fun _ ->
+        |> Promise.map(fun _ ->
             let config = config :> LitConfig<obj, obj>
 
             let styles =
