@@ -46,12 +46,28 @@ module LitElementCE =
         | Style of CSSResult
         | Property of ReactiveProperty
 
-
+    /// <summary>
+    /// An type that represents the necessary information to be able to register a custom element
+    /// </summary>
     type ElementDefinition =
-        { name: string
-          elementConstructor: obj
-          props: ReactiveProperty list
-          styles: CSSResult list }
+        {
+            name: string
+            /// <summary>
+            /// The Actual constructor of the class that is going to be registered
+            /// </summary>
+            /// <example>
+            /// <code lang="fsharp">
+            /// type MyElement =
+            ///   inherit LitElement
+            ///   override _.render() = html "..."
+            ///
+            /// { definition with elementCOnstructor = jsConstructor&lt;MyElement>}
+            /// </code>
+            /// </example>
+            elementConstructor: obj
+            props: ReactiveProperty list
+            styles: CSSResult list
+        }
 
 
     type PropBuilder(propName: string) =
@@ -142,6 +158,10 @@ module LitElementCE =
 
             propName, PropBuilderResult opts
 
+    ///<summary>
+    /// This function takes an <see cref="T:Lit.LitElementCE.ElementDefinition">ElementDefinition</see> record and assigns statically
+    /// the styles and the properties to the constructor before registering in the customElements registry
+    ///</summary>
     let inline defineElement (definition: ElementDefinition) =
         definition.elementConstructor?styles <- definition.styles |> List.toArray
 
