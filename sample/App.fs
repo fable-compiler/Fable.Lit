@@ -92,22 +92,6 @@ let LifeCycleController () =
     let state, setState = Hook.useRefU false
     let txt, setTxt = Hook.useState ""
 
-    Hook.GetController<EffectController>(
-        (fun host ->
-            JS.console.log (sprintf "Connected!")
-            Callback),
-        (fun host ->
-            JS.console.log (sprintf "Update! %A" state.Value)
-            Callback),
-        (fun host ->
-            JS.console.log (sprintf "Updated! %A" state.Value)
-            Callback),
-        (fun host ->
-            JS.console.log (sprintf "Disconnected!")
-            Callback)
-    )
-    |> ignore
-
     html
         $"""
         <label for="">
@@ -121,12 +105,12 @@ let LifeCycleController () =
     """
 
 registerElement<ClassComponents.UserProfile> "user-profile" {
-    property "name" {
+    reactiveProperty "name" {
         use_attribute
         use_type PropType.String
     }
 
-    property "age" {
+    reactiveProperty "age" {
         use_attribute
         use_type PropType.Number
     }
