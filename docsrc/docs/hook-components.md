@@ -16,7 +16,7 @@ let NameInput() =
     html $"""
       <div class="content">
         <p>Hello {value}!</p>
-        <input {Ref inputRef}
+        <input {Lit.refValue inputRef}
           value={value}
           @keyup={EvVal setValue}
           @focus={Ev(fun _ -> inputRef.Value |> Option.iter (fun el -> el.select()))}>
@@ -139,7 +139,7 @@ module MyHooks =
 
     // Updating a ref doesn't cause a re-render,
     // so let's use a ref with the same signature as useState
-    type HookContext =
+    type HookContext with
         member ctx.useSilentState(v: 'Value) =
             let r = ctx.useRef(v)
             r.Value, fun v -> r := v
