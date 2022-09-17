@@ -15,7 +15,7 @@
     <ProjectReference Include="..\src\Lit.Test\Lit.Test.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Elmish" Version="3.1.0" />
+    <PackageReference Include="Fable.Elmish" Version="4.0.0-beta-3" />
     <!-- <PackageReference Include="Fable.Lit.Test" Version="1.0.0-rc-001" /> -->
   </ItemGroup>
 </Project>

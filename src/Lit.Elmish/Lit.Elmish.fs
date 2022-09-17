@@ -6,6 +6,14 @@ open Browser.Types
 open Elmish
 open Lit
 
+type State<'model> =
+    | Active of 'model
+    | Inactive
+
+type Msg<'msg> =
+    | UserMsg of 'msg
+    | Stop
+
 [<RequireQualifiedAccess>]
 module Program =
     /// Creates an elmish program without a view function.
@@ -36,6 +44,33 @@ module Program =
 
         withLitOnElement el program
 
+    /// Adds a cumulative termination handler, doesn't affect the termination criteria
+    let addTerminationHandler (handler: 'model -> unit) (program: Program<'arg, 'model, 'msg, 'view>): Program<'arg, 'model, 'msg, 'view> =
+        program
+        |> Program.mapTermination (fun (criteria, handler') ->
+            criteria, fun model -> handler' model; handler model)
+
+    /// Adds a cumulative subscription
+    let addSubscription (subscribe: 'model -> Cmd<'msg>) (program: Program<'arg, 'model, 'msg, 'view>): Program<'arg, 'model, 'msg, 'view> =
+        program
+        |> Program.mapSubscription (fun subscribe' model ->
+            Cmd.batch [
+                subscribe' model
+                subscribe model
+            ])
+
+    /// Adds a cumulative subscription that will be disposed on termination
+    let addDisposableSubscription (subscribe: 'model -> Dispatch<'msg> -> IDisposable) (program: Program<'arg, 'model, 'msg, 'view>): Program<'arg, 'model, 'msg, 'view> =
+        let mutable disp: IDisposable option = None
+        program
+        |> addSubscription (fun model ->
+            Cmd.ofSub (fun dispatch ->
+                disp <- subscribe model dispatch |> Some
+            )
+        )
+        |> addTerminationHandler (fun _ ->
+            disp |> Option.iter (fun d -> d.Dispose()))
+
 [<AutoOpen>]
 module LitElmishExtensions =
     type ElmishObservable<'State, 'Msg>() =
@@ -62,62 +97,73 @@ module LitElmishExtensions =
             | Some _ -> ()
             | None -> listener <- Some f
 
-    let useElmish(ctx: HookContext, program: unit -> Program<unit, 'State, 'Msg, unit>) =
-        let obs = ctx.useMemo(fun () -> ElmishObservable())
+    type HookContext with
+        member ctx.useElmish(program: unit -> Program<'arg, 'State, 'Msg, unit>, arg: 'arg) =
+            let obs = ctx.useMemo(fun () -> ElmishObservable())
 
-        let state, setState = ctx.useState(fun () ->
-            program()
-            |> Program.withSetState obs.SetState
-            |> Program.run
+            let state, setState = ctx.useState(fun () ->
+                let mapInit init arg =
+                    let model, cmd = init arg
+                    Active model, Cmd.map UserMsg cmd
 
-            match obs.Value with
-            | None -> failwith "Elmish program has not initialized"
-            | Some v -> v)
+                let mapUpdate update msg model =
+                    match msg, model with
+                    | Stop, _ | _, Inactive -> Inactive, Cmd.none
+                    | UserMsg msg, Active model ->
+                        let model, cmd = update msg model
+                        Active model, Cmd.map UserMsg cmd
 
-        ctx.useEffectOnce(fun () ->
-            Hook.createDisposable(fun () ->
-                match box state with
-                | :? System.IDisposable as disp -> disp.Dispose()
-                | _ -> ()))
+                let mapView _view = fun _model _dispatch -> ()
 
-        obs.Subscribe(setState)
-        state, obs.Dispatch
+                let mapSetState _setState = obs.SetState
+
+                let mapSubscribe subscribe model =
+                    match model with
+                    | Active model -> subscribe model |> Cmd.map UserMsg
+                    | Inactive -> Cmd.none
+
+                let mapTermination (criteria, handler) =
+                    (function Stop -> true | UserMsg msg -> criteria msg),
+                    (function
+                        | Inactive -> ()
+                        | Active model ->
+                            handler model
+                            // Support "legacy" method of disposing model
+                            match box model with
+                            | :? System.IDisposable as disp -> disp.Dispose()
+                            | _ -> ())
+
+                program()
+                |> Program.map mapInit mapUpdate mapView mapSetState mapSubscribe mapTermination
+                |> Program.runWith arg
+
+                match obs.Value with
+                | None | Some Inactive -> failwith "unexpected"
+                | Some(Active v) -> v)
+
+            ctx.useEffectOnce(fun () ->
+                Hook.createDisposable(fun () ->
+                    obs.Dispatch(Stop)))
+
+            obs.Subscribe(function Inactive -> () | Active state -> setState state)
+            state, (UserMsg >> obs.Dispatch)
+
+        member ctx.useElmish(program: unit -> Program<unit, 'State, 'Msg, unit>) =
+            ctx.useElmish(program, ())
 
     type Hook with
-        /// <summary>
         /// Start an [Elmish](https://elmish.github.io/elmish/) model-view-update loop.
-        /// </summary>
-        /// <example>
-        ///      type State = { counter: int }
-        ///
-        ///      type Msg = Increment | Decrement
-        ///
-        ///      let init () = { counter = 0 }
-        ///
-        ///      let update msg state =
-        ///          match msg with
-        ///          | Increment -&gt; { state with counter = state.counter + 1 }
-        ///          | Decrement -&gt; { state with counter = state.counter - 1 }
-        ///
-        ///      [&lt;HookComponent>]
-        ///      let app () =
-        ///          let state, dispatch = Hook.useElmish(init, update)
-        ///         html $"""
-        ///               &lt;header>Click the counter&lt;/header>
-        ///               &lt;div id="count">{state.counter}&lt;/div>
-        ///               &lt;button type="button" @click=${fun _ -> dispatch Increment}>
-        ///                 Increment
-        ///               &lt;/button>
-        ///               &lt;button type="button" @click=${fun _ -> dispatch Decrement}>
-        ///                   Decrement
-        ///                &lt;/button>
-        ///              """
-        /// </example>
+        static member inline useElmish(init: 'arg -> ('State * Cmd<'Msg>), update: 'Msg -> 'State -> ('State * Cmd<'Msg>), arg: 'arg): 'State * ('Msg -> unit) =
+            Hook.getContext().useElmish((fun () -> Program.mkHidden init update), arg)
+
+        /// Start an [Elmish](https://elmish.github.io/elmish/) model-view-update loop.
         static member inline useElmish(init: unit -> ('State * Cmd<'Msg>), update: 'Msg -> 'State -> ('State * Cmd<'Msg>)): 'State * ('Msg -> unit) =
-            useElmish(Hook.getContext(), fun () -> Program.mkHidden init update)
+            Hook.getContext().useElmish(fun () -> Program.mkHidden init update)
 
-        static member inline useElmish(program: Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
-            useElmish(Hook.getContext(), fun () -> program)
+        /// Start an [Elmish](https://elmish.github.io/elmish/) model-view-update loop.
+        static member inline useElmish(program: unit -> Program<'arg, 'State, 'Msg, unit>, arg: 'arg): 'State * ('Msg -> unit) =
+            Hook.getContext().useElmish(program, arg)
 
+        /// Start an [Elmish](https://elmish.github.io/elmish/) model-view-update loop.
         static member inline useElmish(program: unit -> Program<unit, 'State, 'Msg, unit>): 'State * ('Msg -> unit) =
-            useElmish(Hook.getContext(), program)
+            Hook.getContext().useElmish(program, ())
