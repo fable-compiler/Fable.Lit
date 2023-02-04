@@ -161,7 +161,7 @@ These parameters are set to true by default (except from detail) for convenience
 
 ## Styles
 
-By default, Lit Elements will attach a [Shadow DOM] to the generated HTML Element. The main advantage of the Shadow DOM is **style encapsulation**, meaning the infamous CSS conflict's won't happen between your component and the rest of the document. On the other hand, this also means global styles won't affect your component, o you cannot use CSS frameworks like Bootstrap or Bulma.
+By default, Lit Elements will attach a [Shadow DOM] to the generated HTML Element. The main advantage of the Shadow DOM is **style encapsulation**, meaning the infamous CSS conflict's won't happen between your component and the rest of the document. On the other hand, this also means global styles won't affect your component, or you cannot use CSS frameworks like Bootstrap or Bulma.
 
 To define styles for your Lit Elements with a shadow DOM, provide them in the init function.
 
