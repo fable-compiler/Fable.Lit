@@ -64,12 +64,12 @@ module LitElmishExtensions =
 
     let useElmish(ctx: HookContext, program: unit -> Program<unit, 'State, 'Msg, unit>) =
         let obs = ctx.useMemo(fun () -> ElmishObservable())
-
-        let state, setState = ctx.useState(fun () ->
-            program()
+        
+        program()
             |> Program.withSetState obs.SetState
             |> Program.run
-
+            
+        let state, setState = ctx.useState(fun () ->
             match obs.Value with
             | None -> failwith "Elmish program has not initialized"
             | Some v -> v)
